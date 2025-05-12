@@ -1,0 +1,22 @@
+name: myenv
+channels:
+  - pytorch
+  - defaults
+dependencies:
+  - python=3.10
+  - numpy
+  - pandas
+  - matplotlib
+  - seaborn
+  - scikit-learn
+  - tqdm
+  - pytorch
+  - torchvision
+  - torchaudio
+  - jupyterlab
+  - notebook
+  - pip
+  - pip:
+      - torchsummary
+      - tensorboard
+      - opencv-python
