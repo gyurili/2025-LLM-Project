@@ -144,3 +144,7 @@ data/MNIST/
 # System files
 .DS_Store 
 
+# hwp, pdf,csv files
+*.hwp
+*.pdf
+*.csv
