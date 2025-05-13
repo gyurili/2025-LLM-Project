@@ -1,0 +1,18 @@
+folder_path: ""
+
+data:
+    type: "pdf" # "hwp" 또는 "pdf", "all"
+    apply_ocr: False # True/ False
+    re: # 전처리?
+
+chunk:
+    spliter: # RecursiveCharacterTextSplitter, TokenTextSplitter
+    size:
+    overlap:
+
+embedding:
+    type: "langchain" # 
+
+retrieval:
+
+generation:

@@ -30,6 +30,7 @@ def safe_ocr(img_array: np.ndarray, ocr_reader: easyocr.Reader) -> str:
     except Exception as e:
         return f"[OCR 실패: {e}]"
 
+
 # 단일 PDF 파일에서 텍스트 + OCR 텍스트 추출
 def extract_text_from_pdf_with_ocr(pdf_path: Path, apply_ocr: bool = True) -> str:
     """
@@ -61,6 +62,7 @@ def extract_text_from_pdf_with_ocr(pdf_path: Path, apply_ocr: bool = True) -> st
                     full_text += f"\n[OCR p.{page_num + 1}]\n{ocr_text}"
 
     return full_text
+
 
 # 폴더 내 모든 PDF 파일을 일괄 처리
 def process_all_pdfs_in_folder(folder_path: str, apply_ocr: bool = True) -> pd.DataFrame:
