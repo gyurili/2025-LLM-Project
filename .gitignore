@@ -144,3 +144,5 @@ data/MNIST/
 # System files
 .DS_Store 
 
+# Notebook file
+Data.ipynb
