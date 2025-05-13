@@ -6,11 +6,11 @@ from PIL import Image  # 이미지 처리
 from pathlib import Path
 from tqdm import tqdm  # 진행률 표시
 
-# ✅ EasyOCR Reader 객체 생성 (GPU 사용)
+# EasyOCR Reader 객체 생성 (GPU 사용)
 # 한글(ko) + 영어(en)를 인식하며, 모델은 한 번만 로드됨
 reader = easyocr.Reader(['ko', 'en'], gpu=True)
 
-# ✅ OCR 안전 수행 함수
+# OCR 안전 수행 함수
 def safe_ocr(img_array: np.ndarray, ocr_reader: easyocr.Reader) -> str:
     """
     이미지 배열을 입력받아 EasyOCR로 텍스트를 추출합니다.
@@ -30,7 +30,7 @@ def safe_ocr(img_array: np.ndarray, ocr_reader: easyocr.Reader) -> str:
     except Exception as e:
         return f"[OCR 실패: {e}]"
 
-# ✅ 단일 PDF 파일에서 텍스트 + OCR 텍스트 추출
+# 단일 PDF 파일에서 텍스트 + OCR 텍스트 추출
 def extract_text_from_pdf_with_ocr(pdf_path: Path, apply_ocr: bool = True) -> str:
     """
     한 개의 PDF 파일에서 일반 텍스트를 추출하고,
@@ -62,7 +62,7 @@ def extract_text_from_pdf_with_ocr(pdf_path: Path, apply_ocr: bool = True) -> st
 
     return full_text
 
-# ✅ 폴더 내 모든 PDF 파일을 일괄 처리
+# 폴더 내 모든 PDF 파일을 일괄 처리
 def process_all_pdfs_in_folder(folder_path: str, apply_ocr: bool = True) -> pd.DataFrame:
     """
     지정된 폴더 내 모든 PDF 파일을 대상으로 텍스트 및 OCR 추출을 수행합니다.
