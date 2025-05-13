@@ -2,15 +2,18 @@ import os
 import platform
 import subprocess
 
-def hwp_to_pdf(hwp_path, pdf_path):
+def hwp_to_pdf(hwp_path: str, pdf_path: str) -> None:
     """
     HWP 파일을 PDF 파일로 변환합니다.
     Windows에서는 win32com을 이용하고,
     macOS/Linux에서는 hwp5txt로 텍스트 추출 후 PDF로 저장합니다.
 
-    Parameters:
+    Args:
         hwp_path (str): 변환할 .hwp 파일의 전체 경로
         pdf_path (str): 저장할 .pdf 파일의 전체 경로
+
+    Returns:
+        None
 
     Raises:
         FileNotFoundError: 입력 파일이 존재하지 않을 경우
@@ -67,11 +70,11 @@ def hwp_to_pdf(hwp_path, pdf_path):
         raise RuntimeError(f"지원되지 않는 운영체제입니다: {system_type}")
 
 
-def batch_convert_hwp_to_pdf(folder_path):
+def batch_convert_hwp_to_pdf(folder_path: str) -> None:
     """
     지정된 폴더 내의 모든 .hwp 파일을 찾아 .pdf 파일로 일괄 변환합니다.
 
-    Parameters:
+    Args:
         folder_path (str): .hwp 파일들이 존재하는 폴더의 전체 경로
 
     Returns:
