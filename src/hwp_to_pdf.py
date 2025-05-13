@@ -1,9 +1,12 @@
 import os
-import win32com.client as win32
+import platform
+import subprocess
 
 def hwp_to_pdf(hwp_path, pdf_path):
     """
     HWP 파일을 PDF 파일로 변환합니다.
+    Windows에서는 win32com을 이용하고,
+    macOS/Linux에서는 hwp5txt로 텍스트 추출 후 PDF로 저장합니다.
 
     Parameters:
         hwp_path (str): 변환할 .hwp 파일의 전체 경로
@@ -11,31 +14,57 @@ def hwp_to_pdf(hwp_path, pdf_path):
 
     Raises:
         FileNotFoundError: 입력 파일이 존재하지 않을 경우
-        RuntimeError: 한글 파일 열기나 저장 실패 시
+        RuntimeError: 파일 열기나 저장 실패 시
     """
     if not os.path.exists(hwp_path):
         raise FileNotFoundError(f"HWP 파일이 존재하지 않습니다: {hwp_path}")
+    
+    system_type = platform.system()
 
-    try:
-        hwp = win32.gencache.EnsureDispatch("HWPFrame.HwpObject")
-        hwp.XHwpWindows.Item(0).Visible = True
-    except Exception as e:
-        raise RuntimeError("한글 프로그램을 불러오지 못했습니다. 한글과컴퓨터가 설치되어 있는지 확인하세요.") from e
+    if system_type == "Windows":
+        try:
+            import win32com.client as win32
+            hwp = win32.gencache.EnsureDispatch("HWPFrame.HwpObject")
+            hwp.XHwpWindows.Item(0).Visible = True
+        except Exception as e:
+            raise RuntimeError("한글 프로그램을 불러오지 못했습니다. 한글과컴퓨터가 설치되어 있는지 확인하세요.") from e
 
-    # 파일 열기
-    try:
-        hwp.Open(hwp_path)
-    except Exception as e:
-        raise RuntimeError(f"HWP 파일을 열 수 없습니다: {hwp_path}\n파일이 손상되었거나 HWP 형식이 아닌 파일일 수 있습니다.") from e
+        # 파일 열기
+        try:
+            hwp.Open(hwp_path)
+        except Exception as e:
+            raise RuntimeError(f"HWP 파일을 열 수 없습니다: {hwp_path}\n파일이 손상되었거나 HWP 형식이 아닌 파일일 수 있습니다.") from e
 
-    # PDF로 저장
-    try:
-        hwp.SaveAs(pdf_path, "PDF")
-    except Exception as e:
-        raise RuntimeError(f"PDF로 저장하는 데 실패했습니다: {pdf_path}") from e
-    # 한글 종료
-    finally:
-        hwp.Quit()
+        # PDF로 저장
+        try:
+            hwp.SaveAs(pdf_path, "PDF")
+        except Exception as e:
+            raise RuntimeError(f"PDF로 저장하는 데 실패했습니다: {pdf_path}") from e
+        # 한글 종료
+        finally:
+            hwp.Quit()
+            
+    elif system_type in ["Darwin", "Linux"]:
+        # hwp5txt를 사용하여 HWP 파일을 텍스트로 변환
+        try:
+            txt_path = os.path.splitext(pdf_path)[0] + ".txt"
+            subprocess.run(["hwp5txt", hwp_path, "-o", txt_path], check=True)
+
+            from fpdf import FPDF
+            pdf = FPDF()
+            pdf.add_page()
+            pdf.set_font("Arial", size=12)
+            with open(txt_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    pdf.multi_cell(0, 10, line)
+            pdf.output(pdf_path)
+            os.remove(txt_path)
+
+        except Exception as e:
+            raise RuntimeError(f"텍스트 추출 또는 PDF 저장에 실패했습니다: {pdf_path}") from e
+
+    else:
+        raise RuntimeError(f"지원되지 않는 운영체제입니다: {system_type}")
 
 
 def batch_convert_hwp_to_pdf(folder_path):
