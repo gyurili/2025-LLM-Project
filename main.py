@@ -1,9 +1,9 @@
 import os
 import yaml
 
-from src.data_load import data_load, data_process, hwp_chunking, generate_vector_db, load_vector_db
-from src.hwp_to_pdf import batch_convert_hwp_to_pdf
+from src.data_load import data_load, data_process, data_chunking
 from src.pdf_loader import process_all_pdfs_in_folder
+from src.vector_db import generate_vector_db, load_vector_db
 
 
 if __name__ == "__main__":
@@ -23,6 +23,51 @@ if __name__ == "__main__":
     data_list_path = os.path.abspath(config["data"]["data_list_path"])
     df = data_load(data_list_path)
 
+    # 파일 유형에 따라 처리
+    file_type = config["data"]["type"]
+    apply_ocr = config["data"].get("apply_ocr", False)
+
+    if file_type == "hwp":
+        df = data_process(df, apply_ocr=apply_ocr, file_type="hwp")
+    elif file_type == "pdf":
+        df = data_process(df, apply_ocr=apply_ocr, file_type="pdf")
+    elif file_type == "all":
+        df = data_process(df, apply_ocr=apply_ocr, file_type="all")
+    else:
+        raise ValueError("지원하지 않는 데이터 타입입니다. 'hwp', 'pdf', 'all' 중 하나로 설정하세요.")
+
+    # 청크 분할
+    all_chunks = data_chunking(df)
+    print("청크 분할 완료!")
+
+    # 벡터 DB 생성 및 저장
+    embed_model_name = config["embedding"]["model"]
+    vector_db_path = os.path.abspath(config["embedding"]["vector_db_path"])
+
+    generate_vector_db(all_chunks, embed_model_name)
+    print("벡터 DB 저장 완료!")
+
+    # 벡터 DB 로드
+    vector_store = load_vector_db(vector_db_path, embed_model_name)
+    print("벡터 DB 로드 완료!")
+
+    # 유사도 검색
+    query_text = config["query"]["query"]
+    top_k = config["query"]["top_k"]
+
+    print(f"\n질문: {query_text}")
+    print(f"유사도 검색 결과 (상위 {top_k}개 문서):")
+
+    docs = vector_store.similarity_search(query_text, k=top_k)
+    for i, doc in enumerate(docs, start=1):
+        print(f"\n문서 {i}:\n{doc.page_content}")
+
+
+
+
+# --------------------------------------------
+# 영선님 작업물
+'''
     if config["data"]["type"] == "hwp":
         df = data_process(df)
         all_chunks = hwp_chunking(df)
@@ -48,3 +93,4 @@ if __name__ == "__main__":
     docs = vector_store.similarity_search(query, k=k)
     for i in range(len(docs)):
         print(docs[i].page_content)
+'''
