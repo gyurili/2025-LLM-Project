@@ -141,7 +141,7 @@ poetry.toml
 pyrightconfig.json
 
 # dataset
-data/files/
+data/
 
 # System files
 .DS_Store 
