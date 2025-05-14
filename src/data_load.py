@@ -10,6 +10,7 @@ from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_openai import OpenAIEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
 import faiss
+from pdf_loader import extract_text_from_pdf
 
 def data_load(path: str) -> pd.DataFrame:
     """
@@ -41,36 +42,48 @@ def data_load(path: str) -> pd.DataFrame:
     df['사업 금액'] = pd.to_numeric(df['사업 금액'], errors='coerce').astype("Int64")
     return df
 
-def data_process(df: pd.DataFrame) -> pd.DataFrame:
+
+def data_process(df: pd.DataFrame, apply_ocr: bool = True) -> pd.DataFrame:
     """
-    HWP 파일을 로드하여 각 행의 텍스트를 'full_text' 컬럼에 추가합니다.
+    HWP 또는 PDF 파일을 처리하여 텍스트를 추출하고,
+    'full_text' 컬럼에 저장합니다.
 
     Args:
-        df (pd.DataFrame): 전처리된 DataFrame
+        df (pd.DataFrame): 파일명 컬럼이 포함된 DataFrame
+        apply_ocr (bool): PDF 처리 시 OCR을 적용할지 여부
 
     Returns:
-        pd.DataFrame: HWP 텍스트가 추가된 DataFrame
+        pd.DataFrame: 텍스트가 추가된 DataFrame
     """
     for file_name in df['파일명']:
         path = os.path.join("data/files", file_name)
 
         try:
             if not os.path.exists(path):
-                raise FileNotFoundError(f"HWP 파일이 존재하지 않습니다: {path}")
+                raise FileNotFoundError(f"파일이 존재하지 않습니다: {path}")
 
-            loader = HWPLoader(path)
-            docs = loader.load()
+            if file_name.lower().endswith(".hwp"):
+                loader = HWPLoader(path)
+                docs = loader.load()
+                if docs and isinstance(docs[0].page_content, str):
+                    df.loc[df['파일명'] == file_name, 'full_text'] = docs[0].page_content
+                else:
+                    print(f"HWP 파일 무시됨 (내용 없음): {file_name}")
 
-            if docs and isinstance(docs[0].page_content, str):
-                df.loc[df['파일명'] == file_name, 'full_text'] = docs[0].page_content
+            elif file_name.lower().endswith(".pdf"):
+                text = extract_text_from_pdf_with_ocr(Path(path), apply_ocr=apply_ocr)
+                df.loc[df['파일명'] == file_name, 'full_text'] = text
+
             else:
-                print(f"파일 무시됨 (내용 없음): {file_name}")
+                print(f"지원하지 않는 파일 형식: {file_name}")
 
         except Exception as e:
             print(f"파일 처리 오류 ({file_name}): {e}")
+
     return df
 
-def hwp_chunking(df: pd.DataFrame) -> List[Document]:
+
+def data_chunking(df: pd.DataFrame) -> List[Document]:
     """
     각 문서 텍스트를 청크 단위로 나누고, metadata를 포함한 Document 리스트를 생성합니다.
 
@@ -100,77 +113,3 @@ def hwp_chunking(df: pd.DataFrame) -> List[Document]:
         else:
             print(f"텍스트 누락으로 스킵된 파일: {row.get('파일명')}")
     return all_chunks
-
-def generate_vector_db(all_chunks: List[Document], embed_model_name: str) -> object:
-    """
-    문서 청크를 기반으로 FAISS 벡터 DB를 생성하고 저장합니다.
-
-    Args:
-        all_chunks (List[Document]): 문서 청크 리스트
-        embed_model_name (str): 'open_ai' 또는 huggingface 모델 이름
-
-    Returns:
-        object: 생성된 embedding 객체
-
-    Raises:
-        ValueError: 지원하지 않는 임베딩 모델명인 경우
-    """
-    if embed_model_name == "open_ai":
-        load_dotenv()
-        embeddings = OpenAIEmbeddings()
-    else:
-        try:
-            embeddings = HuggingFaceEmbeddings(model_name=embed_model_name)
-        except Exception as e:
-            raise ValueError(f"임베딩 모델 초기화 실패: {e}")
-
-    dimension = len(embeddings.embed_query("hello world"))
-
-    vector_store = FAISS(
-        embedding_function=embeddings,
-        index=faiss.IndexFlatL2(dimension),
-        docstore=InMemoryDocstore(),
-        index_to_docstore_id={},
-    )
-    vector_store.add_documents(all_chunks)
-    vector_store.save_local(folder_path="data/", index_name="hwp_faiss_index")
-    return embeddings
-
-def load_vector_db(path: str, embeddings) -> FAISS:
-    """
-    저장된 FAISS 벡터 DB를 로드합니다.
-
-    Args:
-        path (str): 벡터 DB가 저장된 경로
-        embeddings: 사용할 임베딩 모델 객체
-
-    Returns:
-        FAISS: 불러온 벡터 스토어
-    """
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"벡터 DB 경로가 존재하지 않습니다: {path}")
-
-    return FAISS.load_local(
-        folder_path=path,
-        index_name="hwp_faiss_index",
-        embeddings=embeddings,
-        allow_dangerous_deserialization=True,
-    )
-
-df = data_load("data/data_list.csv")
-df = data_process(df)
-all_chunks = hwp_chunking(df)
-print("Chunking 완료!")
-embeddings = generate_vector_db(all_chunks, "open_ai")
-print("Vector DB가 저장되었습니다!")
-
-print("저장된 Vector DB를 불러옵니다!")
-base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-vector_db_path = os.path.join(base_dir, "data")
-
-vector_store = load_vector_db(vector_db_path, embeddings)
-
-docs = vector_store.similarity_search("배드민턴장 및 탁구장 예약방법", k=3)
-
-for i in range(len(docs)):
-    print(docs.page_content)
