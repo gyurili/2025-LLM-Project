@@ -68,7 +68,10 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all
 
     file_root = os.path.join(base_dir, "data", "files")
 
-    for file_name in df['파일명']:
+    filtered_df = df[df['파일명'].str.lower().str.endswith(f".{file_type}") if file_type in ["hwp", "pdf"] else True].copy()
+    filtered_df['full_text'] = None
+
+    for file_name in filtered_df['파일명']:
         file_path = os.path.join(file_root, file_name)
 
         try:
@@ -80,14 +83,14 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all
                     loader = HWPLoader(file_path)
                     docs = loader.load()
                     if docs and isinstance(docs[0].page_content, str):
-                        df.loc[df['파일명'] == file_name, 'full_text'] = docs[0].page_content
+                        filtered_df.loc[filtered_df['파일명'] == file_name, 'full_text'] = docs[0].page_content
                     else:
                         print(f"HWP 파일 무시됨 (내용 없음): {file_name}")
 
             elif file_name.lower().endswith(".pdf"):
                 if file_type in ["pdf", "all"]:
                     text = extract_text_from_pdf(Path(file_path), apply_ocr=apply_ocr)
-                    df.loc[df['파일명'] == file_name, 'full_text'] = text
+                    filtered_df.loc[filtered_df['파일명'] == file_name, 'full_text'] = text
 
             else:
                 print(f"지원하지 않는 파일 형식: {file_name}")
@@ -95,7 +98,7 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all
         except Exception as e:
             print(f"파일 처리 오류 ({file_name}): {e}")
 
-    return df
+    return filtered_df.reset_index(drop=True)
 
 
 def data_chunking(df: pd.DataFrame) -> List[Document]:
