@@ -32,7 +32,7 @@ def safe_ocr(img_array: np.ndarray, ocr_reader: easyocr.Reader) -> str:
 
 
 # 단일 PDF 파일에서 텍스트 + OCR 텍스트 추출
-def extract_text_from_pdf_with_ocr(pdf_path: Path, apply_ocr: bool = True) -> str:
+def extract_text_from_pdf(pdf_path: Path, apply_ocr: bool = True) -> str:
     """
     한 개의 PDF 파일에서 일반 텍스트를 추출하고,
     필요시 모든 페이지에 대해 OCR을 수행한 결과를 결합합니다.
@@ -82,7 +82,7 @@ def process_all_pdfs_in_folder(folder_path: str, apply_ocr: bool = True) -> pd.D
     for idx, file_path in enumerate(pdf_files, start=1):
         print(f"[INFO] 파일 {idx}/{len(pdf_files)} 처리 중: {file_path.name}")
         try:
-            text = extract_text_from_pdf_with_ocr(file_path, apply_ocr=apply_ocr)
+            text = extract_text_from_pdf(file_path, apply_ocr=apply_ocr)
         except Exception as e:
             print(f"[ERROR] {file_path.name}: {e}")
             continue
