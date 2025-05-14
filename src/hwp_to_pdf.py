@@ -107,6 +107,7 @@ def batch_convert_hwp_to_pdf(folder_path: str) -> None:
         print(f"총 {count}개의 HWP 파일이 PDF로 변환되었습니다.")
 
 
+'''
 if __name__ == "__main__":
     """
     스크립트 실행 시 동작:
@@ -114,3 +115,4 @@ if __name__ == "__main__":
     """
     folder_path = r"C:\Users\user\Desktop\PythonWorkspace\2025-LLM-Project\data\files"
     batch_convert_hwp_to_pdf(folder_path)
+'''
