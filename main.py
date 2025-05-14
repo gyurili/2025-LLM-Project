@@ -49,10 +49,10 @@ if __name__ == "__main__":
         splitter_type = config["chunk"]["splitter"]
         if splitter_type not in ["recursive", "token"]:
             raise ValueError("❌ spliter_type은'recursive' 또는 'token' 중 하나여야 합니다.")
-        chunk_size = config["chunk"]["chunk_size"]
+        chunk_size = config["chunk"]["size"]
         if chunk_size <= 0 or not isinstance(chunk_size, int):
             raise ValueError("❌ 청크 크기는 1 이상의 정수여야 합니다.")
-        chunk_overlap = config["chunk"]["chunk_overlap"]
+        chunk_overlap = config["chunk"]["overlap"]
         if chunk_overlap < 0 or not isinstance(chunk_overlap, int):
             raise ValueError("❌ 청크 오버랩은 0 이상의 정수여야 합니다.")
         if config["settings"]["verbose"]:
@@ -79,7 +79,7 @@ if __name__ == "__main__":
         print("✅ Vector DB 로드")
 
         # 유사도 검색
-        query = config["query"]["text"]
+        query = config["query"]["question"]
         k = config["query"]["top_k"]
         if k <= 0:
             raise ValueError("k는 1 이상의 정수여야 합니다.")
