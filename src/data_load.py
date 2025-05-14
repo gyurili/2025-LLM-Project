@@ -1,7 +1,8 @@
 import os
-from typing import List
-
 import pandas as pd
+from typing import List
+from dotenv import load_dotenv
+from pathlib import Path
 from langchain.schema import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_teddynote.document_loaders import HWPLoader
@@ -14,36 +15,35 @@ from pdf_loader import extract_text_from_pdf
 
 def data_load(path: str) -> pd.DataFrame:
     """
-    CSV 파일을 불러와 필요한 컬럼을 포함한 전처리된 DataFrame을 반환합니다.
+    주어진 경로에서 CSV 파일을 불러오고, 필요한 컬럼만 추출하여 전처리된 DataFrame을 반환합니다.
 
     Args:
-        path (str): 프로젝트 루트 기준 CSV 파일 상대 경로 (예: "data/data_list.csv")
+        path (str): 불러올 CSV 파일의 상대 경로
 
     Returns:
         pd.DataFrame: 전처리된 데이터프레임
 
     Raises:
         FileNotFoundError: 파일이 존재하지 않을 경우
-        pd.errors.ParserError: CSV 파일 파싱 중 오류가 발생한 경우
-        ValueError: 필수 컬럼이 누락된 경우
+        pd.errors.ParserError: CSV 파싱 오류 발생 시
     """
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if '__file__' in globals():
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    else:
+        base_dir = os.path.abspath("..")
+
     full_path = os.path.join(base_dir, path)
 
     if not os.path.exists(full_path):
-        raise FileNotFoundError(f"CSV 파일이 존재하지 않습니다: {full_path}")
+        raise FileNotFoundError(f"CSV 파일을 찾을 수 없습니다: {full_path}")
 
-    try:
-        df = pd.read_csv(full_path)
-    except pd.errors.ParserError as e:
-        raise pd.errors.ParserError(f"CSV 파싱 오류: {e}")
+    df = pd.read_csv(full_path)
 
     required_columns = ['파일명', '사업 요약', '텍스트', '사업명', '발주 기관', '사업 금액']
-    missing_cols = set(required_columns) - set(df.columns)
-    if missing_cols:
-        raise ValueError(f"필수 컬럼이 누락되었습니다: {missing_cols}")
+    if not all(col in df.columns for col in required_columns):
+        raise ValueError(f"필수 컬럼이 누락되었습니다: {set(required_columns) - set(df.columns)}")
 
-    df = df[required_columns].copy()
+    df = df[required_columns]
     df['사업 금액'] = pd.to_numeric(df['사업 금액'], errors='coerce').astype("Int64")
     return df
 
@@ -60,19 +60,22 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True) -> pd.DataFrame:
     Returns:
         pd.DataFrame: 텍스트가 추가된 DataFrame
     """
-    base_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data/files")
+    if '__file__' in globals():
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    else:
+        base_dir = os.path.abspath("..")
 
-    df["full_text"] = ""
+    file_root = os.path.join(base_dir, "data", "files")
 
-    for file_name in df["파일명"]:
-        file_path = os.path.join(base_path, file_name)
+    for file_name in df['파일명']:
+        file_path = os.path.join(file_root, file_name)
 
         try:
-            if not os.path.exists(path):
-                raise FileNotFoundError(f"파일이 존재하지 않습니다: {path}")
+            if not os.path.exists(file_path):
+                raise FileNotFoundError(f"파일이 존재하지 않습니다: {file_path}")
 
             if file_name.lower().endswith(".hwp"):
-                loader = HWPLoader(path)
+                loader = HWPLoader(file_path)
                 docs = loader.load()
                 if docs and isinstance(docs[0].page_content, str):
                     df.loc[df['파일명'] == file_name, 'full_text'] = docs[0].page_content
@@ -80,7 +83,7 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True) -> pd.DataFrame:
                     print(f"HWP 파일 무시됨 (내용 없음): {file_name}")
 
             elif file_name.lower().endswith(".pdf"):
-                text = extract_text_from_pdf(Path(path), apply_ocr=apply_ocr)
+                text = extract_text_from_pdf(Path(file_path), apply_ocr=apply_ocr)
                 df.loc[df['파일명'] == file_name, 'full_text'] = text
 
             else:
