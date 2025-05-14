@@ -2,7 +2,6 @@ import os
 import yaml
 
 from src.data_load import data_load, data_process, data_chunking
-from src.pdf_loader import process_all_pdfs_in_folder
 from src.vector_db import generate_vector_db, load_vector_db
 
 
@@ -11,30 +10,19 @@ if __name__ == "__main__":
     with open("config.yaml", "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
-    if config["settings"]["verbose"]:
+    if config["settings"].get("verbose", False):
         print("Verbose 모드로 실행 중입니다.")
         print(config)
 
-    # HWP 파일을 PDF로 변환
+    # 경로 준비
     folder_path = os.path.abspath(config["data"]["folder_path"])
-    # batch_convert_hwp_to_pdf(folder_path)
-
-    # PDF 또는 HWP 파일에서 텍스트 추출
     data_list_path = os.path.abspath(config["data"]["data_list_path"])
-    df = data_load(data_list_path)
-
-    # 파일 유형에 따라 처리
     file_type = config["data"]["type"]
     apply_ocr = config["data"].get("apply_ocr", False)
 
-    if file_type == "hwp":
-        df = data_process(df, apply_ocr=apply_ocr, file_type="hwp")
-    elif file_type == "pdf":
-        df = data_process(df, apply_ocr=apply_ocr, file_type="pdf")
-    elif file_type == "all":
-        df = data_process(df, apply_ocr=apply_ocr, file_type="all")
-    else:
-        raise ValueError("지원하지 않는 데이터 타입입니다. 'hwp', 'pdf', 'all' 중 하나로 설정하세요.")
+    # 데이터 로딩 및 전처리
+    df = data_load(data_list_path)
+    df = data_process(df, apply_ocr=apply_ocr, file_type=file_type)
 
     # 청크 분할
     all_chunks = data_chunking(df)
@@ -61,7 +49,6 @@ if __name__ == "__main__":
     docs = vector_store.similarity_search(query_text, k=top_k)
     for i, doc in enumerate(docs, start=1):
         print(f"\n문서 {i}:\n{doc.page_content}")
-
 
 
 
