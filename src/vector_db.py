@@ -14,7 +14,7 @@ def generate_embedding(embed_model_name: str) -> Union[OpenAIEmbeddings, Hugging
     임베딩 모델을 초기화합니다.
 
     Args:
-        embed_model_name (str): 'open_ai' 또는 huggingface 모델 이름
+        embed_model_name (str): 'openai' 또는 huggingface 모델 이름
 
     Returns:
         임베딩 객체
@@ -23,7 +23,7 @@ def generate_embedding(embed_model_name: str) -> Union[OpenAIEmbeddings, Hugging
         ValueError: 모델 초기화 실패 시
     """
     try:
-        if embed_model_name == "open_ai":
+        if embed_model_name == "openai":
             load_dotenv()
             return OpenAIEmbeddings()
         else:
@@ -91,7 +91,9 @@ def load_vector_db(path: str, embed_model_name: str) -> FAISS:
         allow_dangerous_deserialization=True,
     )
 
-from data_load import (data_load, data_process, data_chunking)
+
+'''
+from src.data_load import (data_load, data_process, data_chunking)
 
 if __name__ == "__main__":
     try:
@@ -116,3 +118,4 @@ if __name__ == "__main__":
 
     except Exception as e:
         print(f"❌ 실행 중 오류 발생: {e}")
+'''

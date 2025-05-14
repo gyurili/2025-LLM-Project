@@ -1,6 +1,6 @@
 
 data:
-    type: "hwp" # "hwp" 또는 "pdf", "all"
+    type: "all" # "hwp" 또는 "pdf", "all"
     folder_path: "data/files"
     data_list_path: "data/data_list.csv"
     apply_ocr: False # True/ False
