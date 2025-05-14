@@ -48,14 +48,15 @@ def data_load(path: str) -> pd.DataFrame:
     return df
 
 
-def data_process(df: pd.DataFrame, apply_ocr: bool = True) -> pd.DataFrame:
+def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all") -> pd.DataFrame:
     """
     HWP 또는 PDF 파일을 처리하여 텍스트를 추출하고,
-    'full_text' 컬럼에 저장합니다.
+    'full_text' 컬럼에 저장합니다. 파일 유형 필터링 지원.
 
     Args:
         df (pd.DataFrame): 파일명 컬럼이 포함된 DataFrame
         apply_ocr (bool): PDF 처리 시 OCR을 적용할지 여부
+        file_type (str): 처리할 파일 유형 ('hwp', 'pdf', 'all')
 
     Returns:
         pd.DataFrame: 텍스트가 추가된 DataFrame
@@ -75,16 +76,18 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True) -> pd.DataFrame:
                 raise FileNotFoundError(f"파일이 존재하지 않습니다: {file_path}")
 
             if file_name.lower().endswith(".hwp"):
-                loader = HWPLoader(file_path)
-                docs = loader.load()
-                if docs and isinstance(docs[0].page_content, str):
-                    df.loc[df['파일명'] == file_name, 'full_text'] = docs[0].page_content
-                else:
-                    print(f"HWP 파일 무시됨 (내용 없음): {file_name}")
+                if file_type in ["hwp", "all"]:
+                    loader = HWPLoader(file_path)
+                    docs = loader.load()
+                    if docs and isinstance(docs[0].page_content, str):
+                        df.loc[df['파일명'] == file_name, 'full_text'] = docs[0].page_content
+                    else:
+                        print(f"HWP 파일 무시됨 (내용 없음): {file_name}")
 
             elif file_name.lower().endswith(".pdf"):
-                text = extract_text_from_pdf(Path(file_path), apply_ocr=apply_ocr)
-                df.loc[df['파일명'] == file_name, 'full_text'] = text
+                if file_type in ["pdf", "all"]:
+                    text = extract_text_from_pdf(Path(file_path), apply_ocr=apply_ocr)
+                    df.loc[df['파일명'] == file_name, 'full_text'] = text
 
             else:
                 print(f"지원하지 않는 파일 형식: {file_name}")
