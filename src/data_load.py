@@ -71,7 +71,7 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True) -> pd.DataFrame:
                     print(f"HWP 파일 무시됨 (내용 없음): {file_name}")
 
             elif file_name.lower().endswith(".pdf"):
-                text = extract_text_from_pdf_with_ocr(Path(path), apply_ocr=apply_ocr)
+                text = extract_text_from_pdf(Path(path), apply_ocr=apply_ocr)
                 df.loc[df['파일명'] == file_name, 'full_text'] = text
 
             else:
