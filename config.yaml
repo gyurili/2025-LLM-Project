@@ -20,7 +20,7 @@ embedding:
 
 query:
     type: "retrieval" # "retrieval", "generation"
-    text: "배드민턴장 및 탁구장 예약방법"
+    question: "배드민턴장 및 탁구장 예약방법"
     top_k: 3
     filter: # {"key": "value"}
     context: # {"key": "value"}
