@@ -1,8 +1,14 @@
 import os
+import fitz
+import faiss
+import easyocr
+import numpy as np
 import pandas as pd
+from PIL import Image
+from tqdm import tqdm
+from pathlib import Path
 from typing import List
 from dotenv import load_dotenv
-from pathlib import Path
 from langchain.schema import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_teddynote.document_loaders import HWPLoader
@@ -10,22 +16,67 @@ from langchain_community.vectorstores import FAISS
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_openai import OpenAIEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
-import faiss
-from pdf_loader import extract_text_from_pdf
+
+# EasyOCR Reader 객체 생성 (GPU 사용)
+# 한글(ko) + 영어(en)를 인식하며, 모델은 한 번만 로드됨
+reader = easyocr.Reader(['ko', 'en'], gpu=True)
+
+
+def safe_ocr(img_array: np.ndarray, ocr_reader: easyocr.Reader) -> str:
+    """
+    이미지 배열을 입력받아 EasyOCR로 텍스트를 추출합니다.
+
+    Args:
+        img_array (np.ndarray): OCR을 수행할 이미지 배열
+        ocr_reader (easyocr.Reader): 초기화된 EasyOCR 리더 인스턴스
+
+    Returns:
+        str: 추출된 텍스트 문자열
+    """
+    try:
+        result = ocr_reader.readtext(img_array, detail=0)
+        if not isinstance(result, list):
+            return ""
+        return "\n".join(result)
+    except Exception as e:
+        return f"[OCR 실패: {e}]"
+
+
+def extract_text_from_pdf(pdf_path: Path, apply_ocr: bool = True) -> str:
+    """
+    PDF 파일에서 텍스트 및 OCR 텍스트를 추출합니다.
+
+    Args:
+        pdf_path (Path): 처리할 PDF 파일 경로
+        apply_ocr (bool): OCR 수행 여부
+
+    Returns:
+        str: 전체 페이지에서 추출된 텍스트
+    """
+    full_text = ""
+    with fitz.open(pdf_path) as doc:
+        for page_num, page in enumerate(tqdm(doc, desc=f"{pdf_path.name}")):
+            page_text = page.get_text()
+            full_text += page_text
+
+            if apply_ocr:
+                pix = page.get_pixmap(dpi=300)
+                img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                ocr_text = safe_ocr(np.array(img), reader)
+                if ocr_text.strip():
+                    full_text += f"\n[OCR p.{page_num + 1}]\n{ocr_text}"
+    return full_text
+
 
 def data_load(path: str) -> pd.DataFrame:
     """
-    주어진 경로에서 CSV 파일을 불러오고, 필요한 컬럼만 추출하여 전처리된 DataFrame을 반환합니다.
+    주어진 경로에서 CSV 파일을 불러와 전처리합니다.
 
     Args:
-        path (str): 불러올 CSV 파일의 상대 경로
+        path (str): CSV 파일 상대 경로
 
     Returns:
         pd.DataFrame: 전처리된 데이터프레임
-
-    Raises:
-        FileNotFoundError: 파일이 존재하지 않을 경우
-        pd.errors.ParserError: CSV 파싱 오류 발생 시
     """
     if '__file__' in globals():
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -33,12 +84,10 @@ def data_load(path: str) -> pd.DataFrame:
         base_dir = os.path.abspath("..")
 
     full_path = os.path.join(base_dir, path)
-
     if not os.path.exists(full_path):
         raise FileNotFoundError(f"CSV 파일을 찾을 수 없습니다: {full_path}")
 
     df = pd.read_csv(full_path)
-
     required_columns = ['파일명', '사업 요약', '텍스트', '사업명', '발주 기관', '사업 금액']
     if not all(col in df.columns for col in required_columns):
         raise ValueError(f"필수 컬럼이 누락되었습니다: {set(required_columns) - set(df.columns)}")
@@ -50,13 +99,12 @@ def data_load(path: str) -> pd.DataFrame:
 
 def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all") -> pd.DataFrame:
     """
-    HWP 또는 PDF 파일을 처리하여 텍스트를 추출하고,
-    'full_text' 컬럼에 저장합니다. 파일 유형 필터링 지원.
+    HWP 또는 PDF 파일을 처리하여 텍스트를 추출하고 full_text 컬럼에 저장합니다.
 
     Args:
-        df (pd.DataFrame): 파일명 컬럼이 포함된 DataFrame
-        apply_ocr (bool): PDF 처리 시 OCR을 적용할지 여부
-        file_type (str): 처리할 파일 유형 ('hwp', 'pdf', 'all')
+        df (pd.DataFrame): 파일 목록을 포함한 데이터프레임
+        apply_ocr (bool): PDF OCR 여부
+        file_type (str): 'hwp', 'pdf', 'all' 중 하나
 
     Returns:
         pd.DataFrame: 텍스트가 추가된 DataFrame
@@ -68,29 +116,31 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all
 
     file_root = os.path.join(base_dir, "data", "files")
 
-    filtered_df = df[df['파일명'].str.lower().str.endswith(f".{file_type}") if file_type in ["hwp", "pdf"] else True].copy()
+    if file_type in ["hwp", "pdf"]:
+        mask = df['파일명'].str.lower().str.endswith(f".{file_type}")
+        filtered_df = df[mask].copy()
+    else:
+        filtered_df = df.copy()
+
     filtered_df['full_text'] = None
 
     for file_name in filtered_df['파일명']:
         file_path = os.path.join(file_root, file_name)
-
         try:
             if not os.path.exists(file_path):
                 raise FileNotFoundError(f"파일이 존재하지 않습니다: {file_path}")
 
-            if file_name.lower().endswith(".hwp"):
-                if file_type in ["hwp", "all"]:
-                    loader = HWPLoader(file_path)
-                    docs = loader.load()
-                    if docs and isinstance(docs[0].page_content, str):
-                        filtered_df.loc[filtered_df['파일명'] == file_name, 'full_text'] = docs[0].page_content
-                    else:
-                        print(f"HWP 파일 무시됨 (내용 없음): {file_name}")
+            if file_name.lower().endswith(".hwp") and file_type in ["hwp", "all"]:
+                loader = HWPLoader(file_path)
+                docs = loader.load()
+                if docs and isinstance(docs[0].page_content, str):
+                    filtered_df.loc[filtered_df['파일명'] == file_name, 'full_text'] = docs[0].page_content
+                else:
+                    print(f"HWP 파일 무시됨 (내용 없음): {file_name}")
 
-            elif file_name.lower().endswith(".pdf"):
-                if file_type in ["pdf", "all"]:
-                    text = extract_text_from_pdf(Path(file_path), apply_ocr=apply_ocr)
-                    filtered_df.loc[filtered_df['파일명'] == file_name, 'full_text'] = text
+            elif file_name.lower().endswith(".pdf") and file_type in ["pdf", "all"]:
+                text = extract_text_from_pdf(Path(file_path), apply_ocr=apply_ocr)
+                filtered_df.loc[filtered_df['파일명'] == file_name, 'full_text'] = text
 
             else:
                 print(f"지원하지 않는 파일 형식: {file_name}")
@@ -106,7 +156,7 @@ def data_chunking(df: pd.DataFrame) -> List[Document]:
     full_text 컬럼을 기준으로 텍스트를 청크로 분할하고 Document 객체로 반환합니다.
 
     Args:
-        df (pd.DataFrame): 'full_text'가 포함된 DataFrame
+        df (pd.DataFrame): 텍스트가 포함된 DataFrame
 
     Returns:
         List[Document]: 청크 단위로 나뉜 Document 객체 리스트
