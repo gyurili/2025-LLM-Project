@@ -1,19 +1,20 @@
 
 data:
     type: "all" # "hwp" 또는 "pdf", "all"
+    limit: 5 # 최대 몇개까지 1 ~ 100 
     folder_path: "data/files"
     data_list_path: "data/data_list.csv"
     apply_ocr: False # True/ False
     re: # 전처리?
 
 chunk:
-    spliter: # RecursiveCharacterTextSplitter, TokenTextSplitter
-    size:
-    overlap:
+    splitter: "recursive" # "recursive", "token"
+    size: 300
+    overlap: 50
 
 embedding:
     type: "langchain" # 
-    model: "openai" # "openai", "cohere", "huggingface"
+    model: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2" # "openai", "cohere", "huggingface"
     model_path: 
     vector_db_path: "data"
 
