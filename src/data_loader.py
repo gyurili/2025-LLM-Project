@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import List
 from dotenv import load_dotenv
 from langchain.schema import Document
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter, TokenTextSplitter
 from langchain_teddynote.document_loaders import HWPLoader
 from langchain_community.vectorstores import FAISS
 from langchain_community.docstore.in_memory import InMemoryDocstore
@@ -39,7 +39,7 @@ def safe_ocr(img_array: np.ndarray, ocr_reader: easyocr.Reader) -> str:
             return ""
         return "\n".join(result)
     except Exception as e:
-        return f"[OCR 실패: {e}]"
+        return f"❌ Error: {e}"
 
 
 def extract_text_from_pdf(pdf_path: Path, apply_ocr: bool = True) -> str:
@@ -68,12 +68,13 @@ def extract_text_from_pdf(pdf_path: Path, apply_ocr: bool = True) -> str:
     return full_text
 
 
-def data_load(path: str) -> pd.DataFrame:
+def data_load(path: str, limit: int = None) -> pd.DataFrame:
     """
     주어진 경로에서 CSV 파일을 불러와 전처리합니다.
 
     Args:
         path (str): CSV 파일 상대 경로
+        limit (Optional[int]): 데이터프레임의 행 수 제한 (기본값: None)
 
     Returns:
         pd.DataFrame: 전처리된 데이터프레임
@@ -82,18 +83,19 @@ def data_load(path: str) -> pd.DataFrame:
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     else:
         base_dir = os.path.abspath("..")
-
     full_path = os.path.join(base_dir, path)
     if not os.path.exists(full_path):
-        raise FileNotFoundError(f"CSV 파일을 찾을 수 없습니다: {full_path}")
+        raise FileNotFoundError(f"❌ CSV 파일을 찾을 수 없습니다: {full_path}")
 
     df = pd.read_csv(full_path)
     required_columns = ['파일명', '사업 요약', '텍스트', '사업명', '발주 기관', '사업 금액']
     if not all(col in df.columns for col in required_columns):
-        raise ValueError(f"필수 컬럼이 누락되었습니다: {set(required_columns) - set(df.columns)}")
+        raise ValueError(f"❌ 필수 컬럼이 누락되었습니다: {set(required_columns) - set(df.columns)}")
 
     df = df[required_columns]
     df['사업 금액'] = pd.to_numeric(df['사업 금액'], errors='coerce').astype("Int64")
+    if limit is not None:
+        df = df.head(limit)
     return df
 
 
@@ -113,7 +115,6 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     else:
         base_dir = os.path.abspath("..")
-
     file_root = os.path.join(base_dir, "data", "files")
 
     if file_type in ["hwp", "pdf"]:
@@ -128,7 +129,7 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all
         file_path = os.path.join(file_root, file_name)
         try:
             if not os.path.exists(file_path):
-                raise FileNotFoundError(f"파일이 존재하지 않습니다: {file_path}")
+                raise FileNotFoundError(f"❌ 파일이 존재하지 않습니다: {file_path}")
 
             if file_name.lower().endswith(".hwp") and file_type in ["hwp", "all"]:
                 loader = HWPLoader(file_path)
@@ -136,22 +137,22 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all
                 if docs and isinstance(docs[0].page_content, str):
                     filtered_df.loc[filtered_df['파일명'] == file_name, 'full_text'] = docs[0].page_content
                 else:
-                    print(f"HWP 파일 무시됨 (내용 없음): {file_name}")
+                    print(f"❌ HWP 파일 무시됨 (내용 없음): {file_name}")
 
             elif file_name.lower().endswith(".pdf") and file_type in ["pdf", "all"]:
                 text = extract_text_from_pdf(Path(file_path), apply_ocr=apply_ocr)
                 filtered_df.loc[filtered_df['파일명'] == file_name, 'full_text'] = text
 
             else:
-                print(f"지원하지 않는 파일 형식: {file_name}")
+                print(f"❌ 지원하지 않는 파일 형식입니다: {file_name}")
 
         except Exception as e:
-            print(f"파일 처리 오류 ({file_name}): {e}")
+            print(f"❌ 파일 처리 오류 ({file_name}): {e}")
 
     return filtered_df.reset_index(drop=True)
 
 
-def data_chunking(df: pd.DataFrame) -> List[Document]:
+def data_chunking(df: pd.DataFrame, splitter_type: str = "recursive", size: int = 300, overlap: int = 50) -> List[Document]:
     """
     full_text 컬럼을 기준으로 텍스트를 청크로 분할하고 Document 객체로 반환합니다.
 
@@ -161,9 +162,14 @@ def data_chunking(df: pd.DataFrame) -> List[Document]:
     Returns:
         List[Document]: 청크 단위로 나뉜 Document 객체 리스트
     """
-    splitter = RecursiveCharacterTextSplitter(chunk_size=300, chunk_overlap=50)
-    all_chunks = []
+    if splitter_type == "recursive":
+        splitter = RecursiveCharacterTextSplitter(chunk_size=size, chunk_overlap=overlap)
+    elif splitter_type == "token":
+        splitter = TokenTextSplitter(chunk_size=size, chunk_overlap=overlap)
+    else:
+        raise ValueError("❌ 지원하지 않는 청크 분할기입니다. 'recursive' 또는 'token'을 사용하세요.")
 
+    all_chunks = []
     for _, row in df.iterrows():
         text = row.get("full_text", "")
         if isinstance(text, str) and text.strip():
@@ -181,7 +187,7 @@ def data_chunking(df: pd.DataFrame) -> List[Document]:
                     )
                     all_chunks.append(doc)
             except Exception as e:
-                print(f"[청크 처리 오류] {row.get('파일명')}: {e}")
+                print(f"❌ [청크 처리 오류] {row.get('파일명')}: {e}")
         else:
-            print(f"[스킵됨] 텍스트 없음: {row.get('파일명')}")
+            print(f"❌ [스킵됨] 텍스트 없음: {row.get('파일명')}")
     return all_chunks
