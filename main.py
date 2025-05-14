@@ -6,78 +6,72 @@ from src.vector_db import generate_vector_db, load_vector_db
 
 
 if __name__ == "__main__":
-    # Config 불러오기
-    with open("config.yaml", "r", encoding="utf-8") as f:
-        config = yaml.safe_load(f)
+    try:
+        # Config 불러오기
+        with open("config.yaml", "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f)
 
-    if config["settings"].get("verbose", False):
-        print("Verbose 모드로 실행 중입니다.")
-        print(config)
+        # 설정 확인
+        if config["settings"]["verbose"]:
+            print("Verbose 모드로 실행 중입니다.")
+            print(config)
 
-    # 경로 준비
-    folder_path = os.path.abspath(config["data"]["folder_path"])
-    data_list_path = os.path.abspath(config["data"]["data_list_path"])
-    file_type = config["data"]["type"]
-    apply_ocr = config["data"].get("apply_ocr", False)
+        # HWP 파일을 PDF로 변환
+        folder_path = os.path.abspath(config["data"]["folder_path"])
+        # batch_convert_hwp_to_pdf(folder_path)
 
-    # 데이터 로딩 및 전처리
-    df = data_load(data_list_path)
-    df = data_process(df, apply_ocr=apply_ocr, file_type=file_type)
+        # PDF 또는 HWP 파일에서 텍스트 추출
+        data_list_path = os.path.abspath(config["data"]["data_list_path"])
 
-    # 청크 분할
-    all_chunks = data_chunking(df)
-    print("청크 분할 완료!")
+        # 데이터 로드
+        df = data_load(data_list_path)
+        print("✅ 데이터 로드 완료")
 
-    # 벡터 DB 생성 및 저장
-    embed_model_name = config["embedding"]["model"]
-    vector_db_path = os.path.abspath(config["embedding"]["vector_db_path"])
+        # 데이터 전처리 및 청크 생성
+        apply_ocr = config["data"]["apply_ocr"]
+        file_type = config["data"]["type"]
+        if file_type not in ["hwp", "pdf", "all"]:
+            raise ValueError("file_type은 'hwp', 'pdf', 'all' 중 하나여야 합니다.")
+        
+        if config["settings"]["verbose"]:
+            print(f"파일 타입: {file_type}")
+            print(f"OCR 적용 여부: {apply_ocr}")
 
-    generate_vector_db(all_chunks, embed_model_name)
-    print("벡터 DB 저장 완료!")
+        df = data_process(df, apply_ocr=apply_ocr, file_type=file_type)
+        print("✅ 데이터 전처리 완료")
 
-    # 벡터 DB 로드
-    vector_store = load_vector_db(vector_db_path, embed_model_name)
-    print("벡터 DB 로드 완료!")
+        all_chunks = data_chunking(df)
+        print("✅ 청크 생성 완료")        
 
-    # 유사도 검색
-    query_text = config["query"]["query"]
-    top_k = config["query"]["top_k"]
-
-    print(f"\n질문: {query_text}")
-    print(f"유사도 검색 결과 (상위 {top_k}개 문서):")
-
-    docs = vector_store.similarity_search(query_text, k=top_k)
-    for i, doc in enumerate(docs, start=1):
-        print(f"\n문서 {i}:\n{doc.page_content}")
+        # 벡터 DB 생성
+        embed_model_name = config["embedding"]["model"]
+        #❌ 나중에 방어적 코드 추가해야함
 
 
+        embeddings = generate_vector_db(all_chunks, embed_model_name)
+        print("✅ Vector DB 생성")
 
-# --------------------------------------------
-# 영선님 작업물
-'''
-    if config["data"]["type"] == "hwp":
-        df = data_process(df)
-        all_chunks = hwp_chunking(df)
-    elif config["data"]["type"] == "pdf":
-        df = process_all_pdfs_in_folder(folder_path, apply_ocr=config["data"]["apply_ocr"])
-    else:
-        raise ValueError("지원하지 않는 데이터 타입입니다. 'hwp' 또는 'pdf'를 선택하세요.")
+        # 벡터 DB 로드
+        vector_db_path = config["embedding"]["vector_db_path"]
+        embed_model = config["embedding"]["model"]
+        if not os.path.exists(vector_db_path):
+            raise FileNotFoundError(f"벡터 DB 경로가 존재하지 않습니다: {vector_db_path}")
+        
+        vector_store = load_vector_db(vector_db_path, embed_model)
+        print("✅ Vector DB 로드")
 
-    # 벡터 DB 생성
-    embeddings = generate_vector_db(all_chunks, config["embedding"]["model"])
-    print("Vector DB가 저장되었습니다!")
+        # 유사도 검색
+        query = config["query"]["text"]
+        k = config["query"]["top_k"]
+        if k <= 0:
+            raise ValueError("k는 1 이상의 정수여야 합니다.")
+        if config["settings"]["verbose"]:
+            print(f"유사도 검색 쿼리: {query}")
+            print(f"유사도 검색 결과 개수: {k}")
 
-    # 벡터 DB 로드
-    vector_store = load_vector_db(config["embedding"]["vector_db_path"], embeddings)
-    print("Vector DB가 로드되었습니다!")
+        docs = vector_store.similarity_search(query, k=k)
+        for i, doc in enumerate(docs, start=1):
+            print(f"\n📄 유사 문서 {i}:\n{doc.page_content}")
 
-    # 유사도 검색
-    query = config["query"]["text"]
-    k = config["query"]["top_k"]
-    print(f"질문: {query}")
-    print(f"유사도 검색 결과 (상위 {k}개 문서):")
-
-    docs = vector_store.similarity_search(query, k=k)
-    for i in range(len(docs)):
-        print(docs[i].page_content)
-'''
+    except Exception as e:
+        print(f"❌ Error: {e}")
