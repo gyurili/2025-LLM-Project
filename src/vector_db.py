@@ -91,13 +91,13 @@ def load_vector_db(path: str, embed_model_name: str) -> FAISS:
         allow_dangerous_deserialization=True,
     )
 
-from data_load import (data_load, data_process, hwp_chunking)
+from data_load import (data_load, data_process, data_chunking)
 
 if __name__ == "__main__":
     try:
         df = data_load("data/data_list.csv")
         df = data_process(df)
-        all_chunks = hwp_chunking(df)
+        all_chunks = data_chunking(df)
 
         print("✅ 청크 분할 완료!")
 
