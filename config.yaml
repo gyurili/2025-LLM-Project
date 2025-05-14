@@ -26,6 +26,7 @@ query:
     prompt: # {"key": "value"}
 
 retrieval:
+    method: "simple"  # "hybrid"
 
 generation:
 
