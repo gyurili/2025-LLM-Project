@@ -144,12 +144,11 @@ data/MNIST/
 # System files
 .DS_Store 
 
-<<<<<<< HEAD
-# hwp, pdf,csv files
+# hwp, pdf, csv files
 *.hwp
 *.pdf
 *.csv
-=======
+
 # Notebook file
 Data.ipynb
->>>>>>> ee2a591124a83a6d1829cc26f5454b945bd3e5ec
+
