@@ -1,5 +1,6 @@
 from typing import List, Dict
 from langchain.vectorstores.base import VectorStore
+from langchain.schema import Document
 
 
 def search_documents(
@@ -32,12 +33,11 @@ def search_documents(
     # 결과 형식 정리
     results = []
     for doc in docs[:top_k]:
-        results.append({
-            "text": doc.page_content.strip(),
-            "source": doc.metadata.get("파일명", "unknown"),
-            "기관": doc.metadata.get("발주 기관", "unknown"),
+        metadata = {
+            "파일명": doc.metadata.get("파일명", "unknown"),
+            "발주 기관": doc.metadata.get("발주 기관", "unknown"),
             "사업명": doc.metadata.get("사업명", "unknown"),
-            "chunk_idx": doc.metadata.get("chunk_idx", -1)
-        })
-
+            "chunk_idx": doc.metadata.get("chunk_idx", -1),
+        }
+        results.append(Document(page_content=doc.page_content.strip(), metadata=metadata))
     return results

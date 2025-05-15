@@ -1,4 +1,5 @@
-from typing import Dict
+from typing import List, Dict
+from langchain.schema import Document
 import torch
 
 
@@ -107,13 +108,12 @@ def generate_answer(
     else:
         raise ValueError("Unsupported model type")
     
-from typing import List, Dict
 
 
 def build_prompt_with_expansion(
     question: str,
-    retrieved_docs: List[Dict],
-    all_docs: List[Dict],
+    retrieved_docs: List[Document],
+    all_docs: List[Document],
     window: int = 1,
     include_source: bool = True,
     prompt_template: str = None
@@ -123,8 +123,8 @@ def build_prompt_with_expansion(
 
     Args:
         question (str): 사용자 질문
-        retrieved_docs (List[Dict]): 검색된 핵심 청크 리스트
-        all_docs (List[Dict]): 전체 문서 청크 리스트 (검색 대상이 된 전체)
+        retrieved_docs (List[Document]): 검색된 핵심 청크 리스트
+        all_docs (List[Document]): 전체 문서 청크 리스트 (검색 대상이 된 전체)
         window (int): 인접 청크 포함 범위 (기본 ±1)
         include_source (bool): 출처 포함 여부
         prompt_template (str): context와 question을 포함할 포맷 문자열
@@ -136,17 +136,18 @@ def build_prompt_with_expansion(
     context_blocks = []
 
     for doc in retrieved_docs:
-        file_name = doc["source"]
-        base_idx = doc["chunk_idx"]
+        file_name = doc.metadata.get("파일명")
+        base_idx = doc.metadata.get("chunk_idx", 0)
 
+        # 같은 문서 내 인접 청크 추출
         neighbors = [
             d for d in all_docs
-            if d["source"] == file_name and
-               abs(d["chunk_idx"] - base_idx) <= window
+            if d.metadata.get("파일명") == file_name and
+               abs(d.metadata.get("chunk_idx", -1) - base_idx) <= window
         ]
 
         for chunk in neighbors:
-            key = (chunk["source"], chunk["chunk_idx"])
+            key = (chunk.metadata.get("파일명"), chunk.metadata.get("chunk_idx"))
             if key in used_chunks:
                 continue
             used_chunks.add(key)
@@ -154,11 +155,12 @@ def build_prompt_with_expansion(
             source_info = ""
             if include_source:
                 source_info = (
-                    f"[출처: {chunk['source']} | 기관: {chunk['기관']} | "
-                    f"사업명: {chunk['사업명']}]"
+                    f"[출처: {chunk.metadata.get('파일명')} | "
+                    f"기관: {chunk.metadata.get('발주 기관')} | "
+                    f"사업명: {chunk.metadata.get('사업명')}]"
                 )
 
-            context = f"{source_info}\n{chunk['text']}".strip()
+            context = f"{source_info}\n{chunk.page_content}".strip()
             context_blocks.append(context)
 
     context_text = "\n\n---\n\n".join(context_blocks)
