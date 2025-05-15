@@ -66,16 +66,26 @@ if __name__ == "__main__":
         all_chunks = data_chunking(df=df, splitter_type=splitter_type, size=chunk_size, overlap=chunk_overlap)
         print("✅ 청크 생성 완료")        
 
-        # 벡터 DB 생성
+        # 벡터 DB 생성 또는 로드드
         embed_model = config["embedding"]["model"]
         if not isinstance(embed_model, str) or not embed_model:
             raise ValueError("❌(config.embedding.model) 임베딩 모델명이 문자열이어야 합니다.")
 
-        embeddings = generate_vector_db(all_chunks, embed_model)
-        print("✅ Vector DB 생성")
-
-        # 벡터 DB 로드
         vector_db_path = config["embedding"]["vector_db_path"]
+        if os.path.exists(vector_db_path):
+            # 벡터 DB가 이미 존재하는 경우
+            if verbose:
+                print(f"✅ 기존 벡터 DB 경로 발견됨: {vector_db_path}, 로드합니다.")
+            vector_store = load_vector_db(vector_db_path, embed_model)
+            print("✅ Vector DB 로드 완료")
+        else:
+            # 벡터 DB가 존재하지 않는 경우
+            if verbose:
+                print(f"⚠️ 벡터 DB가 존재하지 않음. 새로 생성 후 저장합니다: {vector_db_path}")
+            embeddings = generate_vector_db(all_chunks, embed_model)
+            vector_store = load_vector_db(vector_db_path, embed_model)
+            print("✅ Vector DB 생성 및 로드 완료")
+
         if not os.path.exists(vector_db_path):
             raise FileNotFoundError(f"❌(config.embedding.vector_db_path) 벡터 DB 경로가 존재하지 않습니다: {vector_db_path}")
         
