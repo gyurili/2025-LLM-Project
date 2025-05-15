@@ -4,7 +4,8 @@ from typing import List, Union
 import faiss
 from dotenv import load_dotenv
 from langchain.schema import Document
-from langchain_community.vectorstores import FAISS, Chroma
+from langchain_community.vectorstores import FAISS
+from langchain_chroma import Chroma
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_openai import OpenAIEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -77,12 +78,12 @@ def generate_vector_db(
             vector_store.add_documents(all_chunks)
             vector_store.save_local(folder_path=output_path, index_name=index_name)
         elif db_type == "chroma":
+            chroma_path = os.path.join(output_path, index_name)
             vector_store = Chroma.from_documents(
                 documents=all_chunks,
                 embedding=embeddings,
-                persist_directory=output_path,
+                persist_directory=chroma_path,
             )
-            vector_store.persist()
         else:
             raise ValueError("❌ [Value] (vector_db.generate_vector_db) 지원하지 않는 벡터 DB 타입입니다. ('faiss' 또는 'chroma' 사용)")
         
@@ -126,9 +127,10 @@ def load_vector_db(
                 allow_dangerous_deserialization=True,
             )
         elif db_type == "chroma":
+            chroma_path = os.path.join(path, index_name)
             return Chroma(
                 embedding_function=embeddings,
-                persist_directory=path,
+                persist_directory=chroma_path,
             )
         else:
             raise ValueError(f"❌ [Value] (vector_db.load_vector_db) 지원하지 않는 벡터 DB 타입입니다. {db_type}")
