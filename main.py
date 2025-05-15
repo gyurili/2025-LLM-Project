@@ -3,7 +3,7 @@ import yaml
 
 from src.data_loader import data_load, data_process, data_chunking
 from src.vector_db import generate_vector_db, load_vector_db
-from src.retriever import retrieve_documents
+from retrieval import retrieve_documents
 # from src.generation import load_chat_model, build_qa_chain
 
 
