@@ -110,10 +110,6 @@ if __name__ == "__main__":
         index_name = config["embedding"]["index_name"]
         faiss_file = os.path.join(vector_db_path, f"{index_name}.faiss")
         pkl_file = os.path.join(vector_db_path, f"{index_name}.pkl")
-        if not os.path.exists(faiss_file):
-            raise FileNotFoundError(f"❌(config.embedding.index_name) 벡터 DB 파일이 존재하지 않습니다: {faiss_file}")
-        if not os.path.exists(pkl_file):
-            raise FileNotFoundError(f"❌(config.embedding.index_name) 벡터 DB 파일이 존재하지 않습니다: {pkl_file}")
         # verbose 출력
         if verbose:
             print(f"    -임베딩 모델: {embed_model}")
