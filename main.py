@@ -89,7 +89,12 @@ if __name__ == "__main__":
             print(f"유사도 검색 결과 개수: {k}")
 
         search_type = config['retrieval']['search_type']
-        search_documents(query, vector_store, k, search_type)
+        results = search_documents(query, vector_store, k, search_type)
+
+        for i, res in enumerate(results, 1):
+            print(f"\n📄 [결과 {i}]")
+            print(f"출처: {res['source']} | 기관: {res['기관']} | 사업명: {res['사업명']} | 청크: {res['chunk_idx']}")
+            print(f"본문:\n{res['text'][:200]}...")
 
     except Exception as e:
         print(f"❌ Error: {e}")

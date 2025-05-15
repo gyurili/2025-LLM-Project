@@ -27,7 +27,7 @@ def search_documents(
     )
 
     # 질문에 유사한 문서 검색
-    docs = retriever.get_relevant_documents(question)
+    docs = retriever.invoke(question)
 
     # 결과 형식 정리
     results = []
