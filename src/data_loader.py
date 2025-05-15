@@ -39,7 +39,7 @@ def safe_ocr(img_array: np.ndarray, ocr_reader: easyocr.Reader) -> str:
             return ""
         return "\n".join(result)
     except Exception as e:
-        return f"❌ Error: {e}"
+        raise RuntimeError(f"❌ [OCR] (data_loader.safe_ocr) OCR 처리 실패: {e}")
 
 
 def extract_text_from_pdf(pdf_path: Path, apply_ocr: bool = True) -> str:
@@ -53,6 +53,8 @@ def extract_text_from_pdf(pdf_path: Path, apply_ocr: bool = True) -> str:
     Returns:
         str: 전체 페이지에서 추출된 텍스트
     """
+    if not pdf_path.exists():
+        raise FileNotFoundError(f"❌(data_loader.extract_text_from_pdf.pdf_path) PDF 파일을 찾을 수 없습니다: {pdf_path}")
     full_text = ""
     with fitz.open(pdf_path) as doc:
         for page_num, page in enumerate(tqdm(doc, desc=f"{pdf_path.name}")):
@@ -85,12 +87,19 @@ def data_load(path: str, limit: int = None) -> pd.DataFrame:
         base_dir = os.path.abspath("..")
     full_path = os.path.join(base_dir, path)
     if not os.path.exists(full_path):
-        raise FileNotFoundError(f"❌ CSV 파일을 찾을 수 없습니다: {full_path}")
+        raise FileNotFoundError(f"❌ [FileNotFound] (data_loader.data_load.path) CSV 파일을 찾을 수 없습니다: {full_path}")
+    if limit < 0:
+        limit = 1
+        print("⚠️ [Warning] (data_loader.data_load.limit) limit은 0보다 큰 정수여야 합니다. 최소값 1로 설정합니다.")
+    elif limit > 100:
+        limit = 100
+        print("⚠️ [Warning] (data_loader.data_load.limit) limit은 100보다 작거나 같아야 합니다. 최대값 100으로 설정합니다.")
 
     df = pd.read_csv(full_path)
     required_columns = ['파일명', '사업 요약', '텍스트', '사업명', '발주 기관', '사업 금액']
     if not all(col in df.columns for col in required_columns):
-        raise ValueError(f"❌ 필수 컬럼이 누락되었습니다: {set(required_columns) - set(df.columns)}")
+        missing = set(required_columns) - set(df.columns)
+        raise ValueError(f"❌ [Value] (data_loader.data_load.columns) 필수 컬럼이 누락되었습니다: {missing}") 
 
     df = df[required_columns]
     df['사업 금액'] = pd.to_numeric(df['사업 금액'], errors='coerce').astype("Int64")
@@ -120,7 +129,7 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all
     if file_type in ["hwp", "pdf"]:
         mask = df['파일명'].str.lower().str.endswith(f".{file_type}")
         filtered_df = df[mask].copy()
-    else:
+    elif file_type == "all":
         filtered_df = df.copy()
 
     filtered_df['full_text'] = None
@@ -129,7 +138,7 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all
         file_path = os.path.join(file_root, file_name)
         try:
             if not os.path.exists(file_path):
-                raise FileNotFoundError(f"❌ 파일이 존재하지 않습니다: {file_path}")
+                 raise FileNotFoundError(f"❌ [FileNotFound] (data_loader.data_process.path) 파일이 존재하지 않습니다: {file_path}")
 
             if file_name.lower().endswith(".hwp") and file_type in ["hwp", "all"]:
                 loader = HWPLoader(file_path)
@@ -137,19 +146,49 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all
                 if docs and isinstance(docs[0].page_content, str):
                     filtered_df.loc[filtered_df['파일명'] == file_name, 'full_text'] = docs[0].page_content
                 else:
-                    print(f"❌ HWP 파일 무시됨 (내용 없음): {file_name}")
+                    print(f"⚠️ [Warning] (data_loader.data_process.hwp) HWP 파일 무시됨 (내용 없음): {file_name}")
 
             elif file_name.lower().endswith(".pdf") and file_type in ["pdf", "all"]:
                 text = extract_text_from_pdf(Path(file_path), apply_ocr=apply_ocr)
                 filtered_df.loc[filtered_df['파일명'] == file_name, 'full_text'] = text
 
             else:
-                print(f"❌ 지원하지 않는 파일 형식입니다: {file_name}")
+                print(f"⚠️ [Warning] (data_loader.data_process) 지원하지 않는 파일 형식입니다: {file_name}")
 
         except Exception as e:
-            print(f"❌ 파일 처리 오류 ({file_name}): {e}")
+            raise RuntimeError(f"❌ [Runtime] (data_loader.data_process) 파일 처리 오류 ({file_name}): {e}")  
 
     return filtered_df.reset_index(drop=True)
+
+
+import re
+
+def clean_text(text: str) -> str:
+    """
+    입력 문자열에서 불필요한 문자 및 공백을 정리합니다.
+
+    처리 단계:
+    1. 한자 및 유니코드 특수문자를 제거하고, 
+       한글, 영문자, 숫자, 공백 및 일부 특수문자(.,:;!?()~-/)만 남깁니다.
+    2. 연속된 공백을 하나의 공백으로 통일합니다.
+    3. 문자열 양 끝의 공백을 제거합니다.
+
+    Args:
+        text (str): 전처리할 원본 문자열
+
+    Returns:
+        str: 정제된 문자열
+    """
+    if not isinstance(text, str):
+        raise ValueError("❌ [Type] (data_loader.clean_text) 입력값은 문자열이어야 합니다.")
+    # 1. 한자 및 유니코드 특수문자 제거 (한글, 영어, 숫자, 공백, 일부 특수문자 제외)
+    text = re.sub(r"[^\uAC00-\uD7A3a-zA-Z0-9\s.,:;!?()~\-/]", " ", text)
+
+    # 2. 연속된 공백 하나로 통일
+    text = re.sub(r"\s+", " ", text)
+
+    # 3. 앞뒤 공백 제거
+    return text.strip()
 
 
 def data_chunking(df: pd.DataFrame, splitter_type: str = "recursive", size: int = 300, overlap: int = 50) -> List[Document]:
@@ -167,14 +206,13 @@ def data_chunking(df: pd.DataFrame, splitter_type: str = "recursive", size: int 
     elif splitter_type == "token":
         splitter = TokenTextSplitter(chunk_size=size, chunk_overlap=overlap)
     else:
-        raise ValueError("❌ 지원하지 않는 청크 분할기입니다. 'recursive' 또는 'token'을 사용하세요.")
+        raise ValueError(f"❌ [Value] (data_loader.data_chunking.splitter_type) {splitter_type}은 지원하지 않는 청크 분할기입니다.")
 
     all_chunks = []
     for _, row in df.iterrows():
         text = row.get("full_text", "")
         if isinstance(text, str) and text.strip():
             try:
-                # 청크 분할 전, row text 정제
                 text = clean_text(text)
                 chunks = splitter.split_text(text)
                 for i, chunk in enumerate(chunks):
@@ -189,19 +227,7 @@ def data_chunking(df: pd.DataFrame, splitter_type: str = "recursive", size: int 
                     )
                     all_chunks.append(doc)
             except Exception as e:
-                print(f"❌ [청크 처리 오류] {row.get('파일명')}: {e}")
+                raise RuntimeError(f"❌ [Runtime] (data_loader.data_chunking) 청크 생성 오류 ({row.get('파일명')}): {e}")
         else:
-            print(f"❌ [스킵됨] 텍스트 없음: {row.get('파일명')}")
+            raise ValueError(f"❌ [Data] (data_loader.data_chunking) full_text가 비어있거나 문자열이 아닙니다: {row.get('파일명')}")
     return all_chunks
-
-import re
-
-def clean_text(text: str) -> str:
-    # 1. 한자 및 유니코드 특수문자 제거 (한글, 영어, 숫자, 공백, 일부 특수문자 제외)
-    text = re.sub(r"[^\uAC00-\uD7A3a-zA-Z0-9\s.,:;!?()~\-/]", " ", text)
-
-    # 2. 연속된 공백 하나로 통일
-    text = re.sub(r"\s+", " ", text)
-
-    # 3. 앞뒤 공백 제거
-    return text.strip()
