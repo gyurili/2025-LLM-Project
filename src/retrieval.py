@@ -25,8 +25,8 @@ def retrieve_documents(
         List[Dict]: 검색된 문서의 내용과 메타데이터를 담은 딕셔너리 리스트
 
     Raises:
+        RuntimeError: retriever 생성에 실패할 경우
         ValueError: 지원하지 않는 검색 방식일 경우
-        RuntimeError: hybrid 검색 시 문서 리스트가 제공되지 않은 경우
     """
     if search_type == "similarity":
         docs = vector_store.similarity_search(query, k=top_k)
