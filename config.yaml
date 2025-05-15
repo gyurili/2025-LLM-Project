@@ -1,7 +1,7 @@
 
 data:
     type: "all" # "hwp" 또는 "pdf", "all"
-    limit: 5 # 최대 몇개까지 1 ~ 100 
+    limit: 100 # 최대 몇개까지 1 ~ 100 
     folder_path: "data/files"
     data_list_path: "data/data_list.csv"
     apply_ocr: False # True/ False
@@ -17,6 +17,7 @@ embedding:
     model: "nlpai-lab/KoE5" #"sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "openai", "cohere", "huggingface"
     model_path: 
     vector_db_path: "data"
+    index_name: "hwp_faiss_index"
 
 query:
     type: "retrieval" # "retrieval", "generation"
@@ -43,4 +44,4 @@ model:
 # settings
 settings:
     use_gpu: True
-    verbose: False
+    verbose: True
