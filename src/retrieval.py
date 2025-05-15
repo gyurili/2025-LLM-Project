@@ -6,14 +6,12 @@ from langchain.retrievers import EnsembleRetriever
 from langchain.retrievers.document_compressors import EmbeddingsFilter
 from langchain.retrievers import ContextualCompressionRetriever
 
-
 def retrieve_documents(
     query: str,
     vector_store: VectorStore,
     top_k: int,
     search_type: str,
     all_documents: Optional[List[Document]],
-    embeddings
 ) -> List[Dict]:
 
     if search_type == "similarity":
@@ -28,12 +26,24 @@ def retrieve_documents(
         # BM25
         bm25_retriever = BM25Retriever.from_documents(all_documents)
         bm25_retriever.k = top_k
-        
         hybrid_retriever = EnsembleRetriever(
             retrievers=[bm25_retriever, vector_retriever],
             weights=[0.5, 0.5]
         )
+    
         docs = hybrid_retriever.get_relevant_documents(query)
+    
+        # 중복 제거 (파일명 + 청크 내용 기준)
+        seen_pairs = set()
+        unique_docs = []
+        for doc in docs:
+            identifier = (doc.metadata.get("파일명"), doc.page_content.strip())
+            if identifier not in seen_pairs:
+                unique_docs.append(doc)
+                seen_pairs.add(identifier)
+    
+        docs = unique_docs[:top_k]
+        
     else:
         raise ValueError(f"❌ 지원하지 않는 검색 방식입니다: {search_type}")
 
