@@ -4,7 +4,7 @@ import yaml
 from src.data_loader import data_load, data_process, data_chunking
 from src.vector_db import generate_vector_db, load_vector_db
 from src.retriever import retrieve_documents
-from src.generation import load_chat_model, build_qa_chain
+# from src.generation import load_chat_model, build_qa_chain
 
 
 if __name__ == "__main__":
@@ -96,44 +96,12 @@ if __name__ == "__main__":
             print(f"유사도 검색 결과 개수: {top_k}")
         search_type = config["retrieval"]["method"]
 
-        docs = retrieve_documents(query, vector_store, top_k, search_type)
+        docs = retrieve_documents(query, vector_store, top_k, search_type, all_chunks, embeddings)
         for i, doc in enumerate(docs, 1):
             print(f"\n📄 문서 {i}")
             print(f"본문:\n{doc['text'][:300]}...")
             print(f"메타데이터: {doc['metadata']}")
-        
-        '''
-        query = config["query"]["question"]
-        k = config["query"]["top_k"]
-        if k <= 0:
-            raise ValueError("k는 1 이상의 정수여야 합니다.")
-        if config["settings"]["verbose"]:
-            print(f"유사도 검색 쿼리: {query}")
-            print(f"유사도 검색 결과 개수: {top_k}")
-
-        docs = vector_store.similarity_search(query, k=top_k)
-        for i, doc in enumerate(docs, start=1):
-            print(f"\n📄 유사 문서 {i}:\n{doc.page_content}")
             
-        
-        # LLM 모델 로드
-        model_config = config["model"]
-        query_config = config["query"]
-        chat_model = load_chat_model(model_config)
-        print("✅ 생성형 LLM 로드")
-
-        # QA 체인 구성
-        qa_chain = build_qa_chain(
-            vector_store=vector_store,
-            chat_model=chat_model,
-            top_k=query_config["top_k"]
-        )
-
-        query = query_config["question"]
-        response = qa_chain.invoke(query)
-
-        print(f"\n💬 LLM 응답:\n{response}")
-        '''
 
     except FileNotFoundError as e:
         print(f"❌ [FileNotFound] \n {e}")
