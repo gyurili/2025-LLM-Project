@@ -81,9 +81,9 @@ def generate_answer(
         with torch.no_grad():
             output = model.generate(
                 **inputs,
-                max_new_tokens=generation_config.get("max_tokens", 512),
-                temperature=generation_config.get("temperature", 0.7),
-                top_p=generation_config.get("top_p", 0.9)
+                max_new_tokens=generation_config["max_token"],
+                temperature=generation_config["temperature"],
+                top_p=generation_config["top_p"]
             )
 
         return tokenizer.decode(output[0], skip_special_tokens=True)
@@ -94,9 +94,9 @@ def generate_answer(
         response = openai.ChatCompletion.create(
             model=model_info["model"],
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=generation_config.get("max_tokens", 512),
-            temperature=generation_config.get("temperature", 0.7),
-            top_p=generation_config.get("top_p", 0.9)
+            max_new_tokens=generation_config["max_token"],
+            temperature=generation_config["temperature"],
+            top_p=generation_config["top_p"]
         )
 
         return response["choices"][0]["message"]["content"]

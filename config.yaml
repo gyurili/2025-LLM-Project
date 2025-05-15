@@ -32,12 +32,11 @@ retrieval:
 generation:
 
 model:
-    type: 
-    model_path: 
-    temperature: 
-    max_tokens: 
-    top_p: 
-    top_k: 
+    type: "huggingface"
+    model_path: "beomi/KoAlpaca-Polyglot-12.8B"
+    temperature: 0.7
+    max_tokens: 512
+    top_p: 0.9
     n: 
     stop: 
 

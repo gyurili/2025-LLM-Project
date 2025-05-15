@@ -4,6 +4,7 @@ import yaml
 from src.data_loader import data_load, data_process, data_chunking
 from src.vector_db import generate_vector_db, load_vector_db
 from src.retriever import search_documents
+from src.generator import load_generator_model, generate_answer, build_prompt_with_expansion
 
 
 if __name__ == "__main__":
@@ -97,10 +98,9 @@ if __name__ == "__main__":
         search_type = config['retrieval']['search_type']
         results = search_documents(query, vector_store, top_k, search_type)
 
-        for i, res in enumerate(results, 1):
-            print(f"\n📄 [결과 {i}]")
-            print(f"출처: {res['source']} | 기관: {res['기관']} | 사업명: {res['사업명']} | 청크: {res['chunk_idx']}")
-            print(f"본문:\n{res['text'][:200]}...")
+        prompt = build_prompt_with_expansion(query, results, all_chunks)
+        llm = load_generator_model(config)
+        answer = generate_answer(prompt, llm, )
 
     except FileNotFoundError as e:
         print(f"❌ [FileNotFound] \n {e}")
