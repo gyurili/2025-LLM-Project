@@ -88,7 +88,7 @@ def data_load(path: str, limit: int = None) -> pd.DataFrame:
     full_path = os.path.join(base_dir, path)
     if not os.path.exists(full_path):
         raise FileNotFoundError(f"❌ [FileNotFound] (data_loader.data_load.path) CSV 파일을 찾을 수 없습니다: {full_path}")
-    if limit < 1:
+    if limit is None or limit < 1:
         limit = 1
         print("⚠️ [Warning] (data_loader.data_load.limit) limit은 0보다 큰 정수여야 합니다. 최소값 1로 설정합니다.")
     elif limit > 100:
