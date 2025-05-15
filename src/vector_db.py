@@ -31,13 +31,18 @@ def generate_embedding(embed_model_name: str) -> Union[OpenAIEmbeddings, Hugging
     except Exception as e:
         raise ValueError(f"❌ [Value] (vector_db.generate_embedding) 임베딩 모델 초기화 실패: {e}")
 
-def generate_vector_db(all_chunks: List[Document], embed_model_name: str) -> Union[OpenAIEmbeddings, HuggingFaceEmbeddings]:
+def generate_vector_db(
+        all_chunks: List[Document], 
+        embed_model_name: str,
+        index_name: str
+    ) -> Union[OpenAIEmbeddings, HuggingFaceEmbeddings]:
     """
     FAISS 기반 벡터 DB를 생성하고 로컬에 저장합니다.
 
     Args:
         all_chunks (List[Document]): 청크된 문서 리스트
         embed_model_name (str): 사용할 임베딩 모델 이름
+        index_name (str): 벡터 DB 인덱스 이름
 
     Returns:
         임베딩 객체
@@ -68,18 +73,23 @@ def generate_vector_db(all_chunks: List[Document], embed_model_name: str) -> Uni
         if not os.path.exists(output_path):
             os.makedirs(output_path, exist_ok=True)
 
-        vector_store.save_local(folder_path=output_path, index_name="faiss_index")
+        vector_store.save_local(folder_path=output_path, index_name=index_name)
         return embeddings
     except Exception as e:
         raise RuntimeError(f"❌ [Runtime] (vector_db.generate_vector_db) 벡터 DB 생성 실패: {e}")
 
-def load_vector_db(path: str, embed_model_name: str) -> FAISS:
+def load_vector_db(
+        path: str, 
+        embed_model_name: str,
+        index_name: str
+    ) -> FAISS:
     """
     로컬에서 저장된 FAISS 벡터 DB를 로드합니다.
 
     Args:
         path (str): 벡터 DB가 저장된 루트 경로 (예: "data")
         embed_model_name (str): 임베딩 모델 이름
+        index_name (str): 벡터 DB 인덱스 이름
 
     Returns:
         FAISS: 로드된 벡터 DB 객체
@@ -94,7 +104,7 @@ def load_vector_db(path: str, embed_model_name: str) -> FAISS:
         embeddings = generate_embedding(embed_model_name)
         return FAISS.load_local(
             folder_path=path,
-            index_name="faiss_index",
+            index_name=index_name,
             embeddings=embeddings,
             allow_dangerous_deserialization=True,
         )
