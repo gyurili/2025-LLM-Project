@@ -177,14 +177,16 @@ if __name__ == "__main__":
         if verbose:
             print(f"    -유사도 검색 쿼리: {query}")
             print(f"    -유사도 검색 결과 개수: {top_k}")
-        search_type = config["retrieval"]["method"]
-
-        docs = retrieve_documents(query, vector_store, top_k, search_type, all_chunks, embeddings)
+        
+        search_type = config.get("retrieval", {}).get("method", "similarity")
+        if not isinstance(search_type, str):
+            raise ValueError("❌(config.retrieval.method) 검색 방식은 문자열이어야 합니다.")
+        
+        docs = retrieve_documents(query, vector_store, top_k, search_type, all_chunks)
         for i, doc in enumerate(docs, 1):
             print(f"\n📄 문서 {i}")
             print(f"본문:\n{doc['text'][:300]}...")
             print(f"메타데이터: {doc['metadata']}")
-            
 
 
     # 예외 처리

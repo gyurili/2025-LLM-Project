@@ -3,37 +3,54 @@ from langchain.vectorstores.base import VectorStore
 from langchain.schema import Document
 from langchain_community.retrievers import BM25Retriever
 from langchain.retrievers import EnsembleRetriever
-from langchain.retrievers.document_compressors import EmbeddingsFilter
-from langchain.retrievers import ContextualCompressionRetriever
 
 def retrieve_documents(
     query: str,
     vector_store: VectorStore,
     top_k: int,
     search_type: str,
-    all_documents: Optional[List[Document]],
+    all_chunks: Optional[List[Document]],
 ) -> List[Dict]:
+    """
+    주어진 쿼리에 대해 지정된 검색 방식으로 관련 문서를 검색합니다.
 
+    Args:
+        query (str): 사용자 검색 쿼리
+        vector_store (VectorStore): 벡터 저장소 인스턴스
+        top_k (int): 검색할 최대 문서 개수
+        search_type (str): 검색 방식 ("similarity" 또는 "hybrid")
+        all_chunks (Optional[List[Document]]): hybrid 검색을 위한 전체 문서
+
+    Returns:
+        List[Dict]: 검색된 문서의 내용과 메타데이터를 담은 딕셔너리 리스트
+
+    Raises:
+        ValueError: 지원하지 않는 검색 방식일 경우
+        RuntimeError: hybrid 검색 시 문서 리스트가 제공되지 않은 경우
+    """
     if search_type == "similarity":
         docs = vector_store.similarity_search(query, k=top_k)
-
     elif search_type == "hybrid":
-        # FAISS
-        vector_retriever = vector_store.as_retriever(
-            search_type="similarity",
-            search_kwargs={"k": top_k}
-        )
-        # BM25
-        bm25_retriever = BM25Retriever.from_documents(all_documents)
-        bm25_retriever.k = top_k
+        try:
+            vector_retriever = vector_store.as_retriever(
+                search_type="similarity",
+                search_kwargs={"k": top_k}
+            )
+        except Exception as e:
+            raise RuntimeError(f"❌ [Runtime] (retrieval.retrieve_documents.vector_retriever) FAISS retriever 생성 실패: {e}")
+    
+        try:
+            bm25_retriever = BM25Retriever.from_documents(all_chunks)
+            bm25_retriever.k = top_k
+        except Exception as e:
+            raise RuntimeError(f"❌ [Runtime] (retrieval.retrieve_documents.bm25_retriever) BM25 retriever 생성 실패: {e}")
+        
         hybrid_retriever = EnsembleRetriever(
             retrievers=[bm25_retriever, vector_retriever],
             weights=[0.5, 0.5]
         )
-    
         docs = hybrid_retriever.get_relevant_documents(query)
     
-        # 중복 제거 (파일명 + 청크 내용 기준)
         seen_pairs = set()
         unique_docs = []
         for doc in docs:
@@ -41,10 +58,7 @@ def retrieve_documents(
             if identifier not in seen_pairs:
                 unique_docs.append(doc)
                 seen_pairs.add(identifier)
-    
         docs = unique_docs[:top_k]
-        
     else:
-        raise ValueError(f"❌ 지원하지 않는 검색 방식입니다: {search_type}")
-
+        raise ValueError(f"❌ [Value] (retrieval.retrieve_documents.search_type) 지원하지 않는 검색 방식입니다: {search_type}")
     return [{"text": doc.page_content, "metadata": doc.metadata} for doc in docs]
