@@ -68,7 +68,7 @@ def generate_vector_db(all_chunks: List[Document], embed_model_name: str) -> Uni
         if not os.path.exists(output_path):
             os.makedirs(output_path, exist_ok=True)
 
-        vector_store.save_local(folder_path=output_path, index_name="hwp_faiss_index")
+        vector_store.save_local(folder_path=output_path, index_name="faiss_index")
         return embeddings
     except Exception as e:
         raise RuntimeError(f"❌ [Runtime] (vector_db.generate_vector_db) 벡터 DB 생성 실패: {e}")
@@ -94,7 +94,7 @@ def load_vector_db(path: str, embed_model_name: str) -> FAISS:
         embeddings = generate_embedding(embed_model_name)
         return FAISS.load_local(
             folder_path=path,
-            index_name="hwp_faiss_index",
+            index_name="faiss_index",
             embeddings=embeddings,
             allow_dangerous_deserialization=True,
         )
