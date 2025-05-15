@@ -14,7 +14,7 @@ chunk:
 
 embedding:
     type: "langchain" # 
-    model: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2" # "openai", "cohere", "huggingface"
+    model: "nlpai-lab/KoE5" #"sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "openai", "cohere", "huggingface"
     model_path: 
     vector_db_path: "data"
     index_name: "hwp_faiss_index"
