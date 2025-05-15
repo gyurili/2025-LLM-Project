@@ -154,3 +154,6 @@ data/
 # Notebook file
 Data.ipynb
 
+# Vectoc_db
+*.faiss
+*.pkl

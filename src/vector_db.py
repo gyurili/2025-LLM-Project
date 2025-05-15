@@ -29,7 +29,7 @@ def generate_embedding(embed_model_name: str) -> Union[OpenAIEmbeddings, Hugging
         else:
             return HuggingFaceEmbeddings(model_name=embed_model_name)
     except Exception as e:
-        raise ValueError(f"임베딩 모델 초기화 실패: {e}")
+        raise ValueError(f"❌ [Value] (vector_db.generate_embedding) 임베딩 모델 초기화 실패: {e}")
 
 def generate_vector_db(all_chunks: List[Document], embed_model_name: str) -> Union[OpenAIEmbeddings, HuggingFaceEmbeddings]:
     """
@@ -45,25 +45,33 @@ def generate_vector_db(all_chunks: List[Document], embed_model_name: str) -> Uni
     Raises:
         ValueError: 임베딩 처리 실패 시
     """
+    if not all_chunks or not isinstance(all_chunks, list):
+        raise ValueError("❌ [Value] (vector_db.generate_vector_db) all_chunks는 비어 있지 않은 Document 리스트여야 합니다.")
+
     embeddings = generate_embedding(embed_model_name)
     try:
         dimension = len(embeddings.embed_query("hello world"))
     except Exception as e:
-        raise ValueError(f"임베딩 차원 계산 실패: {e}")
+        raise ValueError(f"❌ [Value] (vector_db.generate_vector_db) 임베딩 차원 계산을 실패했습니다.: {e}")
 
-    vector_store = FAISS(
-        embedding_function=embeddings,
-        index=faiss.IndexFlatL2(dimension),
-        docstore=InMemoryDocstore(),
-        index_to_docstore_id={}
-    )
-    vector_store.add_documents(all_chunks)
+    try:
+        vector_store = FAISS(
+            embedding_function=embeddings,
+            index=faiss.IndexFlatL2(dimension),
+            docstore=InMemoryDocstore(),
+            index_to_docstore_id={}
+        )
+        vector_store.add_documents(all_chunks)
 
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    output_path = os.path.join(base_dir, "data")
-    
-    vector_store.save_local(folder_path=output_path, index_name="hwp_faiss_index")
-    return embeddings
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        output_path = os.path.join(base_dir, "data")
+        if not os.path.exists(output_path):
+            os.makedirs(output_path, exist_ok=True)
+
+        vector_store.save_local(folder_path=output_path, index_name="hwp_faiss_index")
+        return embeddings
+    except Exception as e:
+        raise RuntimeError(f"❌ [Runtime] (vector_db.generate_vector_db) 벡터 DB 생성 실패: {e}")
 
 def load_vector_db(path: str, embed_model_name: str) -> FAISS:
     """
@@ -80,13 +88,15 @@ def load_vector_db(path: str, embed_model_name: str) -> FAISS:
         FileNotFoundError: 경로가 없을 경우
     """
     if not os.path.exists(path):
-        raise FileNotFoundError(f"벡터 DB 경로가 존재하지 않습니다: {path}")
+        raise FileNotFoundError(f"❌ [FileNotFound] (vector_db.load_vector_db.path) 벡터 DB 경로가 존재하지 않습니다: {path}")
 
-    embeddings = generate_embedding(embed_model_name)
-
-    return FAISS.load_local(
-        folder_path=path,
-        index_name="hwp_faiss_index",
-        embeddings=embeddings,
-        allow_dangerous_deserialization=True,
-    )
+    try:
+        embeddings = generate_embedding(embed_model_name)
+        return FAISS.load_local(
+            folder_path=path,
+            index_name="hwp_faiss_index",
+            embeddings=embeddings,
+            allow_dangerous_deserialization=True,
+        )
+    except Exception as e:
+        raise RuntimeError(f"❌ [Runtime] (vector_db.load_vector_db) 벡터 DB 로드 실패: {e}")
