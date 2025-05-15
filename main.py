@@ -4,6 +4,37 @@ import yaml
 from src.data_loader import data_load, data_process, data_chunking
 from src.vector_db import generate_vector_db, load_vector_db
 
+# config와 관련된 함수는 main 또는 utils에서 관리하는 것이 좋아 이곳에 만들었습니다.
+def generate_index_name(config: dict) -> str:
+    """
+    config 설정값을 조합하여 벡터 DB 인덱스 이름을 생성합니다.
+
+    구성 요소:
+    - data.type
+    - data.limit
+    - chunk.splitter
+    - embedding.model
+
+    모델명이 경로 형태일 경우 마지막 항목만 사용하며,
+    하이픈(-), 슬래시(/), 공백은 언더스코어(_)로 변환합니다.
+
+    Args:
+        config (dict): 설정 딕셔너리
+
+    Returns:
+        str: 자동 생성된 인덱스 이름 (예: all_100_recursive_openai_faiss_index)
+    """
+    data_type = config.get("data", {}).get("type", "all")
+    limit = config.get("data", {}).get("limit", 100)
+    splitter = config.get("chunk", {}).get("splitter", "recursive")
+    model = config.get("embedding", {}).get("model", "default")
+
+    # 모델 이름에서 마지막 슬래시 기준 요소만 추출 후 특수문자 제거
+    model_key = model.split("/")[-1] if "/" in model else model
+    model_key = model_key.replace('-', '_').replace(' ', '_')
+
+    return f"{data_type}_{limit}_{splitter}_{model_key}_faiss_index"
+
 
 if __name__ == "__main__":
     try:
@@ -107,7 +138,7 @@ if __name__ == "__main__":
             raise ValueError("❌(config.embedding.vector_db_path) 벡터 DB 경로는 문자열이어야 합니다.")
         if not os.path.exists(vector_db_path):
             os.makedirs(vector_db_path, exist_ok=True)
-        index_name = config["embedding"]["index_name"]
+        index_name = generate_index_name(config)
         faiss_file = os.path.join(vector_db_path, f"{index_name}.faiss")
         pkl_file = os.path.join(vector_db_path, f"{index_name}.pkl")
         # verbose 출력
@@ -120,14 +151,14 @@ if __name__ == "__main__":
             # 벡터 DB가 이미 존재하는 경우
             if verbose:
                 print(f"✅ 기존 벡터 DB 경로 발견됨: {faiss_file}, 로드합니다.")
-            vector_store = load_vector_db(vector_db_path, embed_model)
+            vector_store = load_vector_db(vector_db_path, index_name, embed_model)
             print("✅ Vector DB 로드 완료")
         else:
             # 벡터 DB가 존재하지 않는 경우
             if verbose:
                 print(f"⚠️ 벡터 DB가 존재하지 않음. 새로 생성 후 저장합니다: {vector_db_path}")
-            embeddings = generate_vector_db(all_chunks, embed_model)
-            vector_store = load_vector_db(vector_db_path, embed_model)
+            embeddings = generate_vector_db(all_chunks, embed_model, index_name)
+            vector_store = load_vector_db(vector_db_path, index_name, embed_model)
             print("✅ Vector DB 생성 및 로드 완료")
 
         if not os.path.exists(vector_db_path):
