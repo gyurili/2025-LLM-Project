@@ -14,6 +14,7 @@ chunk:
 
 embedding:
     type: "langchain" # 
+    db_type: "faiss" # "faiss", "chorma"
     # openai 사용시 "text-embedding-3-small" 권장
     model: "nlpai-lab/KoE5" #"sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "openai", "cohere", "huggingface"
     model_path: 
