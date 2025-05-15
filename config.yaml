@@ -13,10 +13,10 @@ chunk:
     overlap: 50
 
 embedding:
-    type: "langchain" # 
-    model: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2" # "openai", "cohere", "huggingface"
-    model_path: 
-    vector_db_path: "data"
+    type: "langchain"
+    model: "jhgan/ko-sroberta-multitask"  # KoAlpaca는 generation용, 임베딩엔 STS 기반 모델 사용
+    model_path: null                      # Hugging Face에서 다운로드하므로 경로는 null
+    vector_db_path: "data/koalpaca"   # FAISS 벡터 저장 경로
 
 query:
     type: "retrieval" # "retrieval", "generation"
@@ -27,6 +27,7 @@ query:
     prompt: # {"key": "value"}
 
 retrieval:
+    search_type: "similarity"  # "similarity", "mmr", etc.
 
 generation:
 

@@ -3,6 +3,7 @@ import yaml
 
 from src.data_loader import data_load, data_process, data_chunking
 from src.vector_db import generate_vector_db, load_vector_db
+from src.retriever import search_documents
 
 
 if __name__ == "__main__":
@@ -87,9 +88,8 @@ if __name__ == "__main__":
             print(f"유사도 검색 쿼리: {query}")
             print(f"유사도 검색 결과 개수: {k}")
 
-        docs = vector_store.similarity_search(query, k=k)
-        for i, doc in enumerate(docs, start=1):
-            print(f"\n📄 유사 문서 {i}:\n{doc.page_content}")
+        search_type = config['retrieval']['search_type']
+        search_documents(query, vector_store, k, search_type)
 
     except Exception as e:
         print(f"❌ Error: {e}")
