@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
         prompt = build_prompt_with_expansion(query, results, all_chunks)
         llm = load_generator_model(config)
-        answer = generate_answer(prompt, llm, )
+        answer = generate_answer(prompt, llm, config["model"])
 
     except FileNotFoundError as e:
         print(f"❌ [FileNotFound] \n {e}")
