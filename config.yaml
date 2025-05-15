@@ -14,14 +14,15 @@ chunk:
 
 embedding:
     type: "langchain" # 
-    model: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2" #"nlpai-lab/KoE5", "openai", "cohere", "huggingface"
+    # openai 사용시 "text-embedding-3-small" 권장
+    model: "nlpai-lab/KoE5" #"sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "openai", "cohere", "huggingface"
     model_path: 
     vector_db_path: "data"
     index_name: "hwp_faiss_index"
 
 query:
     type: "retrieval" # "retrieval", "generation"
-    question: "인공지능(AI) 교육으로 IT 융합 인재 양성"
+    question: "배드민턴장 및 탁구장 예약방법"
     top_k: 5
     filter: # {"key": "value"}
     context: # {"key": "value"}
@@ -45,4 +46,4 @@ model:
 # settings
 settings:
     use_gpu: True
-    verbose: False
+    verbose: True
