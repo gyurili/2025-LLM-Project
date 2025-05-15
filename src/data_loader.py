@@ -174,6 +174,8 @@ def data_chunking(df: pd.DataFrame, splitter_type: str = "recursive", size: int 
         text = row.get("full_text", "")
         if isinstance(text, str) and text.strip():
             try:
+                # 청크 분할 전, row text 정제
+                text = clean_text(text)
                 chunks = splitter.split_text(text)
                 for i, chunk in enumerate(chunks):
                     doc = Document(
@@ -191,3 +193,15 @@ def data_chunking(df: pd.DataFrame, splitter_type: str = "recursive", size: int 
         else:
             print(f"❌ [스킵됨] 텍스트 없음: {row.get('파일명')}")
     return all_chunks
+
+import re
+
+def clean_text(text: str) -> str:
+    # 1. 한자 및 유니코드 특수문자 제거 (한글, 영어, 숫자, 공백, 일부 특수문자 제외)
+    text = re.sub(r"[^\uAC00-\uD7A3a-zA-Z0-9\s.,:;!?()~\-/]", " ", text)
+
+    # 2. 연속된 공백 하나로 통일
+    text = re.sub(r"\s+", " ", text)
+
+    # 3. 앞뒤 공백 제거
+    return text.strip()
