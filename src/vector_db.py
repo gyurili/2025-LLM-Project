@@ -90,32 +90,3 @@ def load_vector_db(path: str, embed_model_name: str) -> FAISS:
         embeddings=embeddings,
         allow_dangerous_deserialization=True,
     )
-
-
-'''
-from src.data_load import (data_load, data_process, data_chunking)
-
-if __name__ == "__main__":
-    try:
-        df = data_load("data/data_list.csv")
-        df = data_process(df)
-        all_chunks = data_chunking(df)
-
-        print("✅ 청크 분할 완료!")
-
-        embeddings = generate_vector_db(all_chunks, "open_ai")
-        print("✅ 벡터 DB 저장 완료!")
-
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        vector_db_path = os.path.join(base_dir, "data")
-
-        vector_store = load_vector_db(vector_db_path, "open_ai")
-        print("✅ 벡터 DB 로드 완료!")
-
-        docs = vector_store.similarity_search("배드민턴장 및 탁구장 예약방법", k=8)
-        for i, doc in enumerate(docs, start=1):
-            print(f"\n📄 유사 문서 {i}:\n{doc.page_content}")
-
-    except Exception as e:
-        print(f"❌ 실행 중 오류 발생: {e}")
-'''
