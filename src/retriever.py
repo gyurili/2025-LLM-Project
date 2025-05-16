@@ -8,7 +8,7 @@ def search_documents(
     vector_store: VectorStore,
     top_k: int = 3,
     search_type: str = "similarity"
-) -> List[Dict]:
+) -> List[Document]:
     """
     외부에서 주어진 벡터 스토어를 사용해 질문에 유사한 문서를 검색합니다.
 
@@ -19,7 +19,7 @@ def search_documents(
         search_type (str): 검색 방식 ('similarity', 'mmr' 등)
 
     Returns:
-        List[Dict]: 검색된 문서들의 리스트 (본문 및 메타데이터 포함)
+        List[Document]: 검색된 문서들의 리스트 (본문 및 메타데이터 포함)
     """
     # 검색기(retriever) 구성
     retriever = vector_store.as_retriever(

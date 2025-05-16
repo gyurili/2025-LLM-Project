@@ -11,7 +11,7 @@ def load_generator_model(config: Dict) -> Dict:
         config (Dict): 모델 구성 정보를 담은 설정 딕셔너리
 
     Returns:
-        Dict: 모델 유형(type)과 모델 객체/토크나이저 등을 포함한 구조화된 정보
+        Dict: 모델 유형(type), tokenizer, model 등을 포함한 구조화 정보
     """
     model_type = config["model"]["type"]
     model_name = config["model"]["model_path"]
@@ -21,13 +21,15 @@ def load_generator_model(config: Dict) -> Dict:
 
         tokenizer = AutoTokenizer.from_pretrained(
             model_name,
-            use_fast=False
+            use_fast=False,
+            trust_remote_code=True
         )
 
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
-            torch_dtype=torch.float16,
-            device_map="auto"
+            torch_dtype=torch.float16,  # 또는 config 기반 설정도 가능
+            device_map="auto",
+            trust_remote_code=True
         )
         model.eval()
 
@@ -39,7 +41,6 @@ def load_generator_model(config: Dict) -> Dict:
 
     elif model_type == "openai":
         import openai
-
         openai.api_key = config["model"].get("api_key", None)
 
         return {
@@ -54,7 +55,6 @@ def load_generator_model(config: Dict) -> Dict:
 
     else:
         raise ValueError(f"Unsupported model type: {model_type}")
-    
 
 
 def generate_answer(
@@ -67,7 +67,7 @@ def generate_answer(
 
     Args:
         prompt (str): 모델에 입력할 프롬프트 문자열
-        model_info (Dict): 모델 로딩 결과 (타입, 객체 등 포함)
+        model_info (Dict): 모델 로딩 결과 (type, tokenizer, model 등 포함)
         generation_config (Dict): temperature, max_tokens 등 생성 옵션
 
     Returns:
@@ -77,15 +77,26 @@ def generate_answer(
         tokenizer = model_info["tokenizer"]
         model = model_info["model"]
 
-        inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+        inputs = tokenizer(prompt, return_tensors="pt")
+
+        # ✅ to(model.device) 적용은 input_ids와 attention_mask에만
+        input_ids = inputs["input_ids"].to(model.device)
+        attention_mask = inputs["attention_mask"].to(model.device)
+
+        generate_kwargs = {
+            "input_ids": input_ids,
+            "attention_mask": attention_mask,
+            "max_new_tokens": generation_config.get("max_tokens", 512),
+            "temperature": generation_config.get("temperature", 0.7),
+            "top_p": generation_config.get("top_p", 0.9),
+        }
+
+        # ✅ token_type_ids가 존재하는 경우에만 포함 (BERT 계열 지원)
+        if "token_type_ids" in inputs:
+            generate_kwargs["token_type_ids"] = inputs["token_type_ids"].to(model.device)
 
         with torch.no_grad():
-            output = model.generate(
-                **inputs,
-                max_new_tokens=generation_config["max_token"],
-                temperature=generation_config["temperature"],
-                top_p=generation_config["top_p"]
-            )
+            output = model.generate(**generate_kwargs)
 
         return tokenizer.decode(output[0], skip_special_tokens=True)
 
@@ -95,9 +106,9 @@ def generate_answer(
         response = openai.ChatCompletion.create(
             model=model_info["model"],
             messages=[{"role": "user", "content": prompt}],
-            max_new_tokens=generation_config["max_token"],
-            temperature=generation_config["temperature"],
-            top_p=generation_config["top_p"]
+            max_tokens=generation_config.get("max_tokens", 512),
+            temperature=generation_config.get("temperature", 0.7),
+            top_p=generation_config.get("top_p", 0.9)
         )
 
         return response["choices"][0]["message"]["content"]
@@ -107,7 +118,6 @@ def generate_answer(
 
     else:
         raise ValueError("Unsupported model type")
-    
 
 
 def build_prompt_with_expansion(
