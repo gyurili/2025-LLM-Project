@@ -69,30 +69,3 @@ def retrieve_documents(
         result.append({"page_content": doc.page_content, "metadata": doc.metadata})
 
     return result
-
-
-### 임시 실행 코드 ###
-
-import yaml
-import os
-
-with open("config.yaml", "r", encoding="utf-8") as f:
-    config = yaml.safe_load(f)
-
-from vector_db import load_vector_db
-embed_config = config.get("embedding", {})
-
-vector_db_path = embed_config.get("vector_db_path", "")
-embed_model = embed_config.get("model", "openai")
-
-vector_store=load_vector_db(vector_db_path, embed_model, index_name="all_100_recursive_KoE5_faiss")
-docs = retrieve_documents(query=config.get("query", {}).get("question", ""), 
-                             vector_store=vector_store,
-                             top_k=8, 
-                             search_type="similarity", 
-                             all_chunks=None)
-
-for i, doc in enumerate(docs, 1):
-    print(f"\n📄 문서 {i}")
-    print(f"본문:\n{doc['page_content']}...")
-    print(f"메타데이터: {doc['metadata']}")
