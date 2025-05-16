@@ -1,5 +1,7 @@
-from typing import List, Dict
+from inspect import signature
+from typing import Dict, List
 from langchain.schema import Document
+from langchain.vectorstores.faiss import FAISS
 import torch
 
 
@@ -27,7 +29,7 @@ def load_generator_model(config: Dict) -> Dict:
 
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
-            torch_dtype=torch.float16,  # 또는 config 기반 설정도 가능
+            torch_dtype=torch.float16,
             device_map="auto",
             trust_remote_code=True
         )
@@ -64,22 +66,12 @@ def generate_answer(
 ) -> str:
     """
     다양한 모델 유형에 따라 프롬프트에 대한 답변을 생성합니다.
-
-    Args:
-        prompt (str): 모델에 입력할 프롬프트 문자열
-        model_info (Dict): 모델 로딩 결과 (type, tokenizer, model 등 포함)
-        generation_config (Dict): temperature, max_tokens 등 생성 옵션
-
-    Returns:
-        str: 생성된 답변 문자열
     """
     if model_info["type"] == "hf":
         tokenizer = model_info["tokenizer"]
         model = model_info["model"]
 
         inputs = tokenizer(prompt, return_tensors="pt")
-
-        # ✅ to(model.device) 적용은 input_ids와 attention_mask에만
         input_ids = inputs["input_ids"].to(model.device)
         attention_mask = inputs["attention_mask"].to(model.device)
 
@@ -87,12 +79,12 @@ def generate_answer(
             "input_ids": input_ids,
             "attention_mask": attention_mask,
             "max_new_tokens": generation_config.get("max_tokens", 512),
-            "temperature": generation_config.get("temperature", 0.7),
-            "top_p": generation_config.get("top_p", 0.9),
+            "do_sample": False
         }
 
-        # ✅ token_type_ids가 존재하는 경우에만 포함 (BERT 계열 지원)
-        if "token_type_ids" in inputs:
+        generate_signature = signature(model.generate).parameters
+
+        if "token_type_ids" in inputs and "token_type_ids" in generate_signature:
             generate_kwargs["token_type_ids"] = inputs["token_type_ids"].to(model.device)
 
         with torch.no_grad():
@@ -107,8 +99,7 @@ def generate_answer(
             model=model_info["model"],
             messages=[{"role": "user", "content": prompt}],
             max_tokens=generation_config.get("max_tokens", 512),
-            temperature=generation_config.get("temperature", 0.7),
-            top_p=generation_config.get("top_p", 0.9)
+            temperature=0.0
         )
 
         return response["choices"][0]["message"]["content"]
@@ -134,7 +125,7 @@ def build_prompt_with_expansion(
     Args:
         question (str): 사용자 질문
         retrieved_docs (List[Document]): 검색된 핵심 청크 리스트
-        all_docs (List[Document]): 전체 문서 청크 리스트 (검색 대상이 된 전체)
+        all_docs (List[Document]): 전체 문서 청크 리스트
         window (int): 인접 청크 포함 범위 (기본 ±1)
         include_source (bool): 출처 포함 여부
         prompt_template (str): context와 question을 포함할 포맷 문자열
@@ -149,7 +140,6 @@ def build_prompt_with_expansion(
         file_name = doc.metadata.get("파일명")
         base_idx = doc.metadata.get("chunk_idx", 0)
 
-        # 같은 문서 내 인접 청크 추출
         neighbors = [
             d for d in all_docs
             if d.metadata.get("파일명") == file_name and
@@ -187,3 +177,19 @@ def build_prompt_with_expansion(
     prompt = prompt_template.format(context=context_text, question=question)
 
     return prompt
+
+
+def get_all_documents_from_vectorstore(vectorstore: FAISS) -> List[Document]:
+    """
+    벡터스토어에 저장된 전체 Document 객체를 리스트 형태로 반환합니다.
+
+    Args:
+        vectorstore (FAISS): 로드된 벡터스토어 객체
+
+    Returns:
+        List[Document]: 저장된 전체 문서 청크 리스트
+    """
+    if not hasattr(vectorstore, "docstore") or not hasattr(vectorstore.docstore, "_dict"):
+        raise ValueError("해당 벡터스토어는 docstore 정보를 제공하지 않습니다.")
+
+    return list(vectorstore.docstore._dict.values())
