@@ -1,46 +1,29 @@
 
 data:
-    type: "all" # "hwp" 또는 "pdf", "all"
-    limit: 5 # 최대 몇개까지 1 ~ 100 
     folder_path: "data/files"
     data_list_path: "data/data_list.csv"
+    limit: 100 # 최대 몇개까지 1 ~ 100 
+    file_type: "all" # "hwp" 또는 "pdf", "all"
     apply_ocr: False # True/ False
-    re: # 전처리?
-
-chunk:
     splitter: "recursive" # "recursive", "token"
-    size: 300
-    overlap: 50
+    chunk_size: 300
+    chunk_overlap: 50
 
 embedding:
-    type: "langchain" # 
-    model: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2" # "openai", "cohere", "huggingface"
-    model_path: 
+    # openai 사용시 "text-embedding-3-small" 권장
+    embed_model: "nlpai-lab/KoE5" #"sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "openai", "cohere", "huggingface"
+    db_type: "faiss" # "faiss", "chorma"
     vector_db_path: "data"
 
-query:
-    type: "retrieval" # "retrieval", "generation"
-    question: "배드민턴장 및 탁구장 예약방법"
+retriever:
+    query: "배드민턴장 및 탁구장 예약방법"
     top_k: 3
-    filter: # {"key": "value"}
-    context: # {"key": "value"}
-    prompt: # {"key": "value"}
 
-retrieval:
-
-generation:
-
-model:
-    type: 
-    model_path: 
-    temperature: 
-    max_tokens: 
-    top_p: 
-    top_k: 
-    n: 
-    stop: 
-
+generator:
+    model_type: "huggingface"
+    model_name: "ex"
+    max_length: 512
+    
 # settings
 settings:
-    use_gpu: True
-    verbose: False
+    verbose: True
