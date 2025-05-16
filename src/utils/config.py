@@ -1,6 +1,7 @@
 import os
 import yaml
 
+
 def load_config(config_path: str) -> dict:
     """
     YAML 파일에서 설정을 로드합니다.
@@ -18,6 +19,7 @@ def load_config(config_path: str) -> dict:
         config = yaml.safe_load(f)
 
     return config
+
 
 def check_config(config: dict) -> None:
     """
