@@ -138,7 +138,7 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all
         file_path = os.path.join(file_root, file_name)
         try:
             if not os.path.exists(file_path):
-                 raise FileNotFoundError(f"❌ [FileNotFound] (data_loader.data_process.path) 파일이 존재하지 않습니다: {file_path}")
+                raise FileNotFoundError(f"❌ [FileNotFound] (data_loader.data_process.path) 파일이 존재하지 않습니다: {file_path}")
 
             if file_name.lower().endswith(".hwp") and file_type in ["hwp", "all"]:
                 loader = HWPLoader(file_path)
