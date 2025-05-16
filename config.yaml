@@ -20,8 +20,8 @@ retriever:
     top_k: 3
 
 generator:
-    model_type: ""
-    model_name: ""
+    model_type: "huggingface"
+    model_name: "ex"
     max_length: 512
     
 # settings
