@@ -24,11 +24,7 @@ def check_config(config: dict) -> None:
         verbose = settings_config.get("verbose", False)
         if not isinstance(verbose, bool):
             raise ValueError("❌ [Type] (config.check_config.settings.verbose) verbose는 True 또는 False여야 합니다.")
-        if verbose:
-            print("    -Verbose 모드로 실행 중입니다.")
-        
-    
-    
+
     # data
     data_config = config.get("data", {})
     if not isinstance(data_config, dict):
@@ -82,9 +78,9 @@ def check_config(config: dict) -> None:
     if not isinstance(embedding_config, dict):
         raise ValueError("❌ [Type] (config.check_config.embedding) 임베딩 설정은 딕셔너리여야 합니다.")
     else:
-        embed_mode = embedding_config.get("embed_model_name", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+        embed_mode = embedding_config.get("embed_model", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
         if not isinstance(embed_mode, str):
-            raise ValueError("❌ [Type] (config.check_config.embedding.embed_model_name) 임베딩 모델 이름은 문자열이어야 합니다.")
+            raise ValueError("❌ [Type] (config.check_config.embedding.embed_model) 임베딩 모델 이름은 문자열이어야 합니다.")
 
         db_type = embedding_config.get("db_type", "faiss")
         if db_type not in ["faiss", "chroma"]:
@@ -151,8 +147,13 @@ def load_config(config_path: str) -> dict:
         config = yaml.safe_load(f)
 
     try:
-        # config.yaml 파일에서 설정을 로드합니다.
+        # 설정 유효성 검사
         check_config(config)
+
+        # verbose 모드일 경우 전체 설정 출력
+        if config.get("settings", {}).get("verbose", False):
+            print("\n📄 [Verbose] 최종 설정 내용:")
+            print(yaml.dump(config, allow_unicode=True, sort_keys=False))
     
     # 예외 처리
     except (FileNotFoundError, PermissionError) as e:
