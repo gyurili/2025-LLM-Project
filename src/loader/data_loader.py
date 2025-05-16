@@ -68,24 +68,24 @@ def extract_text_from_pdf(pdf_path: Path, apply_ocr: bool = True) -> str:
     return full_text
 
 
-def data_load(path: str, limit: int = None) -> pd.DataFrame:
+def data_load(path: str, limit: int = None, base_dir: str = None) -> pd.DataFrame:
     """
     주어진 경로에서 CSV 파일을 불러와 전처리합니다.
 
     Args:
         path (str): CSV 파일 상대 경로
         limit (Optional[int]): 데이터프레임의 행 수 제한 (기본값: None)
+        base_dir (Optional[str]): 기본 디렉토리 경로 (기본값은 프로젝트 루트 자동 탐색)
 
     Returns:
         pd.DataFrame: 전처리된 데이터프레임
     """
-    if '__file__' in globals():
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    else:
-        base_dir = os.path.abspath("..")
+    if base_dir is None:
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     full_path = os.path.join(base_dir, path)
     if not os.path.exists(full_path):
-        raise FileNotFoundError(f"❌ [FileNotFound] (data_loader.data_load.path) CSV 파일을 찾을 수 없습니다: {full_path}")
+        raise FileNotFoundError(f"❌ [FileNotFound] (data_loader.data_load.path) 파일을 찾을 수 없습니다: {full_path}")
+    
     if limit < 1:
         limit = 1
         print("⚠️ [Warning] (data_loader.data_load.limit) limit은 0보다 큰 정수여야 합니다. 최소값 1로 설정합니다.")
