@@ -1,6 +1,5 @@
 import os
 import fitz
-import faiss
 import easyocr
 import numpy as np
 import pandas as pd
@@ -8,7 +7,6 @@ from PIL import Image
 from tqdm import tqdm
 from pathlib import Path
 from typing import List
-from dotenv import load_dotenv
 from langchain.schema import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter, TokenTextSplitter
 from langchain_teddynote.document_loaders import HWPLoader
