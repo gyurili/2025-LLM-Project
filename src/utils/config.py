@@ -2,25 +2,6 @@ import os
 import yaml
 
 
-def load_config(config_path: str) -> dict:
-    """
-    YAML 파일에서 설정을 로드합니다.
-
-    Args:
-        config_path (str): YAML 파일 경로
-
-    Returns:
-        dict: 설정 딕셔너리
-    """
-    if not os.path.exists(config_path):
-        raise FileNotFoundError(f"❌ [FileNotFound] (config.load_config) 설정 파일을 찾을 수 없습니다: {config_path}")
-
-    with open(config_path, 'r', encoding='utf-8') as f:
-        config = yaml.safe_load(f)
-
-    return config
-
-
 def check_config(config: dict) -> None:
     """
     설정 딕셔너리의 유효성을 검사합니다.
@@ -54,7 +35,7 @@ def check_config(config: dict) -> None:
         raise ValueError("❌ [Type] (config.check_config.data) 데이터 설정은 딕셔너리여야 합니다.")
     else:
         # load
-        folder_path = data_config.get("folder_path", "data/files"):
+        folder_path = data_config.get("folder_path", "data/files")
         if not isinstance(folder_path, str):
             raise ValueError("❌ [Type] (config.check_config.data.folder_path) 폴더 경로는 문자열이어야 합니다.")
         if not os.path.exists(folder_path):
@@ -152,4 +133,38 @@ def check_config(config: dict) -> None:
         if max_length < 1:
             raise ValueError("❌ [Value] (config.check_config.generator.max_length) 최대 길이는 1보다 커야 합니다.")
         
+
+def load_config(config_path: str) -> dict:
+    """
+    YAML 파일에서 설정을 로드합니다.
+
+    Args:
+        config_path (str): YAML 파일 경로
+
+    Returns:
+        dict: 설정 딕셔너리
+    """
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"❌ [FileNotFound] (config.load_config) 설정 파일을 찾을 수 없습니다: {config_path}")
+
+    with open(config_path, 'r', encoding='utf-8') as f:
+        config = yaml.safe_load(f)
+
+    try:
+        # config.yaml 파일에서 설정을 로드합니다.
+        check_config(config)
     
+    # 예외 처리
+    except (FileNotFoundError, PermissionError) as e:
+        print(f"❌ [File] 파일 접근 오류:\n  {e}")
+
+    except yaml.YAMLError as e:
+        print(f"❌ [YAML] 설정 파일 파싱 오류:\n  {e}")
+
+    except (ValueError, TypeError) as e:
+        print(f"❌ [Config] 설정값 오류:\n  {e}")
+
+    except Exception as e:
+        print(f"❌ [Unexpected] 예상치 못한 오류 발생:\n  {e}")
+
+    return config
