@@ -3,6 +3,7 @@ import yaml
 
 from src.data_loader import data_load, data_process, data_chunking
 from src.vector_db import generate_vector_db, load_vector_db
+
 # from src.retrieval import retrieve_documents
 
 # config와 관련된 함수는 main 또는 utils에서 관리하는 것이 좋아 이곳에 만들었습니다.
