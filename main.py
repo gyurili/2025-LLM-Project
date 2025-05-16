@@ -189,7 +189,7 @@ if __name__ == "__main__":
             print(f"    -유사도 검색 쿼리: {query}")
             print(f"    -유사도 검색 결과 개수: {top_k}")
         
-        search_type = config.get("retrieval", {}).get("method", "similarity")
+        search_type = config.get("retrieval", {}).get("search_type", "similarity")
         if not isinstance(search_type, str):
             raise ValueError("❌(config.retrieval.method) 검색 방식은 문자열이어야 합니다.")
         
