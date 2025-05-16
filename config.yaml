@@ -32,9 +32,9 @@ retrieval:
 generation:
 
 model:
-    type: "huggingface"  # 또는 "openai"
-    model_path: "beomi/KoAlpaca-Polyglot-12.8B"  # 또는 "gpt-3.5-turbo"
-    max_tokens: 512
+  type: "huggingface"
+  model_path: "EleutherAI/polyglot-ko-1.3b"
+  max_tokens: 256
 
 
 

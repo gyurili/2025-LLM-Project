@@ -79,11 +79,12 @@ def generate_answer(
             "input_ids": input_ids,
             "attention_mask": attention_mask,
             "max_new_tokens": generation_config.get("max_tokens", 512),
-            "do_sample": False
+            "do_sample": False,
+            "eos_token_id": tokenizer.eos_token_id or tokenizer.pad_token_id,
+            "repetition_penalty": 1.2
         }
 
         generate_signature = signature(model.generate).parameters
-
         if "token_type_ids" in inputs and "token_type_ids" in generate_signature:
             generate_kwargs["token_type_ids"] = inputs["token_type_ids"].to(model.device)
 
@@ -99,7 +100,7 @@ def generate_answer(
             model=model_info["model"],
             messages=[{"role": "user", "content": prompt}],
             max_tokens=generation_config.get("max_tokens", 512),
-            temperature=0.0
+            temperature=0.0  # Greedy decoding
         )
 
         return response["choices"][0]["message"]["content"]
@@ -167,11 +168,11 @@ def build_prompt_with_expansion(
 
     if prompt_template is None:
         prompt_template = (
-            "다음은 RFP 문서를 기반으로 사용자의 질문에 답변하는 상황입니다.\n"
-            "문서 내용을 기반으로만 답변하고, 모호하거나 문서에 없는 정보는 추측하지 마세요.\n\n"
-            "[문서 정보]\n{context}\n\n"
-            "[질문]\n{question}\n\n"
-            "[답변]"
+            "아래는 정부 및 대학 관련 사업 문서 요약입니다. 문서 내용을 바탕으로 다음 질문에 대해 명확하고 핵심적으로 답변하세요.\n"
+            "반복하지 말고, 문서에 포함된 정보만 기반으로 답하세요. 문서에 없는 정보는 '해당 문서에 정보가 없습니다.'라고 하세요.\n\n"
+            "### 문서 내용:\n{context}\n\n"
+            "### 질문:\n{question}\n\n"
+            "### 답변 (문장으로 1~3줄):"
         )
 
     prompt = prompt_template.format(context=context_text, question=question)
