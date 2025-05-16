@@ -2,25 +2,6 @@ import os
 import yaml
 
 
-def load_config(config_path: str) -> dict:
-    """
-    YAML 파일에서 설정을 로드합니다.
-
-    Args:
-        config_path (str): YAML 파일 경로
-
-    Returns:
-        dict: 설정 딕셔너리
-    """
-    if not os.path.exists(config_path):
-        raise FileNotFoundError(f"❌ [FileNotFound] (config.load_config) 설정 파일을 찾을 수 없습니다: {config_path}")
-
-    with open(config_path, 'r', encoding='utf-8') as f:
-        config = yaml.safe_load(f)
-
-    return config
-
-
 def check_config(config: dict) -> None:
     """
     설정 딕셔너리의 유효성을 검사합니다.
@@ -43,18 +24,14 @@ def check_config(config: dict) -> None:
         verbose = settings_config.get("verbose", False)
         if not isinstance(verbose, bool):
             raise ValueError("❌ [Type] (config.check_config.settings.verbose) verbose는 True 또는 False여야 합니다.")
-        if verbose:
-            print("    -Verbose 모드로 실행 중입니다.")
-        
-    
-    
+
     # data
     data_config = config.get("data", {})
     if not isinstance(data_config, dict):
         raise ValueError("❌ [Type] (config.check_config.data) 데이터 설정은 딕셔너리여야 합니다.")
     else:
         # load
-        folder_path = data_config.get("folder_path", "data/files"):
+        folder_path = data_config.get("folder_path", "data/files")
         if not isinstance(folder_path, str):
             raise ValueError("❌ [Type] (config.check_config.data.folder_path) 폴더 경로는 문자열이어야 합니다.")
         if not os.path.exists(folder_path):
@@ -101,9 +78,9 @@ def check_config(config: dict) -> None:
     if not isinstance(embedding_config, dict):
         raise ValueError("❌ [Type] (config.check_config.embedding) 임베딩 설정은 딕셔너리여야 합니다.")
     else:
-        embed_mode = embedding_config.get("embed_model_name", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+        embed_mode = embedding_config.get("embed_model", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
         if not isinstance(embed_mode, str):
-            raise ValueError("❌ [Type] (config.check_config.embedding.embed_model_name) 임베딩 모델 이름은 문자열이어야 합니다.")
+            raise ValueError("❌ [Type] (config.check_config.embedding.embed_model) 임베딩 모델 이름은 문자열이어야 합니다.")
 
         db_type = embedding_config.get("db_type", "faiss")
         if db_type not in ["faiss", "chroma"]:
@@ -152,4 +129,43 @@ def check_config(config: dict) -> None:
         if max_length < 1:
             raise ValueError("❌ [Value] (config.check_config.generator.max_length) 최대 길이는 1보다 커야 합니다.")
         
+
+def load_config(config_path: str) -> dict:
+    """
+    YAML 파일에서 설정을 로드합니다.
+
+    Args:
+        config_path (str): YAML 파일 경로
+
+    Returns:
+        dict: 설정 딕셔너리
+    """
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"❌ [FileNotFound] (config.load_config) 설정 파일을 찾을 수 없습니다: {config_path}")
+
+    with open(config_path, 'r', encoding='utf-8') as f:
+        config = yaml.safe_load(f)
+
+    try:
+        # 설정 유효성 검사
+        check_config(config)
+
+        # verbose 모드일 경우 전체 설정 출력
+        if config.get("settings", {}).get("verbose", False):
+            print("\n📄 [Verbose] 최종 설정 내용:")
+            print(yaml.dump(config, allow_unicode=True, sort_keys=False))
     
+    # 예외 처리
+    except (FileNotFoundError, PermissionError) as e:
+        print(f"❌ [File] 파일 접근 오류:\n  {e}")
+
+    except yaml.YAMLError as e:
+        print(f"❌ [YAML] 설정 파일 파싱 오류:\n  {e}")
+
+    except (ValueError, TypeError) as e:
+        print(f"❌ [Config] 설정값 오류:\n  {e}")
+
+    except Exception as e:
+        print(f"❌ [Unexpected] 예상치 못한 오류 발생:\n  {e}")
+
+    return config

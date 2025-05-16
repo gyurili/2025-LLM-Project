@@ -8,7 +8,7 @@ data:
     splitter: "recursive" # "recursive", "token"
     chunk_size: 1000            # KoE5는 허용 토큰이 많은 편이기에, chunk_size를 높일 수 있다.
     chunk_overlap: 100 
-    
+ 
 embedding:
     # openai 사용시 "text-embedding-3-small" 권장
     embed_model: "nlpai-lab/KoE5" #"sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "openai", "cohere", "huggingface"
@@ -17,12 +17,12 @@ embedding:
 
 retriever:
     search_type: "similarity"
-    query: "나노종합기술원에 대해서 알려줘"
+    query: "배드민턴장 및 탁구장 예약방법"
     top_k: 3
 
 generator:
-    model_type: ""
-    model_name: ""
+    model_type: "huggingface"
+    model_name: "ex"
     max_length: 512
     
 # settings
