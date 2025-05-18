@@ -106,6 +106,8 @@ def data_load(path: str, limit: int = None, base_dir: str = None) -> pd.DataFram
     return df
 
 
+from src.utils.path import get_project_root_dir
+
 def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all") -> pd.DataFrame:
     """
     HWP 또는 PDF 파일을 처리하여 텍스트를 추출하고 full_text 컬럼에 저장합니다.
@@ -118,10 +120,7 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all
     Returns:
         pd.DataFrame: 텍스트가 추가된 DataFrame
     """
-    if '__file__' in globals():
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    else:
-        base_dir = os.path.abspath("..")
+    base_dir = get_project_root_dir()
     file_root = os.path.join(base_dir, "data", "files")
 
     if file_type in ["hwp", "pdf"]:
