@@ -6,7 +6,7 @@ data:
     file_type: "all" # "hwp" 또는 "pdf", "all"
     apply_ocr: False # True/ False
     splitter: "recursive" # "recursive", "token"
-    chunk_size: 1000            # KoE5는 허용 토큰이 많은 편이기에, chunk_size를 높일 수 있다.
+    chunk_size: 500            # KoE5는 허용 토큰이 많은 편이기에, chunk_size를 높일 수 있다.
     chunk_overlap: 100 
  
 embedding:
