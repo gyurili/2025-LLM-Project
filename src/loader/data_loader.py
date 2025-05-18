@@ -1,6 +1,5 @@
 import os
 import fitz
-import faiss
 import easyocr
 import numpy as np
 import pandas as pd
@@ -8,7 +7,6 @@ from PIL import Image
 from tqdm import tqdm
 from pathlib import Path
 from typing import List
-from dotenv import load_dotenv
 from langchain.schema import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter, TokenTextSplitter
 from langchain_teddynote.document_loaders import HWPLoader
@@ -70,24 +68,24 @@ def extract_text_from_pdf(pdf_path: Path, apply_ocr: bool = True) -> str:
     return full_text
 
 
-def data_load(path: str, limit: int = None) -> pd.DataFrame:
+def data_load(path: str, limit: int = None, base_dir: str = None) -> pd.DataFrame:
     """
     주어진 경로에서 CSV 파일을 불러와 전처리합니다.
 
     Args:
         path (str): CSV 파일 상대 경로
         limit (Optional[int]): 데이터프레임의 행 수 제한 (기본값: None)
+        base_dir (Optional[str]): 기본 디렉토리 경로 (기본값은 프로젝트 루트 자동 탐색)
 
     Returns:
         pd.DataFrame: 전처리된 데이터프레임
     """
-    if '__file__' in globals():
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    else:
-        base_dir = os.path.abspath("..")
+    if base_dir is None:
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     full_path = os.path.join(base_dir, path)
     if not os.path.exists(full_path):
-        raise FileNotFoundError(f"❌ [FileNotFound] (data_loader.data_load.path) CSV 파일을 찾을 수 없습니다: {full_path}")
+        raise FileNotFoundError(f"❌ [FileNotFound] (data_loader.data_load.path) 파일을 찾을 수 없습니다: {full_path}")
+    
     if limit < 1:
         limit = 1
         print("⚠️ [Warning] (data_loader.data_load.limit) limit은 0보다 큰 정수여야 합니다. 최소값 1로 설정합니다.")
@@ -108,6 +106,8 @@ def data_load(path: str, limit: int = None) -> pd.DataFrame:
     return df
 
 
+from src.utils.path import get_project_root_dir
+
 def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all") -> pd.DataFrame:
     """
     HWP 또는 PDF 파일을 처리하여 텍스트를 추출하고 full_text 컬럼에 저장합니다.
@@ -120,10 +120,7 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all
     Returns:
         pd.DataFrame: 텍스트가 추가된 DataFrame
     """
-    if '__file__' in globals():
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    else:
-        base_dir = os.path.abspath("..")
+    base_dir = get_project_root_dir()
     file_root = os.path.join(base_dir, "data", "files")
 
     if file_type in ["hwp", "pdf"]:
