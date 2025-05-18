@@ -18,4 +18,5 @@ if __name__ == '__main__':
 
     from src.embedding.embedding_main import embedding_main
     vector_store = embedding_main(config, chunks)
-    print("✅ 벡터 DB 생성 완료")
+
+    return vector_store
