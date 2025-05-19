@@ -10,9 +10,9 @@ if src_dir not in sys.path:
 if root_dir not in sys.path:
     sys.path.append(root_dir)
     
-from retrieval import retrieve_documents
-from vector_db import load_vector_db
-from main import generate_index_name
+from src.retrieval.retrieval import retrieve_documents
+from src.embedding.vector_db import load_vector_db
+from src.embedding.embedding_main import generate_index_name
 
 def run_retrieval(vector_store=None, verbose=False):
     with open(os.path.join(root_dir, "config.yaml"), "r", encoding="utf-8") as f:
@@ -46,5 +46,3 @@ def run_retrieval(vector_store=None, verbose=False):
             print(f"메타데이터: {doc['metadata']}")
             
     return docs
-
-run_retrieval(vector_store=None, verbose=True)
