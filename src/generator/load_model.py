@@ -111,18 +111,21 @@ def generate_answer(prompt: str, model_info: Dict, generation_config: Dict) -> s
         with torch.no_grad():
             output = model.generate(**generate_kwargs)
 
-        # 생성 후 후처리
         raw_output = tokenizer.decode(output[0], skip_special_tokens=True, clean_up_tokenization_spaces=True)
         answer = raw_output.strip()
 
-        # 무의미한 반복 제거
-        bad_tokens = ["하십시오", "하실 수", "알고 싶어요", "하는데 필요한", "것을", "한다", "하십시오.", "하시기 바랍니다"]
-        for token in bad_tokens:
-            answer = answer.replace(token, "")
+        # 정제: 중복 제거 및 어색한 접미사 필터링
+        answer = answer.replace("#", "").replace("###", "").replace("..", ".")
+        while ".." in answer:
+            answer = answer.replace("..", ".")
 
-        # 너무 짧거나 어색한 경우 예외처리
-        if len(answer) < 10 or answer.count(" ") < 3:
-            answer = "해당 문서에서 예약 방법에 대한 명확한 정보를 찾을 수 없습니다."
+        # # 이상한 반복 문자열 제거
+        # if answer.count(".") > 20 or len(answer) > 1000:
+        #     answer = "해당 문서들 간의 비교 정보를 찾을 수 없습니다."
+
+        # # 매우 짧거나 무의미한 경우 기본 문장 처리
+        # if len(answer) < 10 or answer.count(" ") < 3:
+        #     answer = "해당 문서에서 질문에 대한 명확한 정보를 찾을 수 없습니다."
 
         return answer
 
