@@ -111,7 +111,20 @@ def generate_answer(prompt: str, model_info: Dict, generation_config: Dict) -> s
         with torch.no_grad():
             output = model.generate(**generate_kwargs)
 
-        return tokenizer.decode(output[0], skip_special_tokens=True)
+        # 생성 후 후처리
+        raw_output = tokenizer.decode(output[0], skip_special_tokens=True, clean_up_tokenization_spaces=True)
+        answer = raw_output.strip()
+
+        # 무의미한 반복 제거
+        bad_tokens = ["하십시오", "하실 수", "알고 싶어요", "하는데 필요한", "것을", "한다", "하십시오.", "하시기 바랍니다"]
+        for token in bad_tokens:
+            answer = answer.replace(token, "")
+
+        # 너무 짧거나 어색한 경우 예외처리
+        if len(answer) < 10 or answer.count(" ") < 3:
+            answer = "해당 문서에서 예약 방법에 대한 명확한 정보를 찾을 수 없습니다."
+
+        return answer
 
     elif model_info["type"] == "openai":
         import openai
