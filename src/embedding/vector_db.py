@@ -10,6 +10,8 @@ from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_openai import OpenAIEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
 
+from src.utils.path import get_project_root_dir
+
 def generate_embedding(embed_model_name: str) -> Union[OpenAIEmbeddings, HuggingFaceEmbeddings]:
     """
     임베딩 모델을 초기화합니다.
@@ -63,8 +65,7 @@ def generate_vector_db(
         raise ValueError(f"❌ [Value] (vector_db.generate_vector_db) 임베딩 차원 계산을 실패했습니다.: {e}")
 
     try:
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        output_path = os.path.join(base_dir, "data")
+        output_path = os.path.join(get_project_root_dir(), "data")
         if not os.path.exists(output_path):
             os.makedirs(output_path, exist_ok=True)
         

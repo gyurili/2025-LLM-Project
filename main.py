@@ -1,7 +1,7 @@
 import os
 import yaml
 
-from src.data_loader import data_load, data_process, data_chunking
+from src.loader.data_loader import data_load, data_process, data_chunking
 from src.vector_db import generate_vector_db, load_vector_db
 
 # from src.retrieval import retrieve_documents
