@@ -28,7 +28,10 @@ def generate_embedding(embed_model_name: str) -> Union[OpenAIEmbeddings, Hugging
     try:
         if embed_model_name == "openai":
             load_dotenv()
-            return OpenAIEmbeddings()
+            api_key = os.getenv("OPENAI_API_KEY")
+            if not api_key:
+                raise ValueError("❌ OPENAI_API_KEY가 .env에 정의되어 있지 않습니다.")
+            return OpenAIEmbeddings(openai_api_key=api_key)
         else:
             return HuggingFaceEmbeddings(model_name=embed_model_name)
     except Exception as e:
@@ -38,7 +41,8 @@ def generate_vector_db(
         all_chunks: List[Document], 
         embed_model_name: str,
         index_name: str,
-        db_type: str = "faiss"
+        db_type: str = "faiss",
+        is_save: bool = True
     ) -> Union[FAISS, Chroma]:
     """
     FAISS 기반 벡터 DB를 생성하고 로컬에 저장합니다.
@@ -48,6 +52,7 @@ def generate_vector_db(
         embed_model_name (str): 사용할 임베딩 모델 이름
         index_name (str): 벡터 DB 인덱스 이름
         db_type (str): 사용할 벡터 DB 타입 ('faiss' 또는 'chroma')
+        is_save (bool): 만들어진 vector db를 저장 할건지
 
     Returns:
         VectorStore 객체
@@ -60,7 +65,11 @@ def generate_vector_db(
 
     embeddings = generate_embedding(embed_model_name)
     try:
-        dimension = len(embeddings.embed_query("hello world"))
+        if isinstance(embeddings, HuggingFaceEmbeddings):
+            dimension = len(embeddings.embed_query("hello world"))
+        else:
+            dimension = 1536 # OpenAI의 경우 .embed_query 비용 발생, 수동 입력으로 비용 절감.
+
     except Exception as e:
         raise ValueError(f"❌ [Value] (vector_db.generate_vector_db) 임베딩 차원 계산을 실패했습니다.: {e}")
 
@@ -74,10 +83,11 @@ def generate_vector_db(
                 embedding_function=embeddings,
                 index=faiss.IndexFlatL2(dimension),
                 docstore=InMemoryDocstore(),
-                index_to_docstore_id={}
             )
             vector_store.add_documents(all_chunks)
-            vector_store.save_local(folder_path=output_path, index_name=index_name)
+            if is_save:
+                vector_store.save_local(folder_path=output_path, index_name=index_name)
+                
         elif db_type == "chroma":
             chroma_path = os.path.join(output_path, index_name)
             vector_store = Chroma.from_documents(
@@ -85,6 +95,9 @@ def generate_vector_db(
                 embedding=embeddings,
                 persist_directory=chroma_path,
             )
+
+            if is_save:
+                vector_store.persist()
         else:
             raise ValueError("❌ [Value] (vector_db.generate_vector_db) 지원하지 않는 벡터 DB 타입입니다. ('faiss' 또는 'chroma' 사용)")
         
