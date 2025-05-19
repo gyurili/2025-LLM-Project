@@ -28,7 +28,7 @@ def retrieval_main(config, vector_store, chunks):
         print(f"    -벡터 DB 파일: {index_name}")
         for i, doc in enumerate(docs, 1):
             print(f"\n📄 문서 {i}")
-            print(f"본문:\n{doc['page_content'][:300]}...")
-            print(f"메타데이터: {doc['metadata']}")
+            print(f"본문:\n{doc.page_content[:300]}...")
+            print(f"메타데이터: {doc.metadata}")
             
     return docs
