@@ -84,40 +84,72 @@ def retrieve_top_documents_from_metadata(query, csv_path, top_k=5, verbose=False
     Returns:
         pd.DataFrame: 상위 top_k 문서 정보 + 유사도 점수
     """
-    # 0. 모델 로드
-    sbert_model = SentenceTransformer("snunlp/KR-SBERT-V40K-klueNLI-augSTS")
-    
-    # 1. CSV 파일 로드
-    df = pd.read_csv(csv_path)
+    try:
+        # 0. 모델 로드
+        sbert_model = SentenceTransformer("snunlp/KR-SBERT-V40K-klueNLI-augSTS")
+    except Exception as e:
+        raise RuntimeError(f"❌ SBERT 모델 로딩 실패: {str(e)}")
 
-    # 2. 문서별 메타데이터 기반 임베딩 텍스트 생성
+    # 1. CSV 파일 로드
+    if not os.path.exists(csv_path):
+        raise FileNotFoundError(f"❌ 파일을 찾을 수 없습니다: {csv_path}")
+    
+    try:
+        df = pd.read_csv(csv_path)
+    except Exception as e:
+        raise ValueError(f"❌ CSV 파일 로딩 실패: {str(e)}")
+    
+    # 2. 필요한 열 존재 여부 확인
+    required_columns = ["사업명", "발주 기관", "사업 요약", "파일명"]
+    for col in required_columns:
+        if col not in df.columns:
+            raise KeyError(f"❌ '{col}' 열이 CSV에 존재하지 않습니다.")
+
+    # 3. 임베딩용 텍스트 생성
     def make_embedding_text(row):
         return f"{row['사업명']} {row['발주 기관']} {row['사업 요약']}"
     
-    df["임베딩텍스트"] = df.apply(make_embedding_text, axis=1)
+    try:
+        df["임베딩텍스트"] = df.apply(make_embedding_text, axis=1)
+    except Exception as e:
+        raise RuntimeError(f"❌ 임베딩 텍스트 생성 중 오류: {str(e)}")
 
-    # 3. 문서 임베딩 생성
-    doc_embeddings = sbert_model.encode(df["임베딩텍스트"].tolist(), convert_to_tensor=True)
+    # 4. 문서 임베딩 생성
+    try:
+        doc_embeddings = sbert_model.encode(df["임베딩텍스트"].tolist(), convert_to_tensor=True)
+    except Exception as e:
+        raise RuntimeError(f"❌ 문서 임베딩 생성 실패: {str(e)}")
 
-    # 4. 질문 임베딩 생성
-    query_embedding = sbert_model.encode(query, convert_to_tensor=True)
+    # 5. 질문 임베딩 생성
+    try:
+        query_embedding = sbert_model.encode(query, convert_to_tensor=True)
+    except Exception as e:
+        raise RuntimeError(f"❌ 질문 임베딩 생성 실패: {str(e)}")
 
-    # 5. 유사도 계산
-    similarities = cosine_similarity(query_embedding.cpu().numpy().reshape(1, -1), doc_embeddings.cpu().numpy())[0]
+    # 6. 유사도 계산
+    try:
+        similarities = cosine_similarity(
+            query_embedding.cpu().numpy().reshape(1, -1), 
+            doc_embeddings.cpu().numpy()
+        )[0]
+    except Exception as e:
+        raise RuntimeError(f"❌ 유사도 계산 중 오류: {str(e)}")
 
-    # 6. 상위 top_k 인덱스 추출
+    # 7. 상위 top_k 인덱스 추출
     top_k_indices = np.argsort(similarities)[::-1][:top_k]
 
-    # 7. 결과 DataFrame 추출
-    top_docs = df.iloc[top_k_indices].copy()
-    top_docs["유사도"] = similarities[top_k_indices]
+    # 8. 결과 DataFrame 반환
+    try:
+        top_docs = df.iloc[top_k_indices].copy()
+        top_docs["유사도"] = similarities[top_k_indices]
+    except Exception as e:
+        raise RuntimeError(f"❌ 결과 데이터프레임 생성 실패: {str(e)}")
 
-    if verbose == True:
+    if verbose:
+        print("📄 Top 문서 목록:")
         print(top_docs[["파일명", "유사도"]])
 
-
     return top_docs
-
 
 from src.utils.path import get_project_root_dir
 
