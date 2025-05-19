@@ -68,6 +68,24 @@ def embedding_main(config: dict, chunks: List[Document]) -> Union[FAISS, Chroma]
         db_exists = os.path.exists(faiss_file) and os.path.exists(pkl_file)
     elif db_type == "chroma":
         chroma_dir = os.path.join(vector_db_path, generate_index_name(config))
+        sqlite_path = os.path.join(chroma_dir, "chroma.sqlite3")
+
+        # 필수 요소가 모두 존재하는지 확인
+        has_sqlite = os.path.exists(sqlite_path)
+        has_index_dirs = any(
+            os.path.isdir(os.path.join(chroma_dir, d))
+            and len(os.listdir(os.path.join(chroma_dir, d))) > 0
+            for d in os.listdir(chroma_dir)
+            if os.path.isdir(os.path.join(chroma_dir, d))
+        ) if os.path.exists(chroma_dir) else False
+    
+        db_exists = has_sqlite and has_index_dirs
+    
+        # 불완전한 DB면 삭제
+        if os.path.exists(chroma_dir) and not db_exists:
+            print("⚠️ 불완전한 Chroma 벡터 DB가 감지되어 삭제합니다.")
+            shutil.rmtree(chroma_dir)
+            db_exists = False
         db_exists = os.path.isdir(chroma_dir) and os.path.exists(os.path.join(chroma_dir, "chroma.sqlite3"))
     else:
         raise ValueError(f"❌(embedding.embedding_main) 지원하지 않는 DB 타입입니다: {db_type}")
