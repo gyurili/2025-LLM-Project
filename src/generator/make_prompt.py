@@ -14,8 +14,8 @@ def build_prompt(
     prompt_template: str = None
 ) -> str:
     """
-    검색된 문서 청크의 앞뒤 ±N 범위 인접 청크를 포함해 프롬프트를 구성합니다.
-
+    주어진 질문과 검색된 문서들을 기반으로 프롬프트를 구성합니다.
+    
     Args:
         question (str): 사용자 질문
         retrieved_docs (List[Document]): 검색된 핵심 청크들
@@ -25,6 +25,9 @@ def build_prompt(
     Returns:
         str: 구성된 프롬프트 문자열
     """
+    if not retrieved_docs:
+        raise ValueError("❌ (generator.make_prompt.build_prompt) 검색된 문서가 없습니다.")
+
     context_blocks = []
 
     for chunk in retrieved_docs:
@@ -57,22 +60,3 @@ def build_prompt(
         )
 
     return prompt_template.format(context=context_text, question=question)
-
-
-# from langchain.vectorstores.faiss import FAISS
-# from langchain_chroma import Chroma
-
-# def get_all_documents_from_vectorstore(vectorstore: FAISS) -> List[Document]:
-#     """
-#     FAISS 벡터스토어에서 전체 Document 리스트를 반환합니다.
-
-#     Args:
-#         vectorstore (FAISS): 벡터스토어 객체
-
-#     Returns:
-#         List[Document]: 전체 문서 청크 리스트
-#     """
-#     if not hasattr(vectorstore, "docstore") or not hasattr(vectorstore.docstore, "_dict"):
-#         raise ValueError("해당 벡터스토어는 docstore 정보를 제공하지 않습니다.")
-
-#     return list(vectorstore.docstore._dict.values())
