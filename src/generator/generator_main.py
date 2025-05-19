@@ -1,12 +1,11 @@
 from typing import List
 from langchain.schema import Document
 from generator.load_model import load_generator_model, generate_answer
-from generator.make_prompt import build_prompt_with_expansion, get_all_documents_from_vectorstore
+from generator.make_prompt import build_prompt
 
 
 def generator_main(
     retrieved_docs: List[Document],
-    vectorstore,
     config: dict
 ) -> str:
     """
@@ -22,14 +21,10 @@ def generator_main(
     """
     # 1. 프롬프트 생성
     query = config["retriever"]["query"]
-    all_docs = get_all_documents_from_vectorstore(vectorstore) if vectorstore else []
-    window = 1 if vectorstore else 0
 
-    prompt = build_prompt_with_expansion(
+    prompt = build_prompt(
         question=query,
         retrieved_docs=retrieved_docs,
-        all_docs=all_docs,
-        window=window,
         include_source=config.get("include_source", True),
         prompt_template=config.get("prompt_template")
     )

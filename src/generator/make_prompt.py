@@ -4,7 +4,7 @@ from langchain.schema import Document
 
 '''
     To Do:
-        - 입력된 query, question에 따라 프롬프트를 구성하는 기능
+        - 입력된 질문에 따라 프롬프트를 구성하는 기능
 '''
 
 def build_prompt(
