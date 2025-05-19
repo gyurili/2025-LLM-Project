@@ -22,7 +22,7 @@ retriever:
 
 generator:
     model_type: "huggingface"
-    model_name: "ex"
+    model_name: "EleutherAI/polyglot-ko-1.3b"
     max_length: 512
     
 # settings
