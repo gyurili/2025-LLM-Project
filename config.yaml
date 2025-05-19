@@ -24,7 +24,8 @@ generator:
     model_type: "huggingface"
     model_name: "EleutherAI/polyglot-ko-1.3b"
     max_length: 512
-    
+    use_quantization: False
+
 # settings
 settings:
     verbose: True
