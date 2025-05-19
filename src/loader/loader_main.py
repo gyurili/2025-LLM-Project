@@ -1,7 +1,6 @@
 from typing import List
 from langchain.schema import Document
 from src.loader.data_loader import (retrieve_top_documents_from_metadata, data_process)
-from src.loader.data_loader import (data_load, data_process)
 from src.loader.splitter import (data_chunking, summarize_chunk_quality)
 
 
@@ -33,7 +32,7 @@ def loader_main(config: dict) -> List[Document]:
     print("✅ 청크 생성 완료")
 
     # 4. 청크 품질 검사
-    summarize_chunk_quality(chunks, config.get("settings", {}).get("verbose", False))
+    summarize_chunk_quality(chunks, verbose)
     print("✅ 청크 품질 검사 완료")
 
     return chunks
