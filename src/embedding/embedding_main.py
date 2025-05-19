@@ -28,7 +28,6 @@ def generate_index_name(config: dict) -> str:
         str: 자동 생성된 인덱스 이름 (예: all_100_recursive_openai_faiss_index)
     """
     data_type = config.get("data", {}).get("file_type", "all")
-    limit = config.get("data", {}).get("limit", 100)
     splitter = config.get("data", {}).get("splitter", "recursive")
     model = config.get("embedding", {}).get("embed_model", "default")
     db_type = config.get("embedding", {}).get("db_type", "faiss")
@@ -37,7 +36,7 @@ def generate_index_name(config: dict) -> str:
     model_key = model.split("/")[-1] if "/" in model else model
     model_key = model_key.replace('-', '_').replace(' ', '_')
 
-    return f"{data_type}_{limit}_{splitter}_{model_key}_{db_type}"
+    return f"{data_type}_{splitter}_{model_key}_{db_type}"
 
 
 def embedding_main(config: dict, chunks: List[Document]) -> Union[FAISS, Chroma]:
