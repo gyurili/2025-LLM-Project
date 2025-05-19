@@ -1,9 +1,11 @@
 from typing import List
 from langchain.schema import Document
-from generator import load_generator_model, generate_answer, build_prompt_with_expansion, get_all_documents_from_vectorstore
+from src.generator.generator import load_generator_model, generate_answer, build_prompt_with_expansion, get_all_documents_from_vectorstore
+from langsmith import traceable
+    
 
-
-def run_generation(
+@traceable(name="rag_generator_run")
+def generator_main(
     retrieved_docs: List[Document],
     vectorstore,
     config: dict
