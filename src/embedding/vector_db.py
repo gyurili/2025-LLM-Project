@@ -111,9 +111,6 @@ def generate_vector_db(
 
             vector_store = add_docs_in_batch(vector_store, all_chunks)
             
-            if is_save:
-                vector_store.persist()
-                print("✅ [Success] Chroma vector DB 저장 성공.")
         else:
             raise ValueError("❌ [Value] (vector_db.generate_vector_db) 지원하지 않는 벡터 DB 타입입니다. ('faiss' 또는 'chroma' 사용)")
         
