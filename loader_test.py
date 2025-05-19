@@ -14,7 +14,6 @@ if __name__ == '__main__':
     config = load_config(config_path)
     print("✅ Config 로드 완료")
 
-    df = loader_main(config)
+    chunks = loader_main(config)
 
     print("✅ 데이터 로드 및 전처리 완료")
-    print(df.head())
