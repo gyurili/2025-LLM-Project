@@ -25,4 +25,4 @@ if __name__ == "__main__":
     print("✅ 검색 완료")
 
     # 답변 생성
-    generator_main(docs, None, config)
+    answer = generator_main(docs, config)
