@@ -8,6 +8,7 @@ from langchain.schema.runnable import RunnablePassthrough
 from langchain.schema.output_parser import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, pipeline
+from langsmith import traceable
 
 
 def load_generator_model(config: Dict) -> Dict:
@@ -69,6 +70,7 @@ def load_generator_model(config: Dict) -> Dict:
         raise ValueError(f"Unsupported model type: {model_type}")
 
 
+@traceable(name="generate_answer")
 def generate_answer(prompt: str, model_info: Dict, generation_config: Dict) -> str:
     """
     주어진 프롬프트를 기반으로 다양한 언어 모델로부터 답변을 생성합니다.
