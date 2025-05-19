@@ -2,7 +2,7 @@ from src.retrieval.retrieval import retrieve_documents
 from src.embedding.vector_db import load_vector_db
 from src.embedding.embedding_main import generate_index_name
 
-    
+
 def retrieval_main(config, vector_store, chunks):  
     index_name = generate_index_name(config)
 
