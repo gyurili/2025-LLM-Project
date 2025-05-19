@@ -63,9 +63,5 @@ def retrieve_documents(
         docs = unique_docs[:top_k]
     else:
         raise ValueError(f"❌ [Value] (retrieval.retrieve_documents.search_type) 지원하지 않는 검색 방식입니다: {search_type}")
-        
-    result = []
-    for doc in docs:
-        result.append({"page_content": doc.page_content, "metadata": doc.metadata})
 
-    return result
+    return docs

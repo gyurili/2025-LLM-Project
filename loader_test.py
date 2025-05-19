@@ -15,3 +15,5 @@ if __name__ == '__main__':
     print("✅ Config 로드 완료")
 
     chunks = loader_main(config)
+
+    print("✅ 데이터 로드 및 전처리 완료")

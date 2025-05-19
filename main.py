@@ -6,6 +6,39 @@ import yaml
 
 # from src.retrieval import retrieve_documents
 
+# config와 관련된 함수는 main 또는 utils에서 관리하는 것이 좋아 이곳에 만들었습니다.
+def generate_index_name(config: dict) -> str:
+    """
+    config 설정값을 조합하여 벡터 DB 인덱스 이름을 생성합니다.
+
+    구성 요소:
+    - data.type
+    - data.limit
+    - chunk.splitter
+    - embedding.model
+    - embedding.db_type
+
+    모델명이 경로 형태일 경우 마지막 항목만 사용하며,
+    하이픈(-), 슬래시(/), 공백은 언더스코어(_)로 변환합니다.
+
+    Args:
+        config (dict): 설정 딕셔너리
+
+    Returns:
+        str: 자동 생성된 인덱스 이름 (예: all_100_recursive_openai_faiss_index)
+    """
+    data_type = config.get("data", {}).get("type", "all")
+    limit = config.get("data", {}).get("limit", 100)
+    splitter = config.get("chunk", {}).get("splitter", "recursive")
+    model = config.get("embedding", {}).get("embed_model", "default")
+    db_type = config.get("embedding", {}).get("db_type", "faiss")
+
+    # 모델 이름에서 마지막 슬래시 기준 요소만 추출 후 특수문자 제거
+    model_key = model.split("/")[-1] if "/" in model else model
+    model_key = model_key.replace('-', '_').replace(' ', '_')
+
+    return f"{data_type}_{limit}_{splitter}_{model_key}_{db_type}"
+
 
 # if __name__ == "__main__":
 #     try:
