@@ -3,7 +3,7 @@ import torch
 from typing import Dict
 from inspect import signature
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
-from langsmith import traceable
+from langsmith import trace
 
 
 def load_generator_model(config: Dict) -> Dict:
@@ -69,11 +69,10 @@ def load_generator_model(config: Dict) -> Dict:
         raise ValueError(f"Unsupported model type: {model_type}")
 
 
-@traceable(name="generate_answer")
 def generate_answer(prompt: str, model_info: Dict, generation_config: Dict) -> str:
     """
     주어진 프롬프트를 기반으로 다양한 언어 모델로부터 답변을 생성합니다.
-    LangSmith 트레이서를 통해 실행 기록을 남깁니다.
+    LangSmith 수동 트레이싱을 통해 실행 기록을 명시적으로 남깁니다.
 
     Args:
         prompt (str): 생성할 프롬프트
@@ -87,45 +86,52 @@ def generate_answer(prompt: str, model_info: Dict, generation_config: Dict) -> s
         - 응답 후처리 필터 추가
         - 출력 문자열 정제 옵션 추가
     """
-    if model_info["type"] == "hf":
-        tokenizer = model_info["tokenizer"]
-        model = model_info["model"]
+    with trace(name="generate_answer", inputs={"prompt": prompt}) as run:
+        if model_info["type"] == "hf":
+            tokenizer = model_info["tokenizer"]
+            model = model_info["model"]
 
-        inputs = tokenizer(prompt, return_tensors="pt")
-        input_ids = inputs["input_ids"].to(model.device)
-        attention_mask = inputs["attention_mask"].to(model.device)
+            inputs = tokenizer(prompt, return_tensors="pt")
+            input_ids = inputs["input_ids"].to(model.device)
+            attention_mask = inputs["attention_mask"].to(model.device)
 
-        generate_kwargs = {
-            "input_ids": input_ids,
-            "attention_mask": attention_mask,
-            "max_new_tokens": generation_config.get("max_length", 512),
-            "do_sample": False,
-            "eos_token_id": tokenizer.eos_token_id or tokenizer.pad_token_id,
-            "repetition_penalty": 1.2
-        }
+            generate_kwargs = {
+                "input_ids": input_ids,
+                "attention_mask": attention_mask,
+                "max_new_tokens": generation_config.get("max_length", 512),
+                "do_sample": False,
+                "eos_token_id": tokenizer.eos_token_id or tokenizer.pad_token_id,
+                "repetition_penalty": 1.2
+            }
 
-        generate_signature = signature(model.generate).parameters
-        if "token_type_ids" in inputs and "token_type_ids" in generate_signature:
-            generate_kwargs["token_type_ids"] = inputs["token_type_ids"].to(model.device)
+            generate_signature = signature(model.generate).parameters
+            if "token_type_ids" in inputs and "token_type_ids" in generate_signature:
+                generate_kwargs["token_type_ids"] = inputs["token_type_ids"].to(model.device)
 
-        with torch.no_grad():
-            output = model.generate(**generate_kwargs)
+            with torch.no_grad():
+                output = model.generate(**generate_kwargs)
 
-        return tokenizer.decode(output[0], skip_special_tokens=True)
+            result = tokenizer.decode(output[0], skip_special_tokens=True)
+            run.add_outputs({"output": result})
+            return result
 
-    elif model_info["type"] == "openai":
-        import openai
-        openai.api_key = os.getenv("OPENAI_API_KEY")
-        response = openai.ChatCompletion.create(
-            model=model_info["model"],
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=generation_config.get("max_length", 512),
-            temperature=0.0
-        )
-        return response["choices"][0]["message"]["content"]
+        elif model_info["type"] == "openai":
+            import openai
+            openai.api_key = os.getenv("OPENAI_API_KEY")
+            response = openai.ChatCompletion.create(
+                model=model_info["model"],
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=generation_config.get("max_length", 512),
+                temperature=0.0
+            )
+            result = response["choices"][0]["message"]["content"]
+            run.add_outputs({"output": result})
+            return result
 
-    elif model_info["type"] == "mock":
-        return "이건 테스트용 응답입니다."
+        elif model_info["type"] == "mock":
+            result = "이건 테스트용 응답입니다."
+            run.add_outputs({"output": result})
+            return result
 
-    else:
-        raise ValueError("Unsupported model type")
+        else:
+            raise ValueError("Unsupported model type")
