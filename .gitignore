@@ -151,8 +151,8 @@ data/files/
 *.pdf
 *.csv
 
-# Notebook file
-Data.ipynb
+# data exception
+data/*
 
 # Vectoc_db
 *.faiss
