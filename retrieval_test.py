@@ -21,5 +21,5 @@ if __name__ == '__main__':
     vector_store = embedding_main(config, chunks)
     print("✅ 벡터 DB 생성 완료")
 
-    docs = retrieval_main(config, vector_store)
+    docs = retrieval_main(config, vector_store, chunks)
     print("✅ retrieval 검색 완료")

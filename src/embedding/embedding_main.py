@@ -55,7 +55,7 @@ def embedding_main(config: dict, chunks: List[Document]) -> Union[FAISS, Chroma]
         raise ValueError("❌(embedding.embedding_main) chunks는 Document 객체의 리스트여야 합니다.")
 
     embed_config = config.get("embedding", {})
-    embed_model = embed_config.get("model", "openai")
+    embed_model = embed_config.get("embed_model", "openai")
     project_root = get_project_root_dir()
     vector_db_path = os.path.join(project_root, embed_config.get("vector_db_path", "data"))
     if not os.path.exists(vector_db_path):
