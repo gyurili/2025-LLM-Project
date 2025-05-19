@@ -17,7 +17,7 @@ embedding:
 
 retriever:
     search_type: "similarity" # hybrid
-    query: "배드민턴장 및 탁구장 예약방법"
+    query: "고려대학교 차세대 포털 시스템 사업이랑 광주과학기술원의 학사 시스템 기능개선 사업을 비교해 줄래?"
     top_k: 5
 
 generator:

@@ -6,6 +6,7 @@ if __name__ == "__main__":
     from src.generator.generator_main import generator_main
     from src.utils.config import load_config
     from src.utils.path import get_project_root_dir
+    from dotenv import load_dotenv
     
     project_root = get_project_root_dir()
     print(f"Project root directory: {project_root}")
@@ -13,6 +14,10 @@ if __name__ == "__main__":
     print(f"Config file path: {config_path}")
 
     config = load_config(config_path)
+
+    # .env 불러오기
+    dotenv_path = os.path.join(project_root, ".env")
+    load_dotenv(dotenv_path=dotenv_path)
 
     # 데이터 로드 및 청킹
     chunk = loader_main(config)
