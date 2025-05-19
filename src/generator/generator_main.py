@@ -38,5 +38,7 @@ def generator_main(
         model_info=model_info,
         generation_config=config.get("generator", {})
     )
+    print(answer)
+    print("✅ 답변 생성 완료")
 
     return answer
