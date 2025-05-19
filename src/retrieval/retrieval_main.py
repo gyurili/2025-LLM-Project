@@ -2,7 +2,7 @@ from src.retrieval.retrieval import retrieve_documents
 from src.embedding.vector_db import load_vector_db
 from src.embedding.embedding_main import generate_index_name
 
-    
+
 def retrieval_main(config, vector_store, chunks):  
     index_name = generate_index_name(config)
 
@@ -18,14 +18,17 @@ def retrieval_main(config, vector_store, chunks):
     query = config.get("retriever", {}).get("query", "")
     top_k = config.get("retriever", {}).get("top_k", 5)
     search_type = config.get("retriever", {}).get("search_type", "similarity")
+    rerank = config.get("retriever", {}).get("rerank", True)
+    rerank_top_k = config.get("retriever", {}).get("rerank_top_k", 3)
     verbose = config.get("settings", {}).get("verbose", False)
-        
-    docs = retrieve_documents(query, vector_store, top_k, search_type, chunks)
+
+    docs = retrieve_documents(query, vector_store, top_k, search_type, chunks, embed_model, rerank, rerank_top_k)
     if verbose:
         print(f"    -임베딩 모델: {embed_model}")
         print(f"    -DB 타입: {db_type}")
-        print(f"    -벡터 DB 경로: {vector_db_path}")
         print(f"    -벡터 DB 파일: {index_name}")
+        print(f"    -청킹 검색 type: {search_type}")
+        print(f"    -reRank 적용 여부: {rerank}")
         for i, doc in enumerate(docs, 1):
             print(f"\n📄 문서 {i}")
             print(f"본문:\n{doc.page_content[:300]}...")
