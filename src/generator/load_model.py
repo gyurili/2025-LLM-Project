@@ -2,12 +2,7 @@ import os
 import torch
 from typing import Dict
 from inspect import signature
-from langchain_community.llms import OpenAI
-from langchain_huggingface import HuggingFacePipeline
-from langchain.schema.runnable import RunnablePassthrough
-from langchain.schema.output_parser import StrOutputParser
-from langchain_core.prompts import PromptTemplate
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, pipeline
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from langsmith import traceable
 
 
@@ -20,6 +15,10 @@ def load_generator_model(config: Dict) -> Dict:
 
     Returns:
         Dict: {type, tokenizer, model} 형태의 딕셔너리
+
+    To Do:
+        - 모델 캐시 경로 지정 옵션 추가
+        - 토크나이저 padding 관련 설정 명시화
     """
     model_type = config["generator"]["model_type"]
     model_name = config["generator"]["model_name"]
@@ -83,6 +82,10 @@ def generate_answer(prompt: str, model_info: Dict, generation_config: Dict) -> s
 
     Returns:
         str: 생성된 텍스트 응답
+
+    TODO:
+        - 응답 후처리 필터 추가
+        - 출력 문자열 정제 옵션 추가
     """
     if model_info["type"] == "hf":
         tokenizer = model_info["tokenizer"]

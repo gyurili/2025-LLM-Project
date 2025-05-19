@@ -1,7 +1,7 @@
 from typing import List
 from langchain.schema import Document
-from generator.load_model import load_generator_model, generate_answer
-from generator.make_prompt import build_prompt_with_expansion, get_all_documents_from_vectorstore
+from src.generator.load_model import load_generator_model, generate_answer
+from src.generator.make_prompt import build_prompt_with_expansion, get_all_documents_from_vectorstore
 
 
 def generator_main(
