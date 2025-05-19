@@ -24,7 +24,7 @@ retriever:
 
 generator:
     model_type: "huggingface"
-    model_name: "EleutherAI/polyglot-ko-1.3b"
+    model_name: "microsoft/Phi-4-mini-instruct"
     max_length: 512
     use_quantization: False
 
