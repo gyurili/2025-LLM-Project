@@ -88,22 +88,22 @@ def retrieve_top_documents_from_metadata(query, csv_path, top_k=5, verbose=False
         # 0. 모델 로드
         sbert_model = SentenceTransformer("snunlp/KR-SBERT-V40K-klueNLI-augSTS")
     except Exception as e:
-        raise RuntimeError(f"❌ SBERT 모델 로딩 실패: {str(e)}")
+        raise RuntimeError(f"❌ (data_loader.retrieve_top_documents_from_metadata) SBERT 모델 로딩 실패: {str(e)}")
 
     # 1. CSV 파일 로드
     if not os.path.exists(csv_path):
-        raise FileNotFoundError(f"❌ 파일을 찾을 수 없습니다: {csv_path}")
+        raise FileNotFoundError(f"❌ (data_loader.retrieve_top_documents_from_metadata) 파일을 찾을 수 없습니다: {csv_path}")
     
     try:
         df = pd.read_csv(csv_path)
     except Exception as e:
-        raise ValueError(f"❌ CSV 파일 로딩 실패: {str(e)}")
+        raise ValueError(f"❌ (data_loader.retrieve_top_documents_from_metadata) CSV 파일 로딩 실패: {str(e)}")
     
     # 2. 필요한 열 존재 여부 확인
     required_columns = ["사업명", "발주 기관", "사업 요약", "파일명"]
     for col in required_columns:
         if col not in df.columns:
-            raise KeyError(f"❌ '{col}' 열이 CSV에 존재하지 않습니다.")
+            raise KeyError(f"❌ (data_loader.retrieve_top_documents_from_metadata) '{col}' 열이 CSV에 존재하지 않습니다.")
 
     # 3. 임베딩용 텍스트 생성
     def make_embedding_text(row):
@@ -112,19 +112,19 @@ def retrieve_top_documents_from_metadata(query, csv_path, top_k=5, verbose=False
     try:
         df["임베딩텍스트"] = df.apply(make_embedding_text, axis=1)
     except Exception as e:
-        raise RuntimeError(f"❌ 임베딩 텍스트 생성 중 오류: {str(e)}")
+        raise RuntimeError(f"❌ (data_loader.retrieve_top_documents_from_metadata) 임베딩 텍스트 생성 중 오류: {str(e)}")
 
     # 4. 문서 임베딩 생성
     try:
         doc_embeddings = sbert_model.encode(df["임베딩텍스트"].tolist(), convert_to_tensor=True)
     except Exception as e:
-        raise RuntimeError(f"❌ 문서 임베딩 생성 실패: {str(e)}")
+        raise RuntimeError(f"❌ (data_loader.retrieve_top_documents_from_metadata) 문서 임베딩 생성 실패: {str(e)}")
 
     # 5. 질문 임베딩 생성
     try:
         query_embedding = sbert_model.encode(query, convert_to_tensor=True)
     except Exception as e:
-        raise RuntimeError(f"❌ 질문 임베딩 생성 실패: {str(e)}")
+        raise RuntimeError(f"❌ (data_loader.retrieve_top_documents_from_metadata) 질문 임베딩 생성 실패: {str(e)}")
 
     # 6. 유사도 계산
     try:
@@ -133,7 +133,7 @@ def retrieve_top_documents_from_metadata(query, csv_path, top_k=5, verbose=False
             doc_embeddings.cpu().numpy()
         )[0]
     except Exception as e:
-        raise RuntimeError(f"❌ 유사도 계산 중 오류: {str(e)}")
+        raise RuntimeError(f"❌ (data_loader.retrieve_top_documents_from_metadata) 유사도 계산 중 오류: {str(e)}")
 
     # 7. 상위 top_k 인덱스 추출
     top_k_indices = np.argsort(similarities)[::-1][:top_k]
