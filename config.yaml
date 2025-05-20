@@ -2,12 +2,12 @@
 data:
     folder_path: "data/files"
     data_list_path: "data/data_list.csv"
-    top_k: 5 # 최대 몇개까지 1 ~ 100 
+    top_k: 10 # 최대 몇개까지 1 ~ 100 
     file_type: "all" # "hwp" 또는 "pdf", "all"
     apply_ocr: False # True/ False
-    splitter: "recursive" # "recursive", "token"
+    splitter: "section+recursive" # "recursive", "token", "section+recursive"
     chunk_size: 1000            # KoE5는 허용 토큰이 많은 편이기에, chunk_size를 높일 수 있다.
-    chunk_overlap: 100 
+    chunk_overlap: 250 
 
 embedding:
     # openai 사용시 "text-embedding-3-small" 권장
