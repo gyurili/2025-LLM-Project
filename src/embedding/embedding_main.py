@@ -1,4 +1,5 @@
 import os
+import shutil
 from typing import List, Union
 from langchain.schema import Document
 from langchain_community.vectorstores import FAISS
@@ -34,8 +35,10 @@ def generate_index_name(config: dict) -> str:
     # 모델 이름에서 마지막 슬래시 기준 요소만 추출 후 특수문자 제거
     model_key = model.split("/")[-1] if "/" in model else model
     model_key = model_key.replace('-', '_').replace(' ', '_')
-
-    return f"{data_type}_{splitter}_{model_key}_{db_type}"
+    if config['data']['top_k'] == 100:
+        return f"{data_type}_{config['data']['top_k']}_{splitter}_{model_key}_{db_type}"
+    else:
+        return f"{data_type}_{splitter}_{model_key}_{db_type}"
 
 
 def embedding_main(config: dict, chunks: List[Document], is_save:bool = False) -> Union[FAISS, Chroma]:
@@ -72,7 +75,7 @@ def embedding_main(config: dict, chunks: List[Document], is_save:bool = False) -
         has_sqlite = os.path.exists(sqlite_path)
         has_index_dirs = any(
             os.path.isdir(os.path.join(chroma_dir, d))
-            and len(os.listdir(os.path.join(chroma_dir, d))) == 4
+            and len(os.listdir(os.path.join(chroma_dir, d))) >= 4
             for d in os.listdir(chroma_dir)
             if os.path.isdir(os.path.join(chroma_dir, d))
         ) if os.path.exists(chroma_dir) else False
