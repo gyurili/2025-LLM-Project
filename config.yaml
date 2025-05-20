@@ -7,7 +7,7 @@ data:
     apply_ocr: False # True/ False
     splitter: "section" # "recursive", "token", "section"
     chunk_size: 1000            # KoE5는 허용 토큰이 많은 편이기에, chunk_size를 높일 수 있다.
-    chunk_overlap: 100 
+    chunk_overlap: 250 
 
 embedding:
     # openai 사용시 "text-embedding-3-small" 권장
@@ -20,7 +20,7 @@ retriever:
     query: "한국 철도 공사와 관련된 문서가 3개인데, 문서마다 차이점이 뭐지?"
     top_k: 5
     rerank: True # True/ False
-    min_chunks: 2
+    min_chunks: 3
 
 generator:
     model_type: "openai" # "huggingface", "openai"
@@ -30,4 +30,4 @@ generator:
 
 # settings
 settings:
-    verbose: False
+    verbose: True
