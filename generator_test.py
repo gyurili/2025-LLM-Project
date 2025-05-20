@@ -23,7 +23,7 @@ if __name__ == "__main__":
     chunk = loader_main(config)
 
     # 벡터 DB 생성
-    vector_store = embedding_main(config, chunk)
+    vector_store = embedding_main(config, chunk, is_save=True)
 
     # 유사도 검색
     docs = retrieval_main(config, vector_store, chunk)
