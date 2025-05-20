@@ -69,7 +69,6 @@ with st.sidebar:
                 st.warning("OpenAI 모델을 사용하려면 API 키를 입력해야 합니다.")
 
                                                     
-
     reset_vector_db = st.button("⚠️ Vector DB 초기화")
     
     if config["embedding"]["db_type"] == "faiss":
