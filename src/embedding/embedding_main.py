@@ -13,7 +13,6 @@ def generate_index_name(config: dict) -> str:
 
     구성 요소:
     - data.type
-    - data.limit
     - chunk.splitter
     - embedding.model
     - embedding.db_type
@@ -39,9 +38,9 @@ def generate_index_name(config: dict) -> str:
     return f"{data_type}_{splitter}_{model_key}_{db_type}"
 
 
-def embedding_main(config: dict, chunks: List[Document]) -> Union[FAISS, Chroma]:
+def embedding_main(config: dict, chunks: List[Document], is_save:bool = False) -> Union[FAISS, Chroma]:
     """
-    벡터 DB를 생성하고 로드합니다.
+    벡터 DB를 생성합니다.
 
     Args:
         config (dict): 설정 정보
@@ -73,7 +72,7 @@ def embedding_main(config: dict, chunks: List[Document]) -> Union[FAISS, Chroma]
         has_sqlite = os.path.exists(sqlite_path)
         has_index_dirs = any(
             os.path.isdir(os.path.join(chroma_dir, d))
-            and len(os.listdir(os.path.join(chroma_dir, d))) > 0
+            and len(os.listdir(os.path.join(chroma_dir, d))) == 4
             for d in os.listdir(chroma_dir)
             if os.path.isdir(os.path.join(chroma_dir, d))
         ) if os.path.exists(chroma_dir) else False
@@ -88,14 +87,15 @@ def embedding_main(config: dict, chunks: List[Document]) -> Union[FAISS, Chroma]
         db_exists = os.path.isdir(chroma_dir) and os.path.exists(os.path.join(chroma_dir, "chroma.sqlite3"))
     else:
         raise ValueError(f"❌(embedding.embedding_main) 지원하지 않는 DB 타입입니다: {db_type}")
-    
-    if db_exists:
-        # 벡터 DB가 이미 존재하는 경우
-        vector_store = load_vector_db(vector_db_path, embed_model, generate_index_name(config), db_type)
-        print("✅ Vector DB 로드 완료")
-    else:
-        # 벡터 DB가 존재하지 않는 경우
+
+    if is_save:
+        # Save모드일 때 자동 생성
         vector_store = generate_vector_db(chunks, embed_model, generate_index_name(config), db_type)
         print("✅ Vector DB 생성 완료")
+    else:
+        # Save모드가 아닐 때 불러오기 
+        vector_store = load_vector_db(vector_db_path, embed_model, generate_index_name(config), db_type)
+        print("✅ Vector DB 로드 완료")
+
     
     return vector_store

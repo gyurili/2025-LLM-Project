@@ -1,5 +1,5 @@
 import os
-from typing import List, Union
+from typing import List, Union, Optional, Literal
 
 import faiss
 from dotenv import load_dotenv
@@ -9,6 +9,8 @@ from langchain_chroma import Chroma
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_openai import OpenAIEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
+from langchain.vectorstores.base import VectorStore
+
 
 from src.utils.path import get_project_root_dir
 
@@ -47,6 +49,11 @@ def generate_vector_db(
     ) -> Union[FAISS, Chroma]:
     """
     FAISS 또는 Chroma 기반 벡터 DB를 생성하고 로컬에 저장합니다.
+    
+    Note:
+        Chroma의 경우, PersistentClient를 사용할 때, 지정된 
+        디렉토리에 이미 저장된 DB가 있을 경우 덮어쓰기 시 오류가 생긴다.
+        -> 덮어쓰기 대신, 매 실행시, 생성되는 폴더를 지정 제거 후 생성 진행.
 
     Args:
         all_chunks (List[Document]): 청크된 문서 리스트
@@ -102,6 +109,7 @@ def generate_vector_db(
             if os.path.exists(chroma_path):
                 import shutil
                 shutil.rmtree(chroma_path)
+                print(f"    ⚠️ [Notification] {db_type} 덮어쓰기 오류 방지를 위한 이전 생성 DB 제거...")
                 
             vector_store = Chroma(
                 embedding_function=embeddings,
@@ -110,7 +118,7 @@ def generate_vector_db(
             )
 
             vector_store = add_docs_in_batch(vector_store, all_chunks)
-            
+            print("    ✅ [Success] Chroma vector DB 저장 성공.")
         else:
             raise ValueError("❌ [Value] (vector_db.generate_vector_db) 지원하지 않는 벡터 DB 타입입니다. ('faiss' 또는 'chroma' 사용)")
         
@@ -168,7 +176,9 @@ def load_vector_db(
 
 from tqdm import tqdm
 
-def add_docs_in_batch(vector_store, chunks, batch_size=128):
+def add_docs_in_batch(vector_store:VectorStore,
+                      chunks:Optional[List[Document]], 
+                      batch_size:int=128):
     """
     문서 chunk를 batch별 추가 하는 방식.
 
@@ -183,7 +193,7 @@ def add_docs_in_batch(vector_store, chunks, batch_size=128):
     total = len(chunks)
     pbar = tqdm(
         range(0, total, batch_size), 
-        desc=f"📌 Indexing chunks to {vector_store.__class__.__name__}",
+        desc=f"    📌 Indexing chunks to {vector_store.__class__.__name__}",
         unit="batch"
     )
 
