@@ -138,7 +138,7 @@ def data_chunking(df: pd.DataFrame, splitter_type: str = "section", size: int = 
     return all_chunks
 
 
-def insepect_sample_chunks(chunks: List[Document], file_name: str) -> None:
+def insepect_sample_chunks(chunks: List[Document], file_name: str, verbose: bool = False) -> None:
     """
     특정 파일의 청크를 샘플로 출력합니다.
 
@@ -146,26 +146,27 @@ def insepect_sample_chunks(chunks: List[Document], file_name: str) -> None:
         chunks (List[Document]): Document 객체 리스트
         file_name (str): 검사할 파일명
     """
-    file_chunks = [doc for doc in chunks if doc.metadata.get("파일명") == file_name]
-    if not file_chunks:
-        print(f"❌ [Data] (splitter.insepect_sample_chunks) {file_name}에 대한 청크가 없습니다.")
-        return
-    
-    lengths = [len(doc.page_content) for doc in file_chunks]
-    idx_max = lengths.index(max(lengths))
-    idx_min = lengths.index(min(lengths))
+    if verbose:
+        file_chunks = [doc for doc in chunks if doc.metadata.get("파일명") == file_name]
+        if not file_chunks:
+            print(f"❌ [Data] (splitter.insepect_sample_chunks) {file_name}에 대한 청크가 없습니다.")
+            return
+        
+        lengths = [len(doc.page_content) for doc in file_chunks]
+        idx_max = lengths.index(max(lengths))
+        idx_min = lengths.index(min(lengths))
 
-    selected = {
-        # "첫 청크": file_chunks[0],
-        "중간 청크": file_chunks[len(file_chunks) // 2],
-        # "마지막 청크": file_chunks[-1],
-        # "가장 긴 청크": file_chunks[idx_max],
-        # "가장 짧은 청크": file_chunks[idx_min],
-    }
-    
-    for label, doc in selected.items():
-        print(f"        - {label} 길이: {len(doc.page_content)}")
-        print(f"        - 내용: {doc.page_content[:300] + ('...' if len(doc.page_content) > 300 else '')}")
+        selected = {
+            "첫 청크": file_chunks[0],
+            "중간 청크": file_chunks[len(file_chunks) // 2],
+            "마지막 청크": file_chunks[-1],
+            "가장 긴 청크": file_chunks[idx_max],
+            "가장 짧은 청크": file_chunks[idx_min],
+        }
+        
+        for label, doc in selected.items():
+            print(f"        - {label} 길이: {len(doc.page_content)}")
+            print(f"        - 내용: {doc.page_content[:500] + ('...' if len(doc.page_content) > 500 else '')}")
 
 
 def summarize_chunk_quality(chunks: List[Document], verbose: bool = False):
@@ -176,37 +177,38 @@ def summarize_chunk_quality(chunks: List[Document], verbose: bool = False):
         chunks (List[Document]): Document 객체 리스트
         verbose (bool): 샘플 출력 여부
     """
-    # summary = defaultdict(list)
-    
-    # for doc in chunks:
-    #     file_name = doc.metadata.get("파일명", "Unknown")
-    #     length = len(doc.page_content)
-    #     summary[file_name].append(length)
+    if verbose:
+        summary = defaultdict(list)
+        
+        for doc in chunks:
+            file_name = doc.metadata.get("파일명", "Unknown")
+            length = len(doc.page_content)
+            summary[file_name].append(length)
 
-    # 평균 길이 계산
-    # results = []
-    # for fname, lengths in summary.items():
-    #     arr = np.array(lengths)
-    #     results.append({
-            # "파일명": fname,
-            # "청크수": len(arr),
-            # "평균길이": np.mean(arr),
-            # "최소길이": np.min(arr),
-            # "최대길이": np.max(arr),
-            # "500자미만비율": np.sum(arr < 500) / len(arr) * 100,
-        # })
+        # 평균 길이 계산
+        results = []
+        for fname, lengths in summary.items():
+            arr = np.array(lengths)
+            results.append({
+                "파일명": fname,
+                "청크수": len(arr),
+                "평균길이": np.mean(arr),
+                "최소길이": np.min(arr),
+                "최대길이": np.max(arr),
+                "500자미만비율": np.sum(arr < 500) / len(arr) * 100,
+            })
 
-    # results.sort(key=lambda x: x["500자미만비율"], reverse=True)
+        results.sort(key=lambda x: x["500자미만비율"], reverse=True)
 
-    # print("    - 청크 품질 요약:")
-    # for res in results:
-    #     print(f"    - {res['파일명']}")
-    #     print(f"        - 청크수: {res['청크수']}")
-    #     print(f"        - 평균길이: {res['평균길이']}")
-    #     print(f"        - 최소길이: {res['최소길이']}")
-    #     print(f"        - 최대길이: {res['최대길이']}")
-    #     print(f"        - 500자미만비율: {res['500자미만비율']:.2f}%")
+        print("    - 청크 품질 요약:")
+        for res in results:
+            print(f"    - {res['파일명']}")
+            print(f"        - 청크수: {res['청크수']}")
+            print(f"        - 평균길이: {res['평균길이']}")
+            print(f"        - 최소길이: {res['최소길이']}")
+            print(f"        - 최대길이: {res['최대길이']}")
+            print(f"        - 500자미만비율: {res['500자미만비율']:.2f}%")
 
-        # if verbose:
-        #     insepect_sample_chunks(chunks, res['파일명'])
-        #     print("-" * 30)
+            if verbose:
+                insepect_sample_chunks(chunks, res['파일명'])
+                print("-" * 30)
