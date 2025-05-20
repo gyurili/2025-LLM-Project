@@ -5,7 +5,7 @@ data:
     top_k: 5 # 최대 몇개까지 1 ~ 100 
     file_type: "all" # "hwp" 또는 "pdf", "all"
     apply_ocr: False # True/ False
-    splitter: "recursive" # "recursive", "token"
+    splitter: "section" # "recursive", "token", "section"
     chunk_size: 1000            # KoE5는 허용 토큰이 많은 편이기에, chunk_size를 높일 수 있다.
     chunk_overlap: 100 
 
@@ -30,4 +30,4 @@ generator:
 
 # settings
 settings:
-    verbose: True
+    verbose: False

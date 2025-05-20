@@ -1,4 +1,5 @@
 from typing import List, Optional, Literal
+from collections import defaultdict
 from langchain.vectorstores.base import VectorStore
 from langchain.schema import Document
 from langchain_community.retrievers import BM25Retriever
@@ -6,7 +7,7 @@ from langchain.retrievers import EnsembleRetriever
 from langchain_openai import OpenAIEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
 from sklearn.metrics.pairwise import cosine_similarity
-from collections import defaultdict
+from src.embedding.vector_db import generate_embedding
 
 import os
 from dotenv import load_dotenv
@@ -60,19 +61,17 @@ def rerank_documents(
     selected_docs = []
 
     for group in grouped.values():
+        limit = max(min_chunks, max_chunks) if max_chunks else min_chunks
+        
+        count = 0
         for doc, _ in group[:min_chunks]:
             doc_id = (doc.metadata.get("파일명"), doc.metadata.get("chunk_idx"))
             if doc_id not in selected_set:
                 selected_docs.append(doc)
                 selected_set.add(doc_id)
-
-    for doc, _ in doc_scores:
-        doc_id = (doc.metadata.get("파일명"), doc.metadata.get("chunk_idx"))
-        if doc_id not in selected_set:
-            selected_docs.append(doc)
-            selected_set.add(doc_id)
-        if max_chunks and len(selected_docs) >= max_chunks:
-            break
+                count += 1
+            if count >= limit:
+                break
 
     print("\n📌 최종 선택된 문서:")
     for i, doc in enumerate(selected_docs, 1):
@@ -114,16 +113,8 @@ def retrieve_documents(
         RuntimeError: retriever 생성에 실패할 경우
         ValueError: 지원하지 않는 검색 방식 또는 chunks 미제공 시
     """
-    try:
-        if embed_model_name == "openai":
-            embed_model = OpenAIEmbeddings(
-                model="text-embedding-3-small",
-                openai_api_key=os.getenv("OPENAI_API_KEY")
-            )
-        else:
-            embed_model = HuggingFaceEmbeddings(model_name=embed_model_name)
-    except Exception as e:
-        raise RuntimeError(f"❌ [Runtime] (retrieval.retrieve_documents.embed_model) 임베딩 모델 로딩 실패: {e}")
+    
+    embed_model = generate_embedding(embed_model_name=embed_model_name)
     
     if search_type == "similarity":
         docs = vector_store.similarity_search(query, k=top_k * 5)
