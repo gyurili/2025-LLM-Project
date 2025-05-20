@@ -177,8 +177,8 @@ def load_vector_db(
 from tqdm import tqdm
 
 def add_docs_in_batch(vector_store:VectorStore,
-                      chunks:Optional[List[Document]], 
-                      batch_size:int=128):
+                    chunks:Optional[List[Document]], 
+                    batch_size:int=128):
     """
     문서 chunk를 batch별 추가 하는 방식.
 
