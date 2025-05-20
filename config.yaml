@@ -11,7 +11,7 @@ data:
 
 embedding:
     # openai 사용시 "text-embedding-3-small" 권장
-    embed_model: "nlpai-lab/KoE5" #"sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "openai", "cohere", "huggingface"
+    embed_model: "openai" #"sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "nlpai-lab/KoE5", "openai", "cohere", "huggingface"
     db_type: "faiss" # "faiss", "chorma"
     vector_db_path: "data"
 
@@ -23,8 +23,8 @@ retriever:
     rerank_top_k: 3
 
 generator:
-    model_type: "huggingface"
-    model_name: "microsoft/Phi-4-mini-instruct"
+    model_type: "openai" # "huggingface", "openai"
+    model_name: "gpt-4.1-nano" # "microsoft/Phi-4-mini-instruct", "gpt-4.1-mini", "gpt-4.1-nano"
     max_length: 512
     use_quantization: False
 
