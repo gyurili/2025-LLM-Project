@@ -8,14 +8,13 @@ from tqdm import tqdm
 from pathlib import Path
 from typing import List
 from langchain.schema import Document
-from langchain_text_splitters import RecursiveCharacterTextSplitter, TokenTextSplitter
 from langchain_teddynote.document_loaders import HWPLoader
-from langchain_community.vectorstores import FAISS
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_openai import OpenAIEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
+from sentence_transformers.util import cos_sim
 from src.utils.path import get_project_root_dir
 
 # EasyOCR Reader 객체 생성 (GPU 사용)
@@ -71,7 +70,7 @@ def extract_text_from_pdf(pdf_path: Path, apply_ocr: bool = True) -> str:
     return full_text
 
 
-def retrieve_top_documents_from_metadata(query, csv_path, top_k=5, verbose=False):
+def retrieve_top_documents_from_metadata(query, csv_path, embed_model, top_k=5, verbose=False):
     """
     사용자 질문(query)과 문서 메타데이터(csv)에 기반하여 
     가장 유사한 top_k개의 문서를 반환합니다.
@@ -79,13 +78,19 @@ def retrieve_top_documents_from_metadata(query, csv_path, top_k=5, verbose=False
     Parameters:
         query (str): 사용자 질문
         csv_path (str): CSV 파일 경로
+        embed_model (str): 임베딩 모델 이름 (예: "openai", "huggingface")
         top_k (int): 반환할 문서 수 (기본값 5)
+        verbose (bool): 결과를 표 형태로 출력할지 여부 (기본값 False)
 
     Returns:
         pd.DataFrame: 상위 top_k 문서 정보 + 유사도 점수
     """
     # 0. 모델 로드
-    sbert_model = SentenceTransformer("snunlp/KR-SBERT-V40K-klueNLI-augSTS")
+    from src.embedding.vector_db import generate_embedding
+    embedder = generate_embedding(embed_model)
+    if embedder is not None:
+        if verbose:
+            print(f"    📌 [Info] Embedding model: {embedder.__class__.__name__}")
     
     # 1. CSV 파일 로드
     df = pd.read_csv(csv_path)
@@ -96,14 +101,21 @@ def retrieve_top_documents_from_metadata(query, csv_path, top_k=5, verbose=False
     
     df["임베딩텍스트"] = df.apply(make_embedding_text, axis=1)
 
-    # 3. 문서 임베딩 생성
-    doc_embeddings = sbert_model.encode(df["임베딩텍스트"].tolist(), convert_to_tensor=True)
+    doc_texts = df["임베딩텍스트"].tolist()
 
-    # 4. 질문 임베딩 생성
-    query_embedding = sbert_model.encode(query, convert_to_tensor=True)
-
-    # 5. 유사도 계산
-    similarities = cosine_similarity(query_embedding.cpu().numpy().reshape(1, -1), doc_embeddings.cpu().numpy())[0]
+    # 3. 문서 및 쿼리 임베딩 생성
+    if hasattr(embedder, "encode"):
+        # sentence_transformers 기반
+        doc_embeddings = embedder.encode(doc_texts, convert_to_tensor=True)
+        query_embedding = embedder.encode(query, convert_to_tensor=True)
+        similarities = cos_sim(query_embedding, doc_embeddings)[0].cpu().numpy()
+    else:
+        # LangChain 기반 HuggingFaceEmbeddings 또는 OpenAIEmbeddings
+        doc_embeddings = embedder.embed_documents(doc_texts)
+        query_embedding = embedder.embed_query(query)
+        similarities = cosine_similarity(
+            np.array([query_embedding]), np.array(doc_embeddings)
+        )[0]
 
     # 6. 상위 top_k 인덱스 추출
     top_k_indices = np.argsort(similarities)[::-1][:top_k]
