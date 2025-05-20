@@ -113,8 +113,12 @@ def retrieve_top_documents_from_metadata(query, csv_path, top_k=5, verbose=False
     top_docs["유사도"] = similarities[top_k_indices]
 
     if verbose == True:
-        print(top_docs[["파일명", "유사도"]])
-
+        from tabulate import tabulate
+        table = [
+            [idx, row["파일명"], f"{row['유사도']:.4f}"]
+            for idx, row in top_docs.iterrows()
+        ]
+        print(tabulate(table, headers=["IDX", "파일명", "유사도"], tablefmt="github"))
 
     return top_docs
 
