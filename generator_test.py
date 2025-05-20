@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     chunks = loader_main(config)
 
-    vector_store = embedding_main(config, chunks, is_save=False)
+    vector_store = embedding_main(config, chunks, is_save=True)
     print("✅ 벡터 DB 생성 완료")
 
     docs = retrieval_main(config, vector_store, chunks)
