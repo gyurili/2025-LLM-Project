@@ -24,49 +24,60 @@ def load_generator_model(config: Dict) -> Dict:
     model_name = config["generator"]["model_name"]
 
     if model_type == "huggingface":
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_name,
-            use_fast=False,
-            trust_remote_code=True,
-            token=os.getenv("HF_TOKEN")
-        )
+        try:
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_name,
+                use_fast=False,
+                trust_remote_code=True,
+                token=os.getenv("HF_TOKEN")
+            )
+        except Exception as e:
+            raise RuntimeError(f"❌ (generator.load_model.load_generator_model) 토크나이저 로딩 실패: {e}") 
 
-        if config["generator"].get("use_quantization", False):
-            bnb_config = BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_use_double_quant=True,
-                bnb_4bit_quant_type="nf4",
-                bnb_4bit_compute_dtype=torch.float16,
-                llm_int8_enable_fp32_cpu_offload=True,
-            )
-            model = AutoModelForCausalLM.from_pretrained(
-                model_name,
-                quantization_config=bnb_config,
-                trust_remote_code=True,
-                token=os.getenv("HF_TOKEN"),
-                device_map="auto"
-            )
-        else:
-            model = AutoModelForCausalLM.from_pretrained(
-                model_name,
-                trust_remote_code=True,
-                token=os.getenv("HF_TOKEN"),
-                device_map="auto"
-            )
+        try:
+            if config["generator"].get("use_quantization", False):
+                bnb_config = BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_use_double_quant=True,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_compute_dtype=torch.float16,
+                    llm_int8_enable_fp32_cpu_offload=True,
+                )
+                model = AutoModelForCausalLM.from_pretrained(
+                    model_name,
+                    quantization_config=bnb_config,
+                    trust_remote_code=True,
+                    token=os.getenv("HF_TOKEN"),
+                    device_map="auto"
+                )
+            else:
+                model = AutoModelForCausalLM.from_pretrained(
+                    model_name,
+                    trust_remote_code=True,
+                    token=os.getenv("HF_TOKEN"),
+                    device_map="auto"
+                )
+        except Exception as e:
+            raise RuntimeError(f"❌ (generator.load_model.load_generator_model) 모델 로딩 실패: {e}") 
 
         model.eval()
         return {"type": "hf", "tokenizer": tokenizer, "model": model}
 
     elif model_type == "openai":
-        import openai
-        openai.api_key = os.getenv("OPENAI_API_KEY")
-        return {"type": "openai", "model": model_name}
+        try:
+            import openai
+            openai.api_key = os.getenv("OPENAI_API_KEY")
+            if not openai.api_key:
+                raise ValueError("❌ (generator.load_model.load_generator_model) OPENAI_API_KEY가 설정되지 않았습니다.")
+            return {"type": "openai", "model": model_name}
+        except ImportError:
+            raise ImportError("❌ (generator.load_model.load_generator_model) openai 패키지가 설치되지 않았습니다.")
 
     elif model_type == "dummy":
         return {"type": "mock"}
 
     else:
-        raise ValueError(f"Unsupported model type: {model_type}")
+        raise ValueError(f"❌ (generator.load_model.load_generator_model) 지원하지 않는 model_type: {model_type}")
 
 
 def generate_answer(prompt: str, model_info: Dict, generation_config: Dict) -> str:
@@ -86,59 +97,71 @@ def generate_answer(prompt: str, model_info: Dict, generation_config: Dict) -> s
         - 응답 후처리 필터 추가
         - 출력 문자열 정제 옵션 추가
     """
+    if not prompt:
+        raise ValueError("❌ (generator.load_model.generate_answer) prompt가 비어 있습니다.")
+    
+    if not isinstance(model_info, dict) or "type" not in model_info:
+        raise ValueError("❌ (generator.load_model.generate_answer) model_info의 형식이 잘못되었거나 'type' 키가 없습니다.")
+    
     with trace(name="generate_answer", inputs={"prompt": prompt}) as run:
         if model_info["type"] == "hf":
-            tokenizer = model_info["tokenizer"]
-            model = model_info["model"]
+            try:
+                tokenizer = model_info["tokenizer"]
+                model = model_info["model"]
 
-            inputs = tokenizer(prompt, return_tensors="pt")
-            input_ids = inputs["input_ids"].to(model.device)
-            attention_mask = inputs["attention_mask"].to(model.device)
+                inputs = tokenizer(prompt, return_tensors="pt")
+                input_ids = inputs["input_ids"].to(model.device)
+                attention_mask = inputs["attention_mask"].to(model.device)
 
-            generate_kwargs = {
-                "input_ids": input_ids,
-                "attention_mask": attention_mask,
-                "max_new_tokens": generation_config.get("max_length", 512),
-                "do_sample": False,
-                "eos_token_id": tokenizer.eos_token_id or tokenizer.pad_token_id,
-                "repetition_penalty": 1.2
-            }
+                generate_kwargs = {
+                    "input_ids": input_ids,
+                    "attention_mask": attention_mask,
+                    "max_new_tokens": generation_config.get("max_length", 512),
+                    "do_sample": False,
+                    "eos_token_id": tokenizer.eos_token_id or tokenizer.pad_token_id,
+                    "repetition_penalty": 1.2
+                }
 
-            generate_signature = signature(model.generate).parameters
-            if "token_type_ids" in inputs and "token_type_ids" in generate_signature:
-                generate_kwargs["token_type_ids"] = inputs["token_type_ids"].to(model.device)
+                generate_signature = signature(model.generate).parameters
+                if "token_type_ids" in inputs and "token_type_ids" in generate_signature:
+                    generate_kwargs["token_type_ids"] = inputs["token_type_ids"].to(model.device)
 
-            with torch.no_grad():
-                output = model.generate(**generate_kwargs)
+                with torch.no_grad():
+                    output = model.generate(**generate_kwargs)
 
-            # 생성 후 후처리 적용
-            raw_output = tokenizer.decode(output[0], skip_special_tokens=True, clean_up_tokenization_spaces=True)
-            answer = raw_output.strip()
+                raw_output = tokenizer.decode(output[0], skip_special_tokens=True, clean_up_tokenization_spaces=True)
+                answer = raw_output.strip()
 
-            # 무의미한 반복 제거
-            bad_tokens = ["하십시오", "하실 수", "알고 싶어요", "하는데 필요한", "것을", "한다", "하십시오.", "하시기 바랍니다"]
-            for token in bad_tokens:
-                answer = answer.replace(token, "")
+                bad_tokens = ["하십시오", "하실 수", "알고 싶어요", "하는데 필요한", "것을", "한다", "하십시오.", "하시기 바랍니다"]
+                for token in bad_tokens:
+                    answer = answer.replace(token, "")
 
-            # 너무 짧거나 어색한 경우 예외처리
-            if len(answer) < 10 or answer.count(" ") < 3:
-                answer = "해당 문서에서 예약 방법에 대한 명확한 정보를 찾을 수 없습니다."
+                if len(answer) < 10 or answer.count(" ") < 3:
+                    answer = "해당 문서에서 예약 방법에 대한 명확한 정보를 찾을 수 없습니다."
 
-            run.add_outputs({"output": answer})  # 후처리된 결과 기록
-            return answer
+                run.add_outputs({"output": answer})
+                return answer
+            except Exception as e:
+                raise RuntimeError(f"❌ (generator.load_model.generate_answer) HuggingFace 모델 응답 생성 중 오류: {e}")
 
         elif model_info["type"] == "openai":
-            import openai
-            openai.api_key = os.getenv("OPENAI_API_KEY")
-            response = openai.ChatCompletion.create(
-                model=model_info["model"],
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=generation_config.get("max_length", 512),
-                temperature=0.0
-            )
-            result = response["choices"][0]["message"]["content"]
-            run.add_outputs({"output": result})
-            return result
+            try:
+                import openai
+                openai.api_key = os.getenv("OPENAI_API_KEY")
+                if not openai.api_key:
+                    raise ValueError("❌ (generator.load_model.generate_answer) OPENAI_API_KEY가 설정되지 않았습니다.")
+
+                response = openai.ChatCompletion.create(
+                    model=model_info["model"],
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=generation_config.get("max_length", 512),
+                    temperature=0.0
+                )
+                result = response["choices"][0]["message"]["content"]
+                run.add_outputs({"output": result})
+                return result
+            except Exception as e:
+                raise RuntimeError(f"❌ (generator.load_model.generate_answer) OpenAI 모델 호출 오류: {e}")
 
         elif model_info["type"] == "mock":
             result = "이건 테스트용 응답입니다."
@@ -146,4 +169,4 @@ def generate_answer(prompt: str, model_info: Dict, generation_config: Dict) -> s
             return result
 
         else:
-            raise ValueError("Unsupported model type")
+            raise ValueError(f"❌ (generator.load_model.generate_answer) 지원하지 않는 model_info['type']: {model_info['type']}")
