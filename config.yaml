@@ -12,7 +12,7 @@ data:
 embedding:
     # openai 사용시 "text-embedding-3-small" 권장
     embed_model: "nlpai-lab/KoE5" #"sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "openai", "cohere", "huggingface"
-    db_type: "chroma" # "faiss", "chorma"
+    db_type: "faiss" # "faiss", "chorma"
     vector_db_path: "data"
 
 retriever:
@@ -24,7 +24,7 @@ retriever:
 
 generator:
     model_type: "huggingface"
-    model_name: "EleutherAI/polyglot-ko-1.3b"
+    model_name: "microsoft/Phi-4-mini-instruct"
     max_length: 512
     use_quantization: False
 
