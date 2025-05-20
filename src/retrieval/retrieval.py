@@ -3,8 +3,13 @@ from langchain.vectorstores.base import VectorStore
 from langchain.schema import Document
 from langchain_community.retrievers import BM25Retriever
 from langchain.retrievers import EnsembleRetriever
+from langchain_openai import OpenAIEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
 from sklearn.metrics.pairwise import cosine_similarity
+
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 def rerank_documents(
     query: str,
@@ -75,7 +80,13 @@ def retrieve_documents(
         ValueError: 지원하지 않는 검색 방식 또는 chunks 미제공 시
     """
     try:
-        embed_model = HuggingFaceEmbeddings(model_name=embed_model_name)
+        if embed_model_name == "openai":
+            embed_model = OpenAIEmbeddings(
+                model="text-embedding-3-small",
+                openai_api_key=os.getenv("OPENAI_API_KEY")
+            )
+        else:
+            embed_model = HuggingFaceEmbeddings(model_name=embed_model_name)
     except Exception as e:
         raise RuntimeError(f"❌ [Runtime] (retrieval.retrieve_documents.embed_model) 임베딩 모델 로딩 실패: {e}")
     
