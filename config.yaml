@@ -16,7 +16,7 @@ embedding:
     vector_db_path: "data"
 
 retriever:
-    search_type: "similarity" # hybrid
+    search_type: "similarity" # "similarity", "hybrid"
     query: "배드민턴장 및 탁구장 예약방법"
     top_k: 5
     rerank: True # True/ False
