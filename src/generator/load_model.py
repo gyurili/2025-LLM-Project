@@ -4,6 +4,7 @@ from typing import Dict
 from inspect import signature
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from langsmith import trace
+import openai
 
 
 def load_generator_model(config: Dict) -> Dict:
@@ -65,7 +66,6 @@ def load_generator_model(config: Dict) -> Dict:
 
     elif model_type == "openai":
         try:
-            import openai
             openai.api_key = os.getenv("OPENAI_API_KEY")
             if not openai.api_key:
                 raise ValueError("❌ (generator.load_model.load_generator_model) OPENAI_API_KEY가 설정되지 않았습니다.")

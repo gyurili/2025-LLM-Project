@@ -1,6 +1,7 @@
 from typing import List
 from langchain.schema import Document
-from src.generator.load_model import load_generator_model, generate_answer
+from src.generator.hf_generator import load_hf_model, generate_answer_hf
+from src.generator.openai_generator import load_openai_model, generate_answer_openai
 from src.generator.make_prompt import build_prompt
 
 
@@ -29,15 +30,14 @@ def generator_main(
         prompt_template=config.get("prompt_template")
     )
 
-    # 2. 모델 로드
-    model_info = load_generator_model(config)
+    if config["generator"]["model_type"] == "huggingface":
+        model_info = load_hf_model(config)
+        answer = generate_answer_hf(prompt, model_info, config["generator"])
 
-    # 3. 답변 생성
-    answer = generate_answer(
-        prompt=prompt,
-        model_info=model_info,
-        generation_config=config.get("generator", {})
-    )
+    elif config["generator"]["model_type"] == "openai":
+        model_info = load_openai_model(config)
+        answer = generate_answer_openai(prompt, model_info, config["generator"])
+    
     print(answer)
     print("✅ 답변 생성 완료")
 
