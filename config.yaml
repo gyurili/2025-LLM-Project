@@ -12,13 +12,15 @@ data:
 embedding:
     # openai 사용시 "text-embedding-3-small" 권장
     embed_model: "nlpai-lab/KoE5" #"sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "openai", "cohere", "huggingface"
-    db_type: "chroma" # "faiss", "chorma"
+    db_type: "faiss" # "faiss", "chorma"
     vector_db_path: "data"
 
 retriever:
     search_type: "similarity" # hybrid
     query: "고려대학교 차세대 포털 시스템 사업이랑 광주과학기술원의 학사 시스템 기능개선 사업을 비교해 줄래?"
     top_k: 5
+    rerank: True
+    rerank_top_k: 3
 
 generator:
     model_type: "huggingface"
