@@ -24,7 +24,7 @@ retriever:
 
 generator:
     model_type: "huggingface"
-    model_name: "microsoft/Phi-4-mini-instruct"
+    model_name: "LGAI-EXAONE/EXAONE-Deep-2.4B"
     max_length: 512
     use_quantization: False
 
