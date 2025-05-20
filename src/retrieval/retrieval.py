@@ -5,6 +5,7 @@ from langchain_community.retrievers import BM25Retriever
 from langchain.retrievers import EnsembleRetriever
 from langchain_huggingface import HuggingFaceEmbeddings
 from sklearn.metrics.pairwise import cosine_similarity
+from collections import defaultdict
 
 def rerank_documents(
     query: str,
@@ -13,6 +14,9 @@ def rerank_documents(
     rerank_top_k: int
     ) -> List[Document]:
     """
+        TODO:
+        - 검색된 문서마다 최소 청크 수를 보장하는 로직을 추가합니다.
+
     검색어와 문서 간 임베딩 유사도를 기반으로 문서를 재정렬하여 상위 N개를 반환합니다.
 
     Args:
@@ -55,6 +59,9 @@ def retrieve_documents(
     rerank_top_k: int,
 ) -> List[Document]:
     """
+        TODO:
+        - 문서 그루핑 및 대표 점수 계산을 통해 유사한 문서 그룹을 선택하는 로직을 개선합니다.
+
     주어진 쿼리에 대해 similarity 또는 hybrid 검색 방식으로 관련 문서를 검색합니다.
 
     Args:
@@ -80,9 +87,7 @@ def retrieve_documents(
         raise RuntimeError(f"❌ [Runtime] (retrieval.retrieve_documents.embed_model) 임베딩 모델 로딩 실패: {e}")
     
     if search_type == "similarity":
-        docs = vector_store.similarity_search(query, k=top_k)
-        if rerank:
-            docs = rerank_documents(query, docs, embed_model, rerank_top_k)
+        docs = vector_store.similarity_search(query, k=top_k * 5)
         
     elif search_type == "hybrid":
         if chunks is None:
@@ -90,14 +95,14 @@ def retrieve_documents(
         try:
             vector_retriever = vector_store.as_retriever(
                 search_type="similarity",
-                search_kwargs={"k": top_k}
+                search_kwargs={"k": top_k * 5}
             )
         except Exception as e:
             raise RuntimeError(f"❌ [Runtime] (retrieval.retrieve_documents.vector_retriever) FAISS retriever 생성 실패: {e}")
     
         try:
             bm25_retriever = BM25Retriever.from_documents(chunks)
-            bm25_retriever.k = top_k
+            bm25_retriever.k = top_k * 5
         except Exception as e:
             raise RuntimeError(f"❌ [Runtime] (retrieval.retrieve_documents.bm25_retriever) BM25 retriever 생성 실패: {e}")
         
@@ -107,20 +112,38 @@ def retrieve_documents(
         )
         docs = hybrid_retriever.invoke(query)
     
-        seen_pairs = set()
-        unique_docs = []
-        for doc in docs:
-            identifier = (doc.metadata.get("파일명"), doc.page_content.strip())
-            if identifier not in seen_pairs:
-                unique_docs.append(doc)
-                seen_pairs.add(identifier)
-        docs = unique_docs[:top_k]
+        # seen_pairs = set()
+        # unique_docs = []
+        # for doc in docs:
+        #     identifier = (doc.metadata.get("파일명"), doc.page_content.strip())
+        #     if identifier not in seen_pairs:
+        #         unique_docs.append(doc)
+        #         seen_pairs.add(identifier)
+        # docs = unique_docs[:top_k]
         
-        if rerank:
-            docs = rerank_documents(query, docs, embed_model, rerank_top_k)
-        else:
-            docs = docs[:top_k]
     else:
         raise ValueError(f"❌ [Value] (retrieval.retrieve_documents.search_type) 지원하지 않는 검색 방식입니다: {search_type}")
+    
+    # 문서 그룹화 및 각 문서당 최소 청크 수 보장
+    doc_groups = defaultdict(list)
+    for doc in docs:
+        fname = doc.metadata.get("파일명")
+        doc_groups[fname].append(doc)
+
+    query_vec = embed_model.embed_query(query)
+    selected_docs = []
+    for fname, group in doc_groups.items():
+        if len(group) > 1:
+            doc_vecs = embed_model.embed_documents([doc.page_content for doc in group])
+            similarities = cosine_similarity([query_vec], doc_vecs)[0]
+            ranked_group = sorted(zip(group, similarities), key=lambda x: x[1], reverse=True)
+            selected_docs.extend([doc for doc, _ in ranked_group[:top_k//2 + 1]])
+        else:
+            selected_docs.append(group[0])
+
+    docs = selected_docs
+
+    if rerank:
+        docs = rerank_documents(query, docs, embed_model, rerank_top_k)
 
     return docs
