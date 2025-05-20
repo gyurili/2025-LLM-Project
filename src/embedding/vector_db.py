@@ -33,7 +33,7 @@ def generate_embedding(embed_model_name: str) -> Union[OpenAIEmbeddings, Hugging
             api_key = os.getenv("OPENAI_API_KEY")
             if not api_key:
                 raise ValueError("❌ OPENAI_API_KEY가 .env에 정의되어 있지 않습니다.")
-            return OpenAIEmbeddings(openai_api_key=api_key)
+            return OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=api_key)
         else:
             return HuggingFaceEmbeddings(model_name=embed_model_name)
     except Exception as e:
@@ -177,8 +177,8 @@ def load_vector_db(
 from tqdm import tqdm
 
 def add_docs_in_batch(vector_store:VectorStore,
-                      chunks:Optional[List[Document]], 
-                      batch_size:int=128):
+                    chunks:Optional[List[Document]], 
+                    batch_size:int=128):
     """
     문서 chunk를 batch별 추가 하는 방식.
 
