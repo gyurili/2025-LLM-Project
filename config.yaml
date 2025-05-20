@@ -16,15 +16,18 @@ embedding:
     vector_db_path: "data"
 
 retriever:
-    search_type: "similarity" # hybrid
+    search_type: "similarity" # "similarity", "hybrid"
     query: "배드민턴장 및 탁구장 예약방법"
     top_k: 5
+    rerank: True # True/ False
+    rerank_top_k: 3
 
 generator:
     model_type: "huggingface"
-    model_name: "ex"
+    model_name: "microsoft/Phi-4-mini-instruct"
     max_length: 512
-    
+    use_quantization: False
+
 # settings
 settings:
     verbose: True

@@ -91,7 +91,7 @@ def check_config(config: dict) -> None:
             raise ValueError("❌ [Type] (config.check_config.embedding.vector_db_path) 벡터 DB 경로는 문자열이어야 합니다.")
         if not os.path.exists(vector_db_path):
             raise FileNotFoundError(f"❌ [FileNotFound] (config.check_config.embedding.vector_db_path) 벡터 DB 경로가 존재하지 않습니다: {vector_db_path}")
-    
+
 
     # retriever
     retriever_config = config.get("retriever", {})
@@ -102,6 +102,10 @@ def check_config(config: dict) -> None:
         if not isinstance(query, str):
             raise ValueError("❌ [Type] (config.check_config.retriever.query) 쿼리는 문자열이어야 합니다.")
         
+        search_type = retriever_config.get("search_type", "similarity")
+        if search_type not in ["similarity", "hybrid"]:
+            raise ValueError("❌ [Value] (config.check_config.retriever.search_type) search_type은 'similarity' 또는 'hybrid' 중 하나여야 합니다.")
+
         top_k = retriever_config.get("top_k", 5)
         if not isinstance(top_k, int):
             raise ValueError("❌ [Type] (config.check_config.retriever.top_k) top_k는 정수여야 합니다.")
@@ -109,6 +113,17 @@ def check_config(config: dict) -> None:
             top_k = 1
             print("⚠️ [Warning] (config.check_config.retriever.top_k) top_k는 0보다 큰 정수여야 합니다. 최소값 1로 설정합니다.")
         
+        rerank = retriever_config.get("rerank", True)
+        if not isinstance(rerank, bool):
+            raise ValueError("❌ [Type] (config.check_config.retriever.rerank) rerank는 True 또는 False여야 합니다.")
+
+        rerank_top_k = retriever_config.get("rerank_top_k", 3)
+        if not isinstance(rerank_top_k, int):
+            raise ValueError("❌ [Type] (config.check_config.retriever.rerank_top_k) rerank_top_k는 정수여야 합니다.")
+        if rerank_top_k < 1:
+            rerank_top_k = 1
+            print("⚠️ [Warning] (config.check_config.retriever.rerank_top_k) rerank_top_k는 1 이상이어야 합니다. 최소값 1로 설정합니다.")
+
 
     # generator
     generator_config = config.get("generator", {})
