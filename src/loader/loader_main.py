@@ -25,9 +25,9 @@ def loader_main(config: dict) -> List[Document]:
     print("✅ 데이터 전처리 완료")
 
     # 3. 청크 생성
-    splitter_type = data_config.get("splitter", "recursive")
-    chunk_size = data_config.get("chunk_size", 300)
-    chunk_overlap = data_config.get("chunk_overlap", 50)
+    splitter_type = data_config.get("splitter", "section+recursive")
+    chunk_size = data_config.get("chunk_size", 1000)
+    chunk_overlap = data_config.get("chunk_overlap", 250)
 
     chunks = data_chunking(df=df, splitter_type=splitter_type, size=chunk_size, overlap=chunk_overlap)
     print("✅ 청크 생성 완료")
