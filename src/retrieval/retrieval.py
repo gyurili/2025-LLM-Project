@@ -16,7 +16,8 @@ def rerank_documents(
     query: str,
     docs: List[Document],
     embed_model,
-    rerank_top_k: int
+    min_chunks: int,
+    max_chunks: Optional[int] = None,
     ) -> List[Document]:
     """
         TODO:
@@ -28,7 +29,7 @@ def rerank_documents(
         query (str): 사용자 검색 쿼리
         docs (List[Document]): 검색으로 추출된 문서 리스트
         embed_model: 임베딩 모델 객체
-        rerank_top_k (int): 유사도 기준으로 최종 반환할 문서 개수
+        min_chunks (int): 문서별 보장되는 최소 청크 수
 
     Returns:
         List[Document]: 유사도 기준으로 재정렬된 상위 문서 리스트
@@ -50,7 +51,34 @@ def rerank_documents(
     for i, (doc, score) in enumerate(doc_scores, 1):
         print(f"  {i}. 파일명: {doc.metadata.get('파일명')}, 청크: {doc.metadata.get('chunk_idx')}, 유사도: {score:.4f}")
     
-    return [doc for doc, _ in doc_scores[:rerank_top_k]]
+    grouped = defaultdict(list)
+    for doc, score in doc_scores:
+        fname = doc.metadata.get("파일명")
+        grouped[fname].append((doc, score))
+
+    selected_set = set()
+    selected_docs = []
+
+    for group in grouped.values():
+        for doc, _ in group[:min_chunks]:
+            doc_id = (doc.metadata.get("파일명"), doc.metadata.get("chunk_idx"))
+            if doc_id not in selected_set:
+                selected_docs.append(doc)
+                selected_set.add(doc_id)
+
+    for doc, _ in doc_scores:
+        doc_id = (doc.metadata.get("파일명"), doc.metadata.get("chunk_idx"))
+        if doc_id not in selected_set:
+            selected_docs.append(doc)
+            selected_set.add(doc_id)
+        if max_chunks and len(selected_docs) >= max_chunks:
+            break
+
+    print("\n📌 최종 선택된 문서:")
+    for i, doc in enumerate(selected_docs, 1):
+        print(f"  {i}. 파일명: {doc.metadata.get('파일명')}, 청크: {doc.metadata.get('chunk_idx')}")
+
+    return selected_docs
 
 
 def retrieve_documents(
@@ -61,7 +89,7 @@ def retrieve_documents(
     chunks: Optional[List[Document]],
     embed_model_name: str,
     rerank: bool,
-    rerank_top_k: int,
+    min_chunks: int,
 ) -> List[Document]:
     """
         TODO:
@@ -77,7 +105,7 @@ def retrieve_documents(
         chunks (Optional[List[Document]]): hybrid 검색을 위한 전체 문서 리스트
         embed_model_name (str): 사용할 임베딩 모델 이름
         rerank (bool): re-ranking 적용 여부
-        rerank_top_k (int): re-ranking 시 최종 반환할 문서 개수
+        min_chunks (int): 문서마다 보장되는 최소 청크 수
 
     Returns:
         List[Document]: 검색 또는 재정렬된 문서 리스트
@@ -122,15 +150,6 @@ def retrieve_documents(
             weights=[0.5, 0.5]
         )
         docs = hybrid_retriever.invoke(query)
-    
-        # seen_pairs = set()
-        # unique_docs = []
-        # for doc in docs:
-        #     identifier = (doc.metadata.get("파일명"), doc.page_content.strip())
-        #     if identifier not in seen_pairs:
-        #         unique_docs.append(doc)
-        #         seen_pairs.add(identifier)
-        # docs = unique_docs[:top_k]
         
     else:
         raise ValueError(f"❌ [Value] (retrieval.retrieve_documents.search_type) 지원하지 않는 검색 방식입니다: {search_type}")
@@ -148,13 +167,13 @@ def retrieve_documents(
             doc_vecs = embed_model.embed_documents([doc.page_content for doc in group])
             similarities = cosine_similarity([query_vec], doc_vecs)[0]
             ranked_group = sorted(zip(group, similarities), key=lambda x: x[1], reverse=True)
-            selected_docs.extend([doc for doc, _ in ranked_group[:top_k//2 + 1]])
+            selected_docs.extend([doc for doc, _ in ranked_group])
         else:
             selected_docs.append(group[0])
 
     docs = selected_docs
 
     if rerank:
-        docs = rerank_documents(query, docs, embed_model, rerank_top_k)
+        docs = rerank_documents(query, docs, embed_model, min_chunks, max_chunks=top_k)
 
     return docs
