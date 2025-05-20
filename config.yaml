@@ -2,25 +2,25 @@
 data:
     folder_path: "data/files"
     data_list_path: "data/data_list.csv"
-    top_k: 10 # 최대 몇개까지 1 ~ 100 
+    top_k: 5 # 최대 몇개까지 1 ~ 100 
     file_type: "all" # "hwp" 또는 "pdf", "all"
     apply_ocr: False # True/ False
-    splitter: "section+recursive" # "recursive", "token", "section+recursive"
+    splitter: "section" # "recursive", "token", "section"
     chunk_size: 1000            # KoE5는 허용 토큰이 많은 편이기에, chunk_size를 높일 수 있다.
     chunk_overlap: 250 
 
 embedding:
     # openai 사용시 "text-embedding-3-small" 권장
     embed_model: "nlpai-lab/KoE5" #"sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "nlpai-lab/KoE5", "openai", "cohere", "huggingface"
-    db_type: "chroma" # "faiss", "chorma"
+    db_type: "faiss" # "faiss", "chorma"
     vector_db_path: "data"
 
 retriever:
     search_type: "similarity" # "similarity", "hybrid"
-    query: "배드민턴장 및 탁구장 예약방법"
+    query: "한국 철도 공사와 관련된 문서가 3개인데, 문서마다 차이점이 뭐지?"
     top_k: 5
     rerank: True # True/ False
-    rerank_top_k: 3
+    min_chunks: 3
 
 generator:
     model_type: "openai" # "huggingface", "openai"
