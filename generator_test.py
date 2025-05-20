@@ -1,3 +1,6 @@
+import argparse
+
+
 if __name__ == "__main__":
     import os
     from src.embedding.embedding_main import embedding_main
@@ -8,26 +11,29 @@ if __name__ == "__main__":
     from src.utils.path import get_project_root_dir
     from dotenv import load_dotenv
     
+    parser = argparse.ArgumentParser(description="parser 엔트리 포인트")
+    parser.add_argument("--is_save", action="store_true", help="저장하기 모드")
+    args = parser.parse_args()
+    
     project_root = get_project_root_dir()
     print(f"Project root directory: {project_root}")
     config_path = os.path.join(project_root, "config.yaml")
     print(f"Config file path: {config_path}")
 
     config = load_config(config_path)
+    print("✅ Config 로드 완료")
+    
+    if args.is_save:
+        chunks = loader_main(config)
+    else: 
+        chunks = []
 
-    # .env 불러오기
-    dotenv_path = os.path.join(project_root, ".env")
-    load_dotenv(dotenv_path=dotenv_path)
+    vector_store = embedding_main(config, chunks, is_save=args.is_save)
+    print("✅ 벡터 DB 생성 완료")
 
-    # 데이터 로드 및 청킹
-    chunk = loader_main(config)
-
-    # 벡터 DB 생성
-    vector_store = embedding_main(config, chunk)
-
-    # 유사도 검색
-    docs = retrieval_main(config, vector_store, chunk)
-    print("✅ 검색 완료")
+    docs = retrieval_main(config, vector_store, chunks)
+    print("✅ retrieval 검색 완료")
 
     # 답변 생성
     answer = generator_main(docs, config)
+    print("✅ 답변 생성 완료")
