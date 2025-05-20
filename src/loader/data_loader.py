@@ -155,7 +155,6 @@ def retrieve_top_documents_from_metadata(query, csv_path, embed_model, top_k=5, 
     except Exception as e:
         raise RuntimeError(f"❌ (loader.data_loader.retrieve_top_documents_from_metadata) 예외 발생: {e}")  # 수정부분: 전체 함수 방어적 처리 끝
 
-
 from src.utils.path import get_project_root_dir
 
 def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all") -> pd.DataFrame:
