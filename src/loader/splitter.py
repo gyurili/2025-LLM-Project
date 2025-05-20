@@ -95,12 +95,12 @@ def refine_chunks_with_length_control(chunks: List[dict], max_length: int = 1000
     return refined
 
 # 4. 메인 함수
-def data_chunking(df: pd.DataFrame, splitter_type: str = "section+recursive", size: int = 1000, overlap: int = 250) -> List[Document]:
+def data_chunking(df: pd.DataFrame, splitter_type: str = "section", size: int = 1000, overlap: int = 250) -> List[Document]:
     if splitter_type == "recursive":
         splitter = RecursiveCharacterTextSplitter(chunk_size=size, chunk_overlap=overlap)
     elif splitter_type == "token":
         splitter = TokenTextSplitter(chunk_size=size, chunk_overlap=overlap)
-    elif splitter_type == "section+recursive":
+    elif splitter_type == "section":
         splitter = None  # Custom 로직 사용
     else:
         raise ValueError(f"❌ [Value] (splitter.data_chunking.splitter_type) {splitter_type}은 지원하지 않습니다.")
@@ -111,7 +111,7 @@ def data_chunking(df: pd.DataFrame, splitter_type: str = "section+recursive", si
         if isinstance(text, str) and text.strip():
             try:
                 text = clean_text(text)  # 사전 정의된 전처리 함수
-                if splitter_type == "section+recursive":
+                if splitter_type == "section":
                     sections = extract_sections(text)
                     merged = merge_short_chunks(sections)
                     chunks = refine_chunks_with_length_control(merged, max_length=size, overlap=overlap)
