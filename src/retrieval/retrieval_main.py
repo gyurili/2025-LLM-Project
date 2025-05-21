@@ -33,7 +33,7 @@ def retrieval_main(config, vector_store, chunks):
     min_chunks = config.get("retriever", {}).get("min_chunks", 3)
     verbose = config.get("settings", {}).get("verbose", False)
 
-    docs = retrieve_documents(query, vector_store, top_k, search_type, chunks, embed_model, rerank, min_chunks)
+    docs = retrieve_documents(query, vector_store, top_k, search_type, chunks, embed_model, rerank, min_chunks, verbose)
     if verbose:
         print(f"\n- 임베딩 모델: {embed_model}")
         print(f"- DB 타입: {db_type}")
