@@ -12,6 +12,7 @@ def rag_pipeline():
     with trace(name="rag_pipeline") as run:
         project_root = get_project_root_dir()
         print(f"Project root directory: {project_root}")
+        
         config_path = os.path.join(project_root, "config.yaml")
         print(f"Config file path: {config_path}")
         
