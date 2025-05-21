@@ -142,7 +142,7 @@ def retrieve_documents(
             docs = vector_store.similarity_search(query, k=top_k * 5)
         except Exception as e:
             raise RuntimeError(f"❌ similarity_search 실패: {e}")
-        ``        
+        
     elif search_type == "hybrid":
         if chunks is None:
             raise ValueError("❌ [Value] (retrieval.retrieve_documents.chunks) hybrid 검색을 위해 chunks가 필요합니다.")
