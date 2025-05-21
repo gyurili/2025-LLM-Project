@@ -2,7 +2,7 @@
 data:
     folder_path: "data/files"
     data_list_path: "data/data_list.csv"
-    top_k: 10 # 최대 몇개까지 1 ~ 100 
+    top_k: 5 # 최대 몇개까지 1 ~ 100 
     file_type: "all" # "hwp" 또는 "pdf", "all"
     apply_ocr: False # True/ False
     splitter: "section" # "recursive", "token", "section"
@@ -13,6 +13,7 @@ embedding:
     # openai 사용시 "text-embedding-3-small" 권장
     embed_model: "nlpai-lab/KoE5" #"sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "nlpai-lab/KoE5", "openai", "cohere", "huggingface"
     db_type: "faiss" # "faiss", "chorma"
+    db_type: "faiss" # "faiss", "chorma"
     vector_db_path: "data"
 
 retriever:
@@ -20,7 +21,7 @@ retriever:
     query: "파주도시관광공사의 종량제봉투 판매관리 전산시스템 개선사업의 기대효과는 뭐야?"
     top_k: 5
     rerank: True # True/ False
-    rerank_top_k: 3
+    min_chunks: 3
 
 generator:
     model_type: "huggingface"
@@ -30,4 +31,4 @@ generator:
 
 # settings
 settings:
-    verbose: False
+    verbose: True
