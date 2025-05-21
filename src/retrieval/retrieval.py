@@ -1,5 +1,5 @@
 from typing import List, Optional, Literal
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from langchain.vectorstores.base import VectorStore
 from langchain.schema import Document
 from langchain_community.retrievers import BM25Retriever
@@ -55,9 +55,11 @@ def rerank_documents(
         for i, (doc, score) in enumerate(doc_scores, 1):
             print(f"  {i}. 파일명: {doc.metadata.get('파일명')}, 청크: {doc.metadata.get('chunk_idx')}, 유사도: {score:.4f}")
     
-    grouped = defaultdict(list)
+    grouped = OrderedDict()
     for doc, score in doc_scores:
         fname = doc.metadata.get("파일명")
+        if fname not in grouped:
+            grouped[fname] = []
         grouped[fname].append((doc, score))
 
     selected_set = set()
