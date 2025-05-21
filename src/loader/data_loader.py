@@ -8,12 +8,14 @@ from tqdm import tqdm
 from pathlib import Path
 from typing import List
 from langchain.schema import Document
-from langchain_text_splitters import RecursiveCharacterTextSplitter, TokenTextSplitter
 from langchain_teddynote.document_loaders import HWPLoader
-from langchain_community.vectorstores import FAISS
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_openai import OpenAIEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+from sentence_transformers.util import cos_sim
+from src.utils.path import get_project_root_dir
 
 # EasyOCR Reader 객체 생성 (GPU 사용)
 # 한글(ko) + 영어(en)를 인식하며, 모델은 한 번만 로드됨
@@ -68,42 +70,82 @@ def extract_text_from_pdf(pdf_path: Path, apply_ocr: bool = True) -> str:
     return full_text
 
 
-def data_load(path: str, limit: int = None, base_dir: str = None) -> pd.DataFrame:
+def retrieve_top_documents_from_metadata(query, csv_path, embed_model, top_k=5, verbose=False):
     """
-    주어진 경로에서 CSV 파일을 불러와 전처리합니다.
+    사용자 질문(query)과 문서 메타데이터(csv)에 기반하여 
+    가장 유사한 top_k개의 문서를 반환합니다.
 
-    Args:
-        path (str): CSV 파일 상대 경로
-        limit (Optional[int]): 데이터프레임의 행 수 제한 (기본값: None)
-        base_dir (Optional[str]): 기본 디렉토리 경로 (기본값은 프로젝트 루트 자동 탐색)
+    Parameters:
+        query (str): 사용자 질문
+        csv_path (str): CSV 파일 경로
+        embed_model (str): 임베딩 모델 이름 (예: "openai", "huggingface")
+        top_k (int): 반환할 문서 수 (기본값 5)
+        verbose (bool): 결과를 표 형태로 출력할지 여부 (기본값 False)
 
     Returns:
-        pd.DataFrame: 전처리된 데이터프레임
+        pd.DataFrame: 상위 top_k 문서 정보 + 유사도 점수
     """
-    if base_dir is None:
-        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    full_path = os.path.join(base_dir, path)
-    if not os.path.exists(full_path):
-        raise FileNotFoundError(f"❌ [FileNotFound] (data_loader.data_load.path) 파일을 찾을 수 없습니다: {full_path}")
-    
-    if limit < 1:
-        limit = 1
-        print("⚠️ [Warning] (data_loader.data_load.limit) limit은 0보다 큰 정수여야 합니다. 최소값 1로 설정합니다.")
-    elif limit > 100:
-        limit = 100
-        print("⚠️ [Warning] (data_loader.data_load.limit) limit은 100보다 작거나 같아야 합니다. 최대값 100으로 설정합니다.")
+    try:  # 수정부분: 전체 함수 방어적 처리 시작
+        from src.embedding.vector_db import generate_embedding
+        embedder = generate_embedding(embed_model)
+        if embedder is not None:
+            if verbose:
+                print(f"    📌 [Info] Embedding model: {embedder.__class__.__name__}")
 
-    df = pd.read_csv(full_path)
-    required_columns = ['파일명', '사업 요약', '텍스트', '사업명', '발주 기관', '사업 금액']
-    if not all(col in df.columns for col in required_columns):
-        missing = set(required_columns) - set(df.columns)
-        raise ValueError(f"❌ [Value] (data_loader.data_load.columns) 필수 컬럼이 누락되었습니다: {missing}") 
+        if not os.path.exists(csv_path):
+            raise FileNotFoundError(f"❌ (loader.data_loader.retrieve_top_documents_from_metadata) 파일을 찾을 수 없습니다: {csv_path}")
 
-    df = df[required_columns]
-    df['사업 금액'] = pd.to_numeric(df['사업 금액'], errors='coerce').astype("Int64")
-    if limit is not None:
-        df = df.head(limit)
-    return df
+        try:
+            df = pd.read_csv(csv_path)
+        except Exception as e:
+            raise ValueError(f"❌ (loader.data_loader.retrieve_top_documents_from_metadata) CSV 파일 로딩 실패: {str(e)}")
+
+        required_columns = ["사업명", "발주 기관", "사업 요약", "파일명"]
+        for col in required_columns:
+            if col not in df.columns:
+                raise KeyError(f"❌ (loader.data_loader.retrieve_top_documents_from_metadata) '{col}' 열이 CSV에 존재하지 않습니다.")
+
+        def make_embedding_text(row):
+            return f"{row['사업명']} {row['발주 기관']} {row['사업 요약']}"
+
+        try:
+            df["임베딩텍스트"] = df.apply(make_embedding_text, axis=1)
+        except Exception as e:
+            raise RuntimeError(f"❌ (loader.data_loader.retrieve_top_documents_from_metadata) 임베딩 텍스트 생성 중 오류: {str(e)}")
+
+        doc_texts = df["임베딩텍스트"].tolist()
+
+        if hasattr(embedder, "encode"):
+            doc_embeddings = embedder.encode(doc_texts, convert_to_tensor=True)
+            query_embedding = embedder.encode(query, convert_to_tensor=True)
+            similarities = cos_sim(query_embedding, doc_embeddings)[0].cpu().numpy()
+        else:
+            doc_embeddings = embedder.embed_documents(doc_texts)
+            query_embedding = embedder.embed_query(query)
+            similarities = cosine_similarity(
+                np.array([query_embedding]), np.array(doc_embeddings)
+            )[0]
+
+        top_k_indices = np.argsort(similarities)[::-1][:top_k]
+
+        try:
+            top_docs = df.iloc[top_k_indices].copy()
+            top_docs["유사도"] = similarities[top_k_indices]
+        except Exception as e:
+            raise RuntimeError(f"❌ (loader.data_loader.retrieve_top_documents_from_metadata) 결과 DataFrame 생성 실패: {str(e)}")
+
+        if verbose == True:
+            from tabulate import tabulate
+            table = [
+                [idx, row["파일명"], f"{row['유사도']:.4f}"]
+                for idx, row in top_docs.iterrows()
+            ]
+            output = tabulate(table, headers=["IDX", "파일명", "유사도"], tablefmt="github")
+            print("\n".join("    " + line for line in output.splitlines()))  # 수정부분: 4칸 들여쓰기 적용
+
+        return top_docs
+    except Exception as e:
+        raise RuntimeError(f"❌ (loader.data_loader.retrieve_top_documents_from_metadata) 예외 발생: {e}")  # 수정부분: 전체 함수 방어적 처리 끝
 
 
 from src.utils.path import get_project_root_dir
@@ -156,75 +198,3 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all
             raise RuntimeError(f"❌ [Runtime] (data_loader.data_process) 파일 처리 오류 ({file_name}): {e}")  
 
     return filtered_df.reset_index(drop=True)
-
-
-import re
-
-def clean_text(text: str) -> str:
-    """
-    입력 문자열에서 불필요한 문자 및 공백을 정리합니다.
-
-    처리 단계:
-    1. 한자 및 유니코드 특수문자를 제거하고, 
-       한글, 영문자, 숫자, 공백 및 일부 특수문자(.,:;!?()~-/)만 남깁니다.
-    2. 연속된 공백을 하나의 공백으로 통일합니다.
-    3. 문자열 양 끝의 공백을 제거합니다.
-
-    Args:
-        text (str): 전처리할 원본 문자열
-
-    Returns:
-        str: 정제된 문자열
-    """
-    if not isinstance(text, str):
-        raise ValueError("❌ [Type] (data_loader.clean_text) 입력값은 문자열이어야 합니다.")
-    # 1. 한자 및 유니코드 특수문자 제거 (한글, 영어, 숫자, 공백, 일부 특수문자 제외)
-    text = re.sub(r"[^\uAC00-\uD7A3a-zA-Z0-9\s.,:;!?()~\-/]", " ", text)
-
-    # 2. 연속된 공백 하나로 통일
-    text = re.sub(r"\s+", " ", text)
-
-    # 3. 앞뒤 공백 제거
-    return text.strip()
-
-
-def data_chunking(df: pd.DataFrame, splitter_type: str = "recursive", size: int = 300, overlap: int = 50) -> List[Document]:
-    """
-    full_text 컬럼을 기준으로 텍스트를 청크로 분할하고 Document 객체로 반환합니다.
-
-    Args:
-        df (pd.DataFrame): 텍스트가 포함된 DataFrame
-
-    Returns:
-        List[Document]: 청크 단위로 나뉜 Document 객체 리스트
-    """
-    if splitter_type == "recursive":
-        splitter = RecursiveCharacterTextSplitter(chunk_size=size, chunk_overlap=overlap)
-    elif splitter_type == "token":
-        splitter = TokenTextSplitter(chunk_size=size, chunk_overlap=overlap)
-    else:
-        raise ValueError(f"❌ [Value] (data_loader.data_chunking.splitter_type) {splitter_type}은 지원하지 않는 청크 분할기입니다.")
-
-    all_chunks = []
-    for _, row in df.iterrows():
-        text = row.get("full_text", "")
-        if isinstance(text, str) and text.strip():
-            try:
-                text = clean_text(text)
-                chunks = splitter.split_text(text)
-                for i, chunk in enumerate(chunks):
-                    doc = Document(
-                        page_content=chunk,
-                        metadata={
-                            "사업명": row.get("사업명", ""),
-                            "발주 기관": row.get("발주 기관", ""),
-                            "파일명": row.get("파일명", ""),
-                            "chunk_idx": i
-                        }
-                    )
-                    all_chunks.append(doc)
-            except Exception as e:
-                raise RuntimeError(f"❌ [Runtime] (data_loader.data_chunking) 청크 생성 오류 ({row.get('파일명')}): {e}")
-        else:
-            raise ValueError(f"❌ [Data] (data_loader.data_chunking) full_text가 비어있거나 문자열이 아닙니다: {row.get('파일명')}")
-    return all_chunks

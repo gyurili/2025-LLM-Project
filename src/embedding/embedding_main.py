@@ -13,7 +13,6 @@ def generate_index_name(config: dict) -> str:
 
     구성 요소:
     - data.type
-    - data.limit
     - chunk.splitter
     - embedding.model
     - embedding.db_type
@@ -28,7 +27,6 @@ def generate_index_name(config: dict) -> str:
         str: 자동 생성된 인덱스 이름 (예: all_100_recursive_openai_faiss_index)
     """
     data_type = config.get("data", {}).get("file_type", "all")
-    limit = config.get("data", {}).get("limit", 100)
     splitter = config.get("data", {}).get("splitter", "recursive")
     model = config.get("embedding", {}).get("embed_model", "default")
     db_type = config.get("embedding", {}).get("db_type", "faiss")
@@ -37,12 +35,12 @@ def generate_index_name(config: dict) -> str:
     model_key = model.split("/")[-1] if "/" in model else model
     model_key = model_key.replace('-', '_').replace(' ', '_')
 
-    return f"{data_type}_{limit}_{splitter}_{model_key}_{db_type}"
+    return f"{data_type}_{splitter}_{model_key}_{db_type}"
 
 
-def embedding_main(config: dict, chunks: List[Document]) -> Union[FAISS, Chroma]:
+def embedding_main(config: dict, chunks: List[Document], is_save:bool = False) -> Union[FAISS, Chroma]:
     """
-    벡터 DB를 생성하고 로드합니다.
+    벡터 DB를 생성합니다.
 
     Args:
         config (dict): 설정 정보
@@ -55,7 +53,7 @@ def embedding_main(config: dict, chunks: List[Document]) -> Union[FAISS, Chroma]
         raise ValueError("❌(embedding.embedding_main) chunks는 Document 객체의 리스트여야 합니다.")
 
     embed_config = config.get("embedding", {})
-    embed_model = embed_config.get("model", "openai")
+    embed_model = embed_config.get("embed_model", "openai")
     project_root = get_project_root_dir()
     vector_db_path = os.path.join(project_root, embed_config.get("vector_db_path", "data"))
     if not os.path.exists(vector_db_path):
@@ -68,17 +66,36 @@ def embedding_main(config: dict, chunks: List[Document]) -> Union[FAISS, Chroma]
         db_exists = os.path.exists(faiss_file) and os.path.exists(pkl_file)
     elif db_type == "chroma":
         chroma_dir = os.path.join(vector_db_path, generate_index_name(config))
+        sqlite_path = os.path.join(chroma_dir, "chroma.sqlite3")
+
+        # 필수 요소가 모두 존재하는지 확인
+        has_sqlite = os.path.exists(sqlite_path)
+        has_index_dirs = any(
+            os.path.isdir(os.path.join(chroma_dir, d))
+            and len(os.listdir(os.path.join(chroma_dir, d))) == 4
+            for d in os.listdir(chroma_dir)
+            if os.path.isdir(os.path.join(chroma_dir, d))
+        ) if os.path.exists(chroma_dir) else False
+    
+        db_exists = has_sqlite and has_index_dirs
+    
+        # 불완전한 DB면 삭제
+        if os.path.exists(chroma_dir) and not db_exists:
+            print("⚠️ 불완전한 Chroma 벡터 DB가 감지되어 삭제합니다.")
+            shutil.rmtree(chroma_dir)
+            db_exists = False
         db_exists = os.path.isdir(chroma_dir) and os.path.exists(os.path.join(chroma_dir, "chroma.sqlite3"))
     else:
         raise ValueError(f"❌(embedding.embedding_main) 지원하지 않는 DB 타입입니다: {db_type}")
-    
-    if db_exists:
-        # 벡터 DB가 이미 존재하는 경우
-        vector_store = load_vector_db(vector_db_path, embed_model, generate_index_name(config), db_type)
-        print("✅ Vector DB 로드 완료")
-    else:
-        # 벡터 DB가 존재하지 않는 경우
+
+    if is_save:
+        # Save모드일 때 자동 생성
         vector_store = generate_vector_db(chunks, embed_model, generate_index_name(config), db_type)
         print("✅ Vector DB 생성 완료")
+    else:
+        # Save모드가 아닐 때 불러오기 
+        vector_store = load_vector_db(vector_db_path, embed_model, generate_index_name(config), db_type)
+        print("✅ Vector DB 로드 완료")
+
     
     return vector_store
