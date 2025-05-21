@@ -19,6 +19,7 @@ def rerank_documents(
     embed_model,
     min_chunks: int,
     max_chunks: Optional[int] = None,
+    verbose: bool = False
     ) -> List[Document]:
     """
         TODO:
@@ -35,9 +36,10 @@ def rerank_documents(
     Returns:
         List[Document]: 유사도 기준으로 재정렬된 상위 문서 리스트
     """
-    print("\n📌 기존 문서 순서:")
-    for i, doc in enumerate(docs, 1):
-        print(f"  {i}. 파일명: {doc.metadata.get('파일명')}, 청크: {doc.metadata.get('chunk_idx')}")
+    if verbose:
+        print("\n📌 기존 문서 순서:")
+        for i, doc in enumerate(docs, 1):
+            print(f"  {i}. 파일명: {doc.metadata.get('파일명')}, 청크: {doc.metadata.get('chunk_idx')}")
     
     query_vec = embed_model.embed_query(query)
     doc_vecs = embed_model.embed_documents([doc.page_content for doc in docs])
@@ -48,9 +50,10 @@ def rerank_documents(
     doc_scores = [(doc, score) for doc, score in zip(docs, similarities)]
     doc_scores.sort(key=lambda x: x[1], reverse=True)
     
-    print("\n📌 re-rank 적용 후 문서 순서:")
-    for i, (doc, score) in enumerate(doc_scores, 1):
-        print(f"  {i}. 파일명: {doc.metadata.get('파일명')}, 청크: {doc.metadata.get('chunk_idx')}, 유사도: {score:.4f}")
+    if verbose:
+        print("\n📌 re-rank 적용 후 문서 순서:")
+        for i, (doc, score) in enumerate(doc_scores, 1):
+            print(f"  {i}. 파일명: {doc.metadata.get('파일명')}, 청크: {doc.metadata.get('chunk_idx')}, 유사도: {score:.4f}")
     
     grouped = defaultdict(list)
     for doc, score in doc_scores:
@@ -60,22 +63,24 @@ def rerank_documents(
     selected_set = set()
     selected_docs = []
 
-    for group in grouped.values():
-        limit = max(min_chunks, max_chunks) if max_chunks else min_chunks
-        
+    for fname, group in grouped.items():
+        limit = max_chunks if max_chunks else len(group)
+        group_sorted = sorted(group, key=lambda x: x[1], reverse=True)
+
         count = 0
-        for doc, _ in group[:min_chunks]:
+        for doc, _ in group_sorted:
             doc_id = (doc.metadata.get("파일명"), doc.metadata.get("chunk_idx"))
             if doc_id not in selected_set:
                 selected_docs.append(doc)
                 selected_set.add(doc_id)
                 count += 1
-            if count >= limit:
+            if count >= max(min_chunks, limit):
                 break
 
-    print("\n📌 최종 선택된 문서:")
-    for i, doc in enumerate(selected_docs, 1):
-        print(f"  {i}. 파일명: {doc.metadata.get('파일명')}, 청크: {doc.metadata.get('chunk_idx')}")
+    if verbose:
+        print("\n📌 최종 선택된 문서:")
+        for i, doc in enumerate(selected_docs, 1):
+            print(f"  {i}. 파일명: {doc.metadata.get('파일명')}, 청크: {doc.metadata.get('chunk_idx')}")
 
     return selected_docs
 
@@ -89,6 +94,7 @@ def retrieve_documents(
     embed_model_name: str,
     rerank: bool,
     min_chunks: int,
+    verbose: bool = False
 ) -> List[Document]:
     """
         TODO:
@@ -165,6 +171,6 @@ def retrieve_documents(
     docs = selected_docs
 
     if rerank:
-        docs = rerank_documents(query, docs, embed_model, min_chunks, max_chunks=top_k)
+        docs = rerank_documents(query, docs, embed_model, min_chunks, max_chunks=5, verbose=verbose)
 
     return docs
