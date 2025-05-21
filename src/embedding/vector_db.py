@@ -33,7 +33,7 @@ def generate_embedding(embed_model_name: str) -> Union[OpenAIEmbeddings, Hugging
             api_key = os.getenv("OPENAI_API_KEY")
             if not api_key:
                 raise ValueError("❌ OPENAI_API_KEY가 .env에 정의되어 있지 않습니다.")
-            return OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=api_key)
+            return OpenAIEmbeddings(model="text-embedding-3-large", openai_api_key=api_key)
         else:
             return HuggingFaceEmbeddings(model_name=embed_model_name)
     except Exception as e:
@@ -77,6 +77,8 @@ def generate_vector_db(
     
     try:
         if isinstance(embeddings, HuggingFaceEmbeddings):
+            dimension = len(embeddings.embed_query("hello world"))
+        elif isinstance(embeddings, OpenAIEmbeddings):
             dimension = len(embeddings.embed_query("hello world"))
         else:
             dimension = 1536 # OpenAI의 경우 .embed_query 비용 발생, 수동 입력으로 비용 절감.
