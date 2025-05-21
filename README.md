@@ -21,6 +21,8 @@
 │   ├── retrieval/       # 유사도 검색, 리트리버 구성
 │   ├── generator/       # LLM 응답 생성 모듈
 │   └── utils/           # 공통 유틸 함수
+├── app.py               # Streamlit 기반 웹 인터페이스 (RAG 전체 파이프라인 실행 및 시각화)
+├── main.py              # CLI 또는 스크립트용 전체 파이프라인 실행 진입점 (비대화형 환경용) 
 ```
 
 ---
@@ -67,12 +69,10 @@
 | Python            | 3.10.12        |
 | PyTorch           | 2.6.0 + cu124  |
 | Transformers      | 4.51.3         |
-| SentenceTransformers | 4.1.0      |
 | FAISS             | cpu: 1.11.0, gpu: 1.7.2 |
 | Streamlit         | 1.45.1         |
 | LangChain         | 0.3.25         |
 | HuggingFace Hub   | 0.31.1         |
-| Scikit-Learn      | 1.6.1          |
 | OpenAI            | 1.78.1         |
 
 ---
@@ -99,7 +99,7 @@
 - 문서 내 유사도 정렬 및 선택 로직 구현
 - 리랭크 적용 시 유사도 기반 정렬 유지 및 min/max 청크 수 보장
 
-### ✅ Generatorㄲ
+### ✅ Generator
 - 프롬프트 구성
   - 검색된 Document 리스트로부터 질문에 맞춘 입력 프롬프트 생성
   - 출처 정보(파일명, 기관, 사업명) 포함 가능하며, 커스텀 템플릿 사용 지원
@@ -109,6 +109,15 @@
 - 응답 생성 및 후처리
   - 반복/존댓말/비정상적 응답 제거 필터 내장
   - LangSmith trace 기반 로깅 지원
+
+### ✅ App (Streamlit UI)
+- 사이드바 기반 실시간 설정 UI 구성
+  - 문서 수, 파일 유형, OCR, splitter, 청크 크기, DB 타입, 모델명 등 모든 주요 config 항목 제어 가능
+- Vector DB 삭제 기능 내장 (FAISS .faiss/.pkl, Chroma 디렉토리)
+- RAG 전체 파이프라인 실행 (loader → embedding → retrieval → generation) 및 결과 표시
+- 검색된 문서의 chunk와 메타데이터를 Streamlit UI에 시각적으로 출력
+- 질문 입력 및 응답 표시 기능
+- LangSmith trace와 연동된 응답 로깅 지원
 
 ---
 
