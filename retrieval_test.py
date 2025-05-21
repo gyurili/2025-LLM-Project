@@ -1,6 +1,5 @@
 if __name__ == '__main__':
     import os
-
     from src.utils.path import get_project_root_dir
     from src.utils.config import load_config
     from src.loader.loader_main import loader_main
@@ -18,7 +17,8 @@ if __name__ == '__main__':
 
     chunks = loader_main(config)
 
-    vector_store = embedding_main(config, chunks)
+    vector_store = embedding_main(config, chunks, is_save=False)
+
     print("✅ 벡터 DB 생성 완료")
 
     docs = retrieval_main(config, vector_store, chunks)

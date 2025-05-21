@@ -55,18 +55,26 @@ def extract_text_from_pdf(pdf_path: Path, apply_ocr: bool = True) -> str:
     """
     if not pdf_path.exists():
         raise FileNotFoundError(f"❌(data_loader.extract_text_from_pdf.pdf_path) PDF 파일을 찾을 수 없습니다: {pdf_path}")
+    
     full_text = ""
-    with fitz.open(pdf_path) as doc:
-        for page_num, page in enumerate(tqdm(doc, desc=f"{pdf_path.name}")):
-            page_text = page.get_text()
-            full_text += page_text
+    try:
+        with fitz.open(pdf_path) as doc:
+            for page_num, page in enumerate(tqdm(doc, desc=f"{pdf_path.name}")):
+                try:
+                    page_text = page.get_text()
+                    full_text += page_text
 
-            if apply_ocr:
-                pix = page.get_pixmap(dpi=300)
-                img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-                ocr_text = safe_ocr(np.array(img), reader)
-                if ocr_text.strip():
-                    full_text += f"\n[OCR p.{page_num + 1}]\n{ocr_text}"
+                    if apply_ocr:
+                        pix = page.get_pixmap(dpi=300)
+                        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                        ocr_text = safe_ocr(np.array(img), reader)
+                        if ocr_text.strip():
+                            full_text += f"\n[OCR p.{page_num + 1}]\n{ocr_text}"
+                except Exception as e:
+                    print(f"⚠️ [Warning] (data_loader.extract_text_from_pdf) 페이지 {page_num + 1} 처리 중 오류: {e}")
+    except Exception as e:
+        raise RuntimeError(f"❌ [Runtime] (data_loader.extract_text_from_pdf) PDF 파일 처리 오류: {e}")
+    
     return full_text
 
 
@@ -146,7 +154,6 @@ def retrieve_top_documents_from_metadata(query, csv_path, embed_model, top_k=5, 
         return top_docs
     except Exception as e:
         raise RuntimeError(f"❌ (loader.data_loader.retrieve_top_documents_from_metadata) 예외 발생: {e}")  # 수정부분: 전체 함수 방어적 처리 끝
-
 
 from src.utils.path import get_project_root_dir
 
