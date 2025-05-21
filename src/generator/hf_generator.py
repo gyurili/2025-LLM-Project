@@ -1,4 +1,5 @@
 import os
+import re
 import torch
 from typing import Dict
 from inspect import signature
@@ -48,7 +49,19 @@ def load_hf_model(config: Dict) -> Dict:
 
 def generate_answer_hf(prompt: str, model_info: Dict, generation_config: Dict) -> str:
     """
-    Hugging Face 모델을 사용하여 프롬프트에 응답을 생성합니다.
+    Hugging Face 모델을 사용하여 프롬프트에 응답을 생성합니다
+
+    Args:
+        prompt (str): 생성에 사용할 프롬프트
+        model_info (Dict): 'tokenizer', 'model' 키 포함
+        generation_config (Dict): max_length 등 생성 설정
+
+    Returns:
+        str: 정제된 모델 응답
+
+    To Do:
+        - 불필요한 반복 제거
+        - 프롬프트 누락 응답 제거
     """
     with trace(name="generate_answer_hf", inputs={"prompt": prompt}) as run:
         tokenizer = model_info["tokenizer"]
@@ -76,13 +89,18 @@ def generate_answer_hf(prompt: str, model_info: Dict, generation_config: Dict) -
         raw_output = tokenizer.decode(output[0], skip_special_tokens=True, clean_up_tokenization_spaces=True)
         answer = raw_output.strip()
 
-        # 후처리 필터
+        # 프롬프트 시작 문장 제거
+        if "당신은 정부 및 대학의 공공 사업 제안서를 분석하는" in answer:
+            answer = answer.split("문서 내용:")[-1].strip()
+
+        # 반복 제거
         bad_tokens = ["하십시오", "하실 수", "알고 싶어요", "하는데 필요한", "것을", "한다", "하십시오.", "하시기 바랍니다"]
         for token in bad_tokens:
             answer = answer.replace(token, "")
 
+        # 너무 짧거나 의미 없는 경우 대체
         if len(answer) < 10 or answer.count(" ") < 3:
-            answer = "해당 문서에서 예약 방법에 대한 명확한 정보를 찾을 수 없습니다."
+            answer = "해당 문서에서 질문에 대한 명확한 정보를 찾을 수 없습니다"
 
         run.add_outputs({"output": answer})
         return answer

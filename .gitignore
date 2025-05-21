@@ -157,3 +157,6 @@ data/*
 # Vectoc_db
 *.faiss
 *.pkl
+
+# config
+config.yaml

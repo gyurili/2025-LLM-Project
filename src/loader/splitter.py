@@ -7,7 +7,7 @@ from langchain.schema import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter, TokenTextSplitter
 
 '''
-    To do:
+    TODO:
         1. verbose일때 청킹이 잘 되었는지 확인하는 로깅 추가
         2. 의미 단위로 청크를 나누는 방법 추가
 '''
