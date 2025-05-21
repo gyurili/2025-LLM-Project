@@ -62,22 +62,23 @@ def rerank_documents(
             grouped[fname] = []
         grouped[fname].append((doc, score))
 
+    doc_chunk_counter = defaultdict(int)
     selected_set = set()
     selected_docs = []
 
-    for fname, group in grouped.items():
-        limit = max_chunks if max_chunks else len(group)
-        group_sorted = sorted(group, key=lambda x: x[1], reverse=True)
+    for doc, score in doc_scores:
+        fname = doc.metadata.get("파일명")
+        doc_id = (fname, doc.metadata.get("chunk_idx"))
 
-        count = 0
-        for doc, _ in group_sorted:
-            doc_id = (doc.metadata.get("파일명"), doc.metadata.get("chunk_idx"))
-            if doc_id not in selected_set:
-                selected_docs.append(doc)
-                selected_set.add(doc_id)
-                count += 1
-            if count >= max(min_chunks, limit):
-                break
+        if doc_id in selected_set:
+            continue
+
+        limit = max_chunks if max_chunks else float("inf")
+
+        if doc_chunk_counter[fname] < max(min_chunks, limit):
+            selected_docs.append(doc)
+            selected_set.add(doc_id)
+            doc_chunk_counter[fname] += 1
 
     if verbose:
         print("\n📌 최종 선택된 문서:")
