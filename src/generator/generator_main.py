@@ -59,11 +59,13 @@ def is_unsatisfactory(answer: str) -> bool:
     return False
     
 from collections import defaultdict
+from typing import List
 
 def generate_with_clarification(
     retrieved_docs: List[Document], 
     config: dict,
-    max_retries:int=1
+    max_retries: int = 1,
+    model_info = None
 ) -> str:
     """
     검색된 문서와 초기 질문을 바탕으로 생성된 답변이 부적절할 경우,
@@ -73,25 +75,23 @@ def generate_with_clarification(
         retrieved_docs (List[Document]): 검색된 문서들
         config (dict): 설정 정보 (retriever/generator 관련 포함)
         max_retries (int): 최대 재생성 시도 횟수
+        model_info: 미리 로드된 생성 모델 정보 (옵션)
 
     Returns:
         str: 최종 생성된 적절한 답변
     """
-    answer = generator_main(retrieved_docs, config)
-    
+
+    # 1) context 구성
     docs_by_file = defaultdict(list)
     for chunk in retrieved_docs:
         file_name = chunk.metadata.get("파일명", "알 수 없음")
         docs_by_file[file_name].append(chunk.page_content)
 
-    # context 재사용을 위해 한번만 구성
     context_blocks = []
     for file_name, chunks in docs_by_file.items():
         source_info = f"[출처: {file_name}]"
-        # 해당 문서 내 여러 chunk는 한 문단으로 합치거나 --- 로 구분 가능
-        document_text = "\n\n---\n\n".join(chunks)
-        context_block = f"{source_info}\n{document_text}"
-        context_blocks.append(context_block)
+        document_text = "\n".join(chunks)
+        context_blocks.append(f"{source_info}\n{document_text}")
 
     context_text = "\n\n---\n\n".join(context_blocks)
 
@@ -106,15 +106,26 @@ def generate_with_clarification(
         "### 질문:\n{question}\n\n"
         "### 보완된 답변:"
     )
-    
-    # retry loop
+
+    # 2) 초기 답변 생성 (model_info 없으면 최초 로드)
+    model_type = config["generator"]["model_type"]
+    if model_info is None:
+        if model_type == "huggingface":
+            model_info = load_hf_model(config)
+        elif model_type == "openai":
+            model_info = load_openai_model(config)
+        else:
+            raise ValueError(f"지원되지 않는 generator model_type: {model_type}")
+
+    answer = generator_main(retrieved_docs, config)
+
+    # 3) 재시도 루프
     for i in range(max_retries):
-        unsatisfy = is_unsatisfactory(answer)
-        if not unsatisfy:
-            break
+        if not is_unsatisfactory(answer):
+            break  # 만족하는 답변이면 종료
 
         print(f"⚠️ 답변 재생성 중...({i+1}/{max_retries})")
-        issue = "생성된 답변이 문서에 기반하지 않았거나 너무 짧습니다."
+        issue = "생성된 답변이 문서에 기반하지 않았거나 너무 짧습니다. 혹은 생성된 답변에 중복된 내용이 포함되어 있습니다."
 
         retry_prompt = clarification_template.format(
             context=context_text,
@@ -122,17 +133,18 @@ def generate_with_clarification(
             issue=issue
         )
 
-        model_type = config["generator"]["model_type"]
         if model_type == "huggingface":
-            model_info = load_hf_model(config)
             answer = generate_answer_hf(retry_prompt, model_info, config["generator"])
         elif model_type == "openai":
-            model_info = load_openai_model(config)
             answer = generate_answer_openai(retry_prompt, model_info, config["generator"])
         else:
             raise ValueError(f"지원되지 않는 generator model_type: {model_type}")
+
         print(answer)
 
-    print("✅ 최종 답변 생성 완료")
-    
+    if not is_unsatisfactory(answer):
+        print("✅ 최종 답변 생성 완료")
+    else:
+        print("⚠️ 최대 재시도 횟수 도달, 답변 개선 실패")
+
     return answer

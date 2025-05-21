@@ -46,7 +46,7 @@ def load_hf_model(config: Dict) -> Dict:
     return {"tokenizer": tokenizer, "model": model}
 
 
-def generate_answer_hf(prompt: str, model_info: Dict, generation_config: Dict) -> str:
+def generate_answer_hf(prompt: str, model_info: Dict, generation_config: Dict, verbose:bool = False) -> str:
     """
     Hugging Face 모델을 사용하여 프롬프트에 응답을 생성합니다.
     """
@@ -73,9 +73,17 @@ def generate_answer_hf(prompt: str, model_info: Dict, generation_config: Dict) -
         with torch.no_grad():
             output = model.generate(**generate_kwargs)
 
-        raw_output = tokenizer.decode(output[0], skip_special_tokens=True, clean_up_tokenization_spaces=True)
-        answer = raw_output.strip()
-
+        if verbose:
+            raw_output = tokenizer.decode(output[0], skip_special_tokens=True, clean_up_tokenization_spaces=True)
+            answer = raw_output.strip()
+        else:
+            # prompt 내용 생략
+            output_ids = output[0]
+            input_len = input_ids.size(1)
+            generated_ids = output_ids[input_len:]
+            generated_text = tokenizer.decode(generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=True)
+            answer = generated_text.strip()
+        
         # 후처리 필터
         bad_tokens = ["하십시오", "하실 수", "알고 싶어요", "하는데 필요한", "것을", "한다", "하십시오.", "하시기 바랍니다"]
         for token in bad_tokens:

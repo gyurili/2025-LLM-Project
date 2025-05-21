@@ -136,7 +136,7 @@ def run_rag_pipeline(config):
 
     # 답변 생성
     with st.spinner("문서 요약 및 답변 생성 중..."):
-        answer = generate_with_clarification(docs, config)
+        answer = generate_with_clarification(docs, config, 3)
 
     # 답변 표시
     st.markdown("### 🤖 요약된 답변")
