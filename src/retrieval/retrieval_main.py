@@ -33,9 +33,10 @@ def retrieval_main(config, vector_store, chunks):
 
     docs = retrieve_documents(query, vector_store, top_k, search_type, chunks, embed_model, rerank, rerank_top_k, verbose)
     
-    for i, doc in enumerate(docs, 1):
-            print(f"\n📄 문서 {i}")
-            print(f"본문:\n{doc.page_content}...")
-            print(f"메타데이터: {doc.metadata}")
+    if verbose:
+        for i, doc in enumerate(docs, 1):
+                print(f"\n📄 문서 {i}")
+                print(f"본문:\n{doc.page_content}...")
+                print(f"메타데이터: {doc.metadata}")
             
     return docs

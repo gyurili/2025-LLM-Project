@@ -1,5 +1,3 @@
-from src.utils.shared_cache import set_cache_dirs
-set_cache_dirs()
 from dotenv import load_dotenv
 from src.embedding.vector_db import generate_embedding
 from typing import List, Optional, Literal
