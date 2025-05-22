@@ -35,7 +35,7 @@ def generator_test():
             print("✅ 문서 검색 완료")
 
         with trace(name="generator_main"):
-            answer = generate_with_clarification(docs, config)
+            answer = generator_main(docs, config)
             print("✅ 답변 생성 완료")
 
         run.add_outputs({
