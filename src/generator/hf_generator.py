@@ -89,16 +89,16 @@ def generate_answer_hf(prompt: str, model_info: Dict, generation_config: Dict, v
         if verbose:
             raw_output = tokenizer.decode(output[0], skip_special_tokens=True, clean_up_tokenization_spaces=True)
             answer = raw_output.strip()
-        else:
             # 프롬프트 시작 문장 제거
             if "당신은 정부 및 대학의 공공 사업 제안서를 분석하는" in answer:
                 answer = answer.split("문서 내용:")[-1].strip()
+        else:
             # prompt 내용 생략
-            # output_ids = output[0]
-            # input_len = input_ids.size(1)
-            # generated_ids = output_ids[input_len:]
-            # generated_text = tokenizer.decode(generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=True)
-            # answer = generated_text.strip()
+            output_ids = output[0]
+            input_len = input_ids.size(1)
+            generated_ids = output_ids[input_len:]
+            generated_text = tokenizer.decode(generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=True)
+            answer = generated_text.strip()
 
         # 반복 제거
         bad_tokens = ["하십시오", "하실 수", "알고 싶어요", "하는데 필요한", "것을", "한다", "하십시오.", "하시기 바랍니다"]
