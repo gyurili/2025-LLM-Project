@@ -1,66 +1,33 @@
 
 data:
-    type: "all" # "hwp" 또는 "pdf", "all"
-    limit: 5 # 최대 몇개까지 1 ~ 100 
     folder_path: "data/files"
     data_list_path: "data/data_list.csv"
+    top_k: 5 # 최대 몇개까지 1 ~ 100 
+    file_type: "all" # "hwp" 또는 "pdf", "all"
     apply_ocr: False # True/ False
-    re: # 전처리?
-
-chunk:
-    splitter: "recursive" # "recursive", "token"
-    size: 300
-    overlap: 50
+    splitter: "section" # "recursive", "token", "section"
+    chunk_size: 1000            # KoE5는 허용 토큰이 많은 편이기에, chunk_size를 높일 수 있다.
+    chunk_overlap: 250 
 
 embedding:
-    type: "langchain" # 
-    model: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2" # "openai", "cohere", "huggingface"
-    model_path: 
+    # openai 사용시 "text-embedding-3-small" 권장
+    embed_model: "nlpai-lab/KoE5" #"sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "nlpai-lab/KoE5", "openai", "cohere", "huggingface"
+    db_type: "faiss" # "faiss", "chorma"
     vector_db_path: "data"
 
-llm:
-  provider: "huggingface"  # 또는 "openai"
-  model: "Bllossom/llama-3.2-Korean-Bllossom-AICA-5B" # "nlpai-lab/KULLM3"  # Hugging Face 모델명 또는 OpenAI 모델명 (예: "gpt-4")
-  use_gpu: true
-  use_quantization: False  # 4비트 양자화 활성화
-  max_length: 512  # Hugging Face용
-  max_tokens: 500  # OpenAI용
-  prompt_template: |
-    당신은 문서 기반 질의응답 시스템입니다.
-    다음은 사용자의 질문과 관련된 문서들입니다:
+retriever:
+    search_type: "similarity" # "similarity", "hybrid"
+    query: "파주도시관광공사의 종량제봉투 판매관리 전산시스템 개선사업의 기대효과는 뭐야?"
+    top_k: 5
+    rerank: True # True/ False
+    min_chunks: 3
 
-    {context}
-
-    사용자의 질문: {question}
-
-    위 문서의 내용을 바탕으로 질문에 정확하고 간결하게 답하십시오. 
-    가능하다면 정보를 요약하고, 불확실한 내용은 언급하지 마십시오.
-    답변은 한국어로 작성하십시오.
-    답변:
-
-query:
-    type: "retrieval" # "retrieval", "generation"
-    question: "재난통합관리시스템을 고도화하여 다양한 재난 관련 정보를 수집,  통합관리 및 운영하는 제안서가 있어?"
-    top_k: 3
-    filter: # {"key": "value"}
-    context: # {"key": "value"}
-    prompt: # {"key": "value"}
-
-retrieval:
-
-generation:
-
-model:
-    type: 
-    model_path: 
-    temperature: 
-    max_tokens: 
-    top_p: 
-    top_k: 
-    n: 
-    stop: 
+generator:
+    model_type: "huggingface"
+    model_name: "microsoft/Phi-4-mini-instruct"
+    max_length: 512
+    use_quantization: False
 
 # settings
 settings:
-    use_gpu: True
-    verbose: False
+    verbose: True

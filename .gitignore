@@ -151,9 +151,12 @@ data/
 *.pdf
 *.csv
 
-# Notebook file
-Data.ipynb
+# data exception
+data/*
 
 # Vectoc_db
 *.faiss
 *.pkl
+
+# config
+config.yaml

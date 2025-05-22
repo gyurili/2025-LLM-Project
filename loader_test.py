@@ -1,16 +1,13 @@
 import os
 from langsmith import trace
 from dotenv import load_dotenv
-from src.embedding.embedding_main import embedding_main
-from src.retrieval.retrieval_main import retrieval_main
 from src.loader.loader_main import loader_main
-from src.generator.generator_main import generator_main
 from src.utils.config import load_config
 from src.utils.path import get_project_root_dir
 
-def rag_pipeline():
-    try:
-        with trace(name="rag_pipeline") as run:
+def loader_test():
+    try: 
+        with trace(name="loader_test") as run:
             project_root = get_project_root_dir()
             print(f"Project root directory: {project_root}")
 
@@ -27,25 +24,18 @@ def rag_pipeline():
                 chunks = loader_main(config)
                 print("✅ 데이터 로드 완료")
 
-            with trace(name="embedding_main"):
-                vector_store = embedding_main(config, chunks, is_save=False)
-                print("✅ 벡터 DB 생성 완료")
-
-            with trace(name="retrieval_main"):
-                docs = retrieval_main(config, vector_store, chunks)
-                print("✅ 문서 검색 완료")
-
-            with trace(name="generator_main"):
-                answer = generator_main(docs, config)
-                print("✅ 답변 생성 완료")
-
             run.add_outputs({
+                "top_k": config["data"]["top_k"],
+                "file_type": config["data"]["file_type"],
+                "apply_ocr": config["data"]["apply_ocr"],
+                "splitter": config["data"]["splitter"],
+                "chunk_size": config["data"]["chunk_size"],
+                "chunk_overlap": config["data"]["chunk_overlap"],
                 "num_chunks": len(chunks),
-                "num_retrieved_docs": len(docs),
-                "final_answer": answer
+                "num_documents": len(set(doc.metadata["파일명"] for doc in chunks)),
             })
     except Exception as e:
         print(f"❌ 로깅 에러: {e}")
 
 if __name__ == "__main__":
-    rag_pipeline()
+    loader_test()
