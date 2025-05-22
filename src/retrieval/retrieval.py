@@ -32,7 +32,7 @@ def rerank_documents(
         for i, doc in enumerate(docs, 1):
             print(f"  {i}. 파일명: {doc.metadata.get('파일명')}, 청크: {doc.metadata.get('chunk_idx')}")
     
-    model = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2", trust_remote_code=True)
+    model = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
 
     pairs = [(query, doc.page_content) for doc in docs]
     scores = model.predict(pairs)
