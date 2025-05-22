@@ -2,32 +2,34 @@
 data:
     folder_path: "data/files"
     data_list_path: "data/data_list.csv"
-    top_k: 100 # 최대 몇개까지 1 ~ 100 
+    top_k: 5 # 최대 몇개까지 1 ~ 100 
     file_type: "all" # "hwp" 또는 "pdf", "all"
     apply_ocr: False # True/ False
-    splitter: "section" # "recursive", "token", "section"
+    splitter: "recursive" # "recursive", "token", "section"
     chunk_size: 1000            # KoE5는 허용 토큰이 많은 편이기에, chunk_size를 높일 수 있다.
     chunk_overlap: 250 
 
 embedding:
     # openai 사용시 "text-embedding-3-small" 권장
-    embed_model: "nlpai-lab/KoE5" #"sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "nlpai-lab/KoE5", "openai", "cohere", "huggingface"
+    embed_model: "openai" #"sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "nlpai-lab/KoE5", "openai", "cohere", "huggingface"
     db_type: "faiss" # "faiss", "chorma"
     vector_db_path: "data"
 
 retriever:
-    search_type: "similarity" # "similarity", "hybrid"
-    query: "파주도시관광공사의 종량제봉투 판매관리 전산시스템 개선사업의 기대효과는 뭐야?"
-    top_k: 5
+    search_type: "hybrid" # "similarity", "hybrid"
+    query: "국립인천해양박물관의 해양자료관리시스템과 한국수자원조사기술원의 수문자료정보관리시스템을 비교했을 때, 사업 추진 배경 차이는 뭐야?"
+    top_k: 10
     rerank: True # True/ False
-    min_chunks: 3
+    rerank_top_k: 5
 
 generator:
-    model_type: "huggingface" # "huggingface", "openai"
-    model_name: "microsoft/Phi-4-mini-instruct" # "microsoft/Phi-4-mini-instruct", "Bllossom/llama-3.2-Korean-Bllossom-AICA-5B" "gpt-4.1-mini", "gpt-4.1-nano"
+    model_type: "openai" # "huggingface", "openai"
+    model_name: "gpt-4.1-nano" # "microsoft/Phi-4-mini-instruct", "gpt-4.1-mini", "gpt-4.1-nano"
     max_length: 512
     use_quantization: True
 
 # settings
 settings:
-    verbose: True
+    verbose: False
+
+chat_history:
