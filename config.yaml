@@ -18,10 +18,9 @@ embedding:
 retriever:
     search_type: "hybrid" # "similarity", "hybrid"
     query: "국립인천해양박물관의 해양자료관리시스템과 한국수자원조사기술원의 수문자료정보관리시스템을 비교했을 때, 사업 추진 배경 차이는 뭐야?"
+    top_k: 5
     rerank: True # True/ False
-    top_k: 20
-    rerank_top_k: 3 
-    min_chunks: 2
+    rerank_top_k: 3
 
 generator:
     model_type: "openai" # "huggingface", "openai"

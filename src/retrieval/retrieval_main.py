@@ -31,19 +31,17 @@ def retrieval_main(config, vector_store, chunks):
     search_type = config.get("retriever", {}).get("search_type", "similarity")
     rerank = config.get("retriever", {}).get("rerank", True)
     rerank_top_k = config.get("retriever", {}).get("rerank_top_k", 3)
-    min_chunks = config.get("retriever", {}).get("min_chunks", 2)
     verbose = config.get("settings", {}).get("verbose", False)
 
-    docs = retrieve_documents(query, vector_store, top_k, search_type, chunks, embed_model, rerank, rerank_top_k, min_chunks, verbose)
+    docs = retrieve_documents(query, vector_store, top_k, search_type, chunks, embed_model, rerank, rerank_top_k)
     if verbose:
         print(f"\n- 임베딩 모델: {embed_model}")
         print(f"- DB 타입: {db_type}")
         print(f"- 벡터 DB 파일: {index_name}")
         print(f"- 청킹 검색 type: {search_type}")
         print(f"- reRank 적용 여부: {rerank}")
-        print(f"- 문서마다 보장되는 최소 청크 수: {min_chunks}")
         for i, doc in enumerate(docs, 1):
-            print(f"\n📄 문서 {i}/{len(docs)}")
+            print(f"\n📄 문서 {i}")
             print(f"본문:\n{doc.page_content[:300]}...")
             print(f"메타데이터: {doc.metadata}")
             
