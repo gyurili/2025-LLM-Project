@@ -36,7 +36,8 @@ def build_prompt(
             source_info = (
                 f"[출처: {chunk.metadata.get('파일명')} | "
                 f"기관: {chunk.metadata.get('발주 기관')} | "
-                f"사업명: {chunk.metadata.get('사업명')}]"
+                f"사업명: {chunk.metadata.get('사업명')} | "
+                f"청크 번호: {chunk.metadata.get('chunk_idx')}]"
             )
 
         context = f"{source_info}\n{chunk.page_content}".strip()
@@ -56,7 +57,9 @@ def build_prompt(
             "- 불확실하거나 추측되는 내용은 포함하지 마세요.\n"
             "- 문서 외의 지식, 상식, 다른 문서나 유사 사례를 근거로 답하지 마세요\n"
             "- 답변은 최대 5문장 이내로 작성하세요.\n"
-            "- 항목이 여러 개인 경우, 항목별로 줄바꿈하여 나열하세요.\n\n"
+            "- 항목이 여러 개인 경우, 항목별로 줄바꿈하여 나열하세요.\n"
+            "- 답변의 마지막엔 출처가 된 문서들을 [출처: '문서명'] 형식으로 작성 하시오.\n"
+            "- 문서 내용 중간에 출처를 표시하지 마세요.\n\n"
             "### 문서 내용:\n{context}\n\n"
             "### 질문:\n{question}\n\n"
             "### 답변:"
