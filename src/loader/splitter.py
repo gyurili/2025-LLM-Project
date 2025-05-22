@@ -209,6 +209,5 @@ def summarize_chunk_quality(chunks: List[Document], verbose: bool = False):
             print(f"        - 최대길이: {res['최대길이']}")
             print(f"        - 500자미만비율: {res['500자미만비율']:.2f}%")
 
-            if verbose:
-                insepect_sample_chunks(chunks, res['파일명'])
-                print("-" * 30)
+            insepect_sample_chunks(chunks, res['파일명'])
+            print("-" * 30)

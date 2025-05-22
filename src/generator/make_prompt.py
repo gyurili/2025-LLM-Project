@@ -11,7 +11,8 @@ def build_prompt(
     question: str,
     retrieved_docs: List[Document],
     include_source: bool = True,
-    prompt_template: str = None
+    prompt_template: str = None,
+    chat_history: str = None,
 ) -> str:
     """
     주어진 질문과 검색된 문서들을 기반으로 프롬프트를 구성합니다.
@@ -45,6 +46,11 @@ def build_prompt(
 
     context_text = "\n\n---\n\n".join(context_blocks)
 
+    # 대화 내역 요약 검사
+    chat_history_section = ""
+    if chat_history:
+        chat_history_section = f"### 이전 대화:\n{chat_history}\n\n"
+
     if prompt_template is None:
         prompt_template = (
             "당신은 정부 및 대학의 공공 사업 제안서를 분석하는 AI 전문가입니다.\n"
@@ -65,4 +71,4 @@ def build_prompt(
             "### 답변:"
         )
 
-    return prompt_template.format(context=context_text, question=question)
+    return prompt_template.format(context=context_text, question=question, chat_history_section=chat_history_section)

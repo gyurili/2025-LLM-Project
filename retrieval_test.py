@@ -1,3 +1,5 @@
+from src.utils.shared_cache import set_cache_dirs
+set_cache_dirs()
 import os
 from langsmith import trace
 from dotenv import load_dotenv
@@ -40,7 +42,7 @@ def retrieval_test():
                 "embed_model": config["embedding"]["embed_model"],
                 "db_type": config["embedding"]["db_type"],
                 "rerank": config["retriever"]["rerank"],
-                "min_chunks": config["retriever"]["min_chunks"],
+                "rerank_top_k": config["retriever"]["rerank_top_k"],
                 "top_k": config["retriever"]["top_k"],
                 "num_chunks": len(chunks),
                 "num_retrieved_docs": len(docs),
