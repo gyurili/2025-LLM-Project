@@ -30,10 +30,11 @@ def retrieval_main(config, vector_store, chunks):
     top_k = config.get("retriever", {}).get("top_k", 5)
     search_type = config.get("retriever", {}).get("search_type", "similarity")
     rerank = config.get("retriever", {}).get("rerank", True)
-    min_chunks = config.get("retriever", {}).get("min_chunks", 3)
+    rerank_top_k = config.get("retriever", {}).get("rerank_top_k", 3)
+    min_chunks = config.get("retriever", {}).get("min_chunks", 2)
     verbose = config.get("settings", {}).get("verbose", False)
 
-    docs = retrieve_documents(query, vector_store, top_k, search_type, chunks, embed_model, rerank, min_chunks, verbose)
+    docs = retrieve_documents(query, vector_store, top_k, search_type, chunks, embed_model, rerank, rerank_top_k, min_chunks, verbose)
     if verbose:
         print(f"\n- 임베딩 모델: {embed_model}")
         print(f"- DB 타입: {db_type}")
