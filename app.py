@@ -8,8 +8,12 @@ from src.utils.config import load_config
 from src.loader.loader_main import loader_main
 from src.embedding.embedding_main import embedding_main
 from src.retrieval.retrieval_main import retrieval_main
-from src.generator.generator_main import generator_main
+from src.generator.generator_main import generator_main, generate_with_clarification
 from src.embedding.embedding_main import generate_index_name
+from src.generator.hf_generator import load_hf_model
+from src.generator.openai_generator import load_openai_model
+from src.generator.load_model import load_generator_model
+
 
 project_root = get_project_root_dir()
 config_path = os.path.join(project_root, "config.yaml")
@@ -30,7 +34,7 @@ with st.sidebar:
     config["data"]["top_k"] = st.slider("🔢 최대 문서 수(files)", 1, 100, config["data"]["top_k"])
     config["data"]["file_type"] = st.selectbox("📄 파일 유형", ["all", "pdf", "hwp"], index=["all", "pdf", "hwp"].index(config["data"]["file_type"]))
     config["data"]["apply_ocr"] = st.toggle("🧾 OCR 적용 여부", config["data"]["apply_ocr"])
-    config["data"]["splitter"] = st.selectbox("✂️ 문서 분할 방법", ["section+recursive", "recursive", "token"], index=["section+recursive", "recursive", "token"].index(config["data"]["splitter"]))
+    config["data"]["splitter"] = st.selectbox("✂️ 문서 분할 방법", ["section", "recursive", "token"], index=["section", "recursive", "token"].index(config["data"]["splitter"]))
     config["data"]["chunk_size"] = st.number_input("📏 Chunk 크기", value=config["data"]["chunk_size"], step=100)
     config["data"]["chunk_overlap"] = st.number_input("🔁 Chunk 오버랩", value=config["data"]["chunk_overlap"], step=10)
 
@@ -95,7 +99,15 @@ with st.sidebar:
         else:
             st.info("삭제할 파일 및 폴더가 없습니다.")
 
-
+@st.cache_resource
+def get_generation_model(model_type:str, model_name:str, use_quantization:bool = False):
+    config = {'generator': {'model_type': model_type, 'model_name': model_name, 'use_quantization': use_quantization}}
+    if model_type == 'huggingface':
+        model_info = load_hf_model(config)
+    else:
+        model_info = load_openai_model(config)
+    return model_info
+    
 def run_rag_pipeline(config):
     '''
     '''
@@ -132,11 +144,14 @@ def run_rag_pipeline(config):
         st.warning("검색된 문서가 없습니다.")
     else:
         st.info(docs.page_content)
-
-
+    model_type = config["generator"]["model_type"]
+    model_name = config["generator"]["model_name"]
+    use_quantization = config["generator"]["use_quantization"]
+    model_info = get_generation_model(model_type, model_name, use_quantization)
+    
     # 답변 생성
     with st.spinner("문서 요약 및 답변 생성 중..."):
-        answer = generator_main(docs, config)
+        answer = generate_with_clarification(docs, config, max_retries=3, model_info=model_info)
 
     # 답변 표시
     st.markdown("### 🤖 요약된 답변")

@@ -2,7 +2,7 @@
 data:
     folder_path: "data/files"
     data_list_path: "data/data_list.csv"
-    top_k: 5 # 최대 몇개까지 1 ~ 100 
+    top_k: 100 # 최대 몇개까지 1 ~ 100 
     file_type: "all" # "hwp" 또는 "pdf", "all"
     apply_ocr: False # True/ False
     splitter: "recursive" # "recursive", "token", "section"
@@ -26,7 +26,7 @@ generator:
     model_type: "openai" # "huggingface", "openai"
     model_name: "gpt-4.1-nano" # "microsoft/Phi-4-mini-instruct", "gpt-4.1-mini", "gpt-4.1-nano"
     max_length: 512
-    use_quantization: False
+    use_quantization: True
 
 # settings
 settings:
