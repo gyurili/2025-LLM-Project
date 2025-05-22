@@ -6,7 +6,8 @@ from src.generator.make_prompt import build_prompt
 
 def generator_main(
     retrieved_docs: List[Document],
-    config: dict
+    config: dict,
+    model_info=None
 ) -> str:
     """
     검색된 문서 리스트를 기반으로 답변을 생성하는 메인 실행 함수.
@@ -28,17 +29,19 @@ def generator_main(
         include_source=config.get("include_source", True),
         prompt_template=config.get("prompt_template")
     )
-
-    if config["generator"]["model_type"] == "huggingface":
-        model_info = load_hf_model(config)
+    model_type = config["generator"]["model_type"]
+    if model_info is None:
+        if model_type == "huggingface":
+            model_info = load_hf_model(config)
+        elif model_type == "openai":
+            model_info = load_openai_model(config)
+            
+    if model_type == "huggingface":
         answer = generate_answer_hf(prompt, model_info, config["generator"])
-
-    elif config["generator"]["model_type"] == "openai":
-        model_info = load_openai_model(config)
+    elif model_type == "openai":
         answer = generate_answer_openai(prompt, model_info, config["generator"])
-    
+        
     print(answer)
-
     return answer
 
 def is_unsatisfactory(answer: str) -> bool:
@@ -116,7 +119,7 @@ def generate_with_clarification(
         else:
             raise ValueError(f"지원되지 않는 generator model_type: {model_type}")
 
-    answer = generator_main(retrieved_docs, config)
+    answer = generator_main(retrieved_docs, config, model_info)
 
     # 3) 재시도 루프
     for i in range(max_retries):
