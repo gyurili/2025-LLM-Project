@@ -31,4 +31,6 @@ generator:
 
 # settings
 settings:
-    verbose: True
+    verbose: False
+
+chat_history:
