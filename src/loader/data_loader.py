@@ -78,7 +78,7 @@ def extract_text_from_pdf(pdf_path: Path, apply_ocr: bool = True) -> str:
     return full_text
 
 
-def retrieve_top_documents_from_metadata(query, csv_path, embed_model, top_k=5, verbose=False):
+def retrieve_top_documents_from_metadata(query, csv_path, embed_model, top_k=5):
     """
     사용자 질문(query)과 문서 메타데이터(csv)에 기반하여 
     가장 유사한 top_k개의 문서를 반환합니다.
@@ -88,7 +88,6 @@ def retrieve_top_documents_from_metadata(query, csv_path, embed_model, top_k=5, 
         csv_path (str): CSV 파일 경로
         embed_model (str): 임베딩 모델 이름 (예: "openai", "huggingface")
         top_k (int): 반환할 문서 수 (기본값 5)
-        verbose (bool): 결과를 표 형태로 출력할지 여부 (기본값 False)
 
     Returns:
         pd.DataFrame: 상위 top_k 문서 정보 + 유사도 점수
@@ -97,8 +96,7 @@ def retrieve_top_documents_from_metadata(query, csv_path, embed_model, top_k=5, 
         from src.embedding.vector_db import generate_embedding
         embedder = generate_embedding(embed_model)
         if embedder is not None:
-            if verbose:
-                print(f"    📌 [Info] Embedding model: {embedder.__class__.__name__}")
+            print(f"📌 [Info] Embedding model: {embedder.__class__.__name__}")
 
         if not os.path.exists(csv_path):
             raise FileNotFoundError(f"❌ (loader.data_loader.retrieve_top_documents_from_metadata) 파일을 찾을 수 없습니다: {csv_path}")
@@ -142,14 +140,13 @@ def retrieve_top_documents_from_metadata(query, csv_path, embed_model, top_k=5, 
         except Exception as e:
             raise RuntimeError(f"❌ (loader.data_loader.retrieve_top_documents_from_metadata) 결과 DataFrame 생성 실패: {str(e)}")
 
-        if verbose == True:
-            from tabulate import tabulate
-            table = [
-                [idx, row["파일명"], f"{row['유사도']:.4f}"]
-                for idx, row in top_docs.iterrows()
-            ]
-            output = tabulate(table, headers=["IDX", "파일명", "유사도"], tablefmt="github")
-            print("\n".join("    " + line for line in output.splitlines()))  # 수정부분: 4칸 들여쓰기 적용
+        from tabulate import tabulate
+        table = [
+            [idx, row["파일명"], f"{row['유사도']:.4f}"]
+            for idx, row in top_docs.iterrows()
+        ]
+        output = tabulate(table, headers=["IDX", "파일명", "유사도"], tablefmt="github")
+        print("\n".join("    " + line for line in output.splitlines()))  # 수정부분: 4칸 들여쓰기 적용
 
         return top_docs
     except Exception as e:
