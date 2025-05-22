@@ -38,7 +38,6 @@ config = load_config(config_path)
 dotenv_path = os.path.join(project_root, ".env")
 load_dotenv(dotenv_path=dotenv_path)
 
-
 # 전역 설정
 @st.cache_resource
 def get_generation_model(model_type:str, model_name:str, use_quantization:bool = False):
@@ -58,7 +57,7 @@ model_info = get_generation_model(config["generator"]["model_type"],
 # 사이드 바 설정
 with st.sidebar:
     st.header("⚙️ 설정")
-    sidebar_page = st.radio("사이드바 메뉴 선택", ["옵션 설정", "📚 참고 문서 보기"])
+    sidebar_page = st.radio("사이드바 메뉴 선택", ["옵션 설정", "참고 문서 보기"])
 
     if sidebar_page == "옵션 설정":
         # Data 관련 설정
