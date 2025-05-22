@@ -8,8 +8,12 @@ from src.utils.config import load_config
 from src.loader.loader_main import loader_main
 from src.embedding.embedding_main import embedding_main
 from src.retrieval.retrieval_main import retrieval_main
-from src.generator.generator_main import generator_main
+from src.generator.generator_main import generator_main, generate_with_clarification
 from src.embedding.embedding_main import generate_index_name
+from src.generator.hf_generator import load_hf_model
+from src.generator.openai_generator import load_openai_model
+from src.generator.load_model import load_generator_model
+
 
 project_root = get_project_root_dir()
 config_path = os.path.join(project_root, "config.yaml")
@@ -30,7 +34,7 @@ with st.sidebar:
     config["data"]["top_k"] = st.slider("🔢 최대 문서 수(files)", 1, 100, config["data"]["top_k"])
     config["data"]["file_type"] = st.selectbox("📄 파일 유형", ["all", "pdf", "hwp"], index=["all", "pdf", "hwp"].index(config["data"]["file_type"]))
     config["data"]["apply_ocr"] = st.toggle("🧾 OCR 적용 여부", config["data"]["apply_ocr"])
-    config["data"]["splitter"] = st.selectbox("✂️ 문서 분할 방법", ["section+recursive", "recursive", "token"], index=["section+recursive", "recursive", "token"].index(config["data"]["splitter"]))
+    config["data"]["splitter"] = st.selectbox("✂️ 문서 분할 방법", ["section", "recursive", "token"], index=["section", "recursive", "token"].index(config["data"]["splitter"]))
     config["data"]["chunk_size"] = st.number_input("📏 Chunk 크기", value=config["data"]["chunk_size"], step=100)
     config["data"]["chunk_overlap"] = st.number_input("🔁 Chunk 오버랩", value=config["data"]["chunk_overlap"], step=10)
 
@@ -52,7 +56,7 @@ with st.sidebar:
     config["retriever"]["search_type"] = st.selectbox("🔎 검색 방식", ["similarity", "hybrid"], index=["similarity", "hybrid"].index(config["retriever"]["search_type"]))
     config["retriever"]["top_k"] = st.slider("📄 검색 문서 수(chunks)", 1, 20, config["retriever"]["top_k"])
     config["retriever"]["rerank"] = st.toggle("📊 리랭크 적용", config["retriever"]["rerank"])
-    config["retriever"]["min_chunks"] = st.slider("🔝 리랭크 문서 수(chunks)", 1, 20, config["retriever"]["min_chunks"])
+    config["retriever"]["rerank_top_k"] = st.slider("🔝 리랭크 문서 수(chunks)", 1, 20, config["retriever"]["rerank_top_k"])
 
     # Generator 설정
     st.subheader("🔍 생성자 설정")
@@ -95,9 +99,36 @@ with st.sidebar:
         else:
             st.info("삭제할 파일 및 폴더가 없습니다.")
 
-
-def run_rag_pipeline(config):
+@st.cache_resource
+def get_generation_model(model_type:str, model_name:str, use_quantization:bool = False):
+    config = {'generator': {'model_type': model_type, 'model_name': model_name, 'use_quantization': use_quantization}}
+    if model_type == 'huggingface':
+        model_info = load_hf_model(config)
+    else:
+        model_info = load_openai_model(config)
+    return model_info
+    
+def run_rag_pipeline(config:dict):
     '''
+    RAG 전체 파이프라인을 실행한다.
+
+    Steps:
+        1. 문서를 불러온 후 Chunk분리를 진행.
+        2. chunk를 embedding vector로 만든 후 DB에 저장 (FAISS or Chroma).
+        3. 질문과 유사한 문서청크를 DB에서 불러온 후 top_k만큼 출력.
+        4. retriever단계에서 추출된 문서 chunk를 context로 입력 후 generate 진행.
+        5. 생성된 답변 정제 후 출력.
+        6. 질문과 답변을 history에 저장 한다.
+            - 5개가 넘어갈 경우 초기화.
+            - 600초 동안만 히스토리 저장, 이후는 초기화
+    Args:
+        config (dict): 설정 저장 파일
+
+    UI 출력:
+        - 질문 최상단 출력
+        - 추출된 문서 chunk 출력
+        - 생성된 답변 출력
+        - 질문, 답변 history 출력
     '''
     # Vector DB 존재 여부 확인
     if config["data"]["top_k"] == 100:
@@ -132,11 +163,14 @@ def run_rag_pipeline(config):
         st.warning("검색된 문서가 없습니다.")
     else:
         st.info(docs.page_content)
-
-
+    model_type = config["generator"]["model_type"]
+    model_name = config["generator"]["model_name"]
+    use_quantization = config["generator"]["use_quantization"]
+    model_info = get_generation_model(model_type, model_name, use_quantization)
+    
     # 답변 생성
     with st.spinner("문서 요약 및 답변 생성 중..."):
-        answer = generator_main(docs, config)
+        answer = generate_with_clarification(docs, config, max_retries=3, model_info=model_info)
 
     # 답변 표시
     st.markdown("### 🤖 요약된 답변")
@@ -148,9 +182,16 @@ def run_rag_pipeline(config):
         "answer": answer
     })
 
+    # History 5개 까지만 저장
+    MAX_HISTORY_LENGTH = 5
+
+    if len(st.session_state.chat_history) > MAX_HISTORY_LENGTH:
+        st.session_state.chat_history = st.session_state.chat_history[-MAX_HISTORY_LENGTH:]
+
 # ======================
 # 🤖 질문 입력 및 실행
 # ======================
+import time
 if "input_key_version" not in st.session_state:
     st.session_state.input_key_version = 0
 if "trigger_search" not in st.session_state:
@@ -159,6 +200,13 @@ if "user_query" not in st.session_state:
     st.session_state.user_query = ""
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
+    st.session_state.history_timestamp = time.time()
+
+# 추가 history 초기화 = 10분간만 history 유지
+EXPIRY_SECONDS = 600
+if time.time() - st.session_state.get("history_timestamp", 0) > EXPIRY_SECONDS:
+    st.session_state.chat_history = []
+    st.session_state.history_timestamp = time.time()
 
 def reset_query():
     st.session_state.input_key_version += 1
@@ -181,3 +229,9 @@ if st.session_state.trigger_search:
     run_rag_pipeline(config)
     # Reset
     reset_query()
+
+if st.session_state.chat_history:
+    st.markdown("### 🗂️ 대화 히스토리")
+    for i, turn in enumerate(st.session_state.chat_history[::-1]):
+        st.markdown(f"**Q{i+1}.** {turn['question']}")
+        st.markdown(f"**A{i+1}.** {turn['answer']}")
