@@ -44,6 +44,14 @@ def rerank_documents(
         print("\n📌 re-rank 적용 후 문서 순서:")
         for i, (doc, score) in enumerate(doc_scores, 1):
             print(f"  {i}. 파일명: {doc.metadata.get('파일명')}, 청크: {doc.metadata.get('chunk_idx')}, 점수: {score:.4f}")
+    else:
+        print("\n📌 최종 문서 순서(상위 5개):")
+        rerank_top5 = 0
+        for i, (doc, score) in enumerate(doc_scores, 1):
+            print(f"  {i}. 파일명: {doc.metadata.get('파일명')}, 청크: {doc.metadata.get('chunk_idx')}, 점수: {score:.4f}")
+            rerank_top5 += 1
+            if rerank_top5 == 5:
+                break
 
     return [doc for doc, _ in doc_scores[:rerank_top_k]]
 

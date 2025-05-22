@@ -14,7 +14,7 @@ def loader_main(config: dict) -> List[Document]:
     # 1. 데이터 로드
     data_list_path = data_config.get("data_list_path", "data/data_list.csv")
 
-    df = retrieve_top_documents_from_metadata(query=query, csv_path=data_list_path, embed_model=embed_model, top_k=top_k, verbose=verbose)
+    df = retrieve_top_documents_from_metadata(query=query, csv_path=data_list_path, embed_model=embed_model, top_k=top_k)
     print("✅ 문서 유사도 검색 완료")
 
     # 2. 데이터 전처리
@@ -34,7 +34,8 @@ def loader_main(config: dict) -> List[Document]:
 
     # 4. 청크 품질 검사
     summarize_chunk_quality(chunks, verbose)
-    print("✅ 청크 품질 검사 완료")
+    if verbose:
+        print("✅ 청크 품질 검사 완료")
 
     return chunks
 
