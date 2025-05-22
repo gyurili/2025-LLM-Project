@@ -17,14 +17,14 @@ embedding:
 
 retriever:
     search_type: "similarity" # "similarity", "hybrid"
-    query: "한국 철도 공사와 관련된 파일이 3개인데, 파일마다 차이점이 뭐지?"
+    query: "파주도시관광공사의 종량제봉투 판매관리 전산시스템 개선사업의 기대효과는 뭐야?"
     top_k: 5
     rerank: True # True/ False
     min_chunks: 3
 
 generator:
     model_type: "huggingface" # "huggingface", "openai"
-    model_name: "gpt-4.1-nano" # "microsoft/Phi-4-mini-instruct", "Bllossom/llama-3.2-Korean-Bllossom-AICA-5B" "gpt-4.1-mini", "gpt-4.1-nano", "EleutherAI/gpt-neo-1.3B"
+    model_name: "microsoft/Phi-4-mini-instruct" # "microsoft/Phi-4-mini-instruct", "Bllossom/llama-3.2-Korean-Bllossom-AICA-5B" "gpt-4.1-mini", "gpt-4.1-nano"
     max_length: 512
     use_quantization: True
 

@@ -38,7 +38,6 @@ def generator_main(
         answer = generate_answer_openai(prompt, model_info, config["generator"])
     
     print(answer)
-    print("✅ 답변 생성 완료")
 
     return answer
 
