@@ -19,7 +19,7 @@ from src.utils.path import get_project_root_dir
 
 # EasyOCR Reader 객체 생성 (GPU 사용)
 # 한글(ko) + 영어(en)를 인식하며, 모델은 한 번만 로드됨
-reader = easyocr.Reader(['ko', 'en'], gpu=True)
+reader = easyocr.Reader(['ko', 'en'], gpu=False)
 
 
 def safe_ocr(img_array: np.ndarray, ocr_reader: easyocr.Reader) -> str:

@@ -34,7 +34,8 @@ def loader_main(config: dict) -> List[Document]:
 
     # 4. 청크 품질 검사
     summarize_chunk_quality(chunks, verbose)
-    print("✅ 청크 품질 검사 완료")
+    if verbose:
+        print("✅ 청크 품질 검사 완료")
 
     return chunks
 
