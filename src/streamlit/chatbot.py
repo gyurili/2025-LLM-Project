@@ -67,7 +67,7 @@ with st.sidebar:
     config["retriever"]["search_type"] = st.selectbox("🔎 검색 방식", ["similarity", "hybrid"], index=["similarity", "hybrid"].index(config["retriever"]["search_type"]))
     config["retriever"]["top_k"] = st.slider("📄 검색 문서 수(chunks)", 1, 20, config["retriever"]["top_k"])
     config["retriever"]["rerank"] = st.toggle("📊 리랭크 적용", config["retriever"]["rerank"])
-    config["retriever"]["min_chunks"] = st.slider("🔝 리랭크 문서 수(chunks)", 1, 20, config["retriever"]["min_chunks"])
+    config["retriever"]["rerank_top_k"] = st.slider("🔝 리랭크 문서 수(chunks)", 1, 20, config["retriever"]["rerank_top_k"])
 
     # Generator 설정
     st.subheader("🔍 생성자 설정")
