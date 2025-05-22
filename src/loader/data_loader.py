@@ -93,7 +93,7 @@ def retrieve_top_documents_from_metadata(query, csv_path, embed_model, top_k=5, 
     Returns:
         pd.DataFrame: 상위 top_k 문서 정보 + 유사도 점수
     """
-    try:  # 수정부분: 전체 함수 방어적 처리 시작
+    try:
         from src.embedding.vector_db import generate_embedding
         embedder = generate_embedding(embed_model)
         if embedder is not None:
