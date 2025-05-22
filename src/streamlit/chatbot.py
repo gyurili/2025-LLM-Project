@@ -19,6 +19,8 @@ from src.embedding.embedding_main import embedding_main
 from src.retrieval.retrieval_main import retrieval_main
 from src.generator.generator_main import generator_main
 from src.embedding.embedding_main import generate_index_name
+from src.generator.hf_generator import load_hf_model
+from src.generator.openai_generator import load_openai_model
 
 # Streamlit 페이지 설정
 st.set_page_config(page_title="RFP Chatbot", layout="wide") # (Chrome 상단 바 이름)
@@ -35,6 +37,23 @@ config_path = os.path.join(project_root, "config.yaml")
 config = load_config(config_path)
 dotenv_path = os.path.join(project_root, ".env")
 load_dotenv(dotenv_path=dotenv_path)
+
+
+# 전역 설정
+@st.cache_resource
+def get_generation_model(model_type:str, model_name:str, use_quantization:bool = False):
+    config = {'generator': {'model_type': model_type, 'model_name': model_name, 'use_quantization': use_quantization}}
+    if model_type == 'huggingface':
+        model_info = load_hf_model(config)
+    else:
+        model_info = load_openai_model(config)
+    return model_info
+
+# 실행 중 모델은 단 한번만 부르기
+model_info = get_generation_model(config["generator"]["model_type"], 
+                                  config["generator"]["model_name"], 
+                                  config["generator"]["use_quantization"])
+
 
 # 사이드 바 설정
 with st.sidebar:
@@ -148,7 +167,7 @@ if query:
     # 질문에 대한 답변 생성, 추론 시간 측정
     start_time = time.time()
     with st.spinner("🤖 답변 생성 중..."):
-        answer = generator_main(docs, config) # generator_main 함수에 docs와 query를 전달
+        answer = generator_main(docs, config, model_info=model_info) # generator_main 함수에 docs와 query를 전달
     end_time = time.time()
     elapsed = round(end_time - start_time, 2)
 
