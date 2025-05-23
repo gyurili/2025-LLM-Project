@@ -8,16 +8,13 @@ import streamlit as st
 import shutil
 from pathlib import Path
 from datetime import datetime
+import requests
 os.environ["HF_HOME"] = "2025-LLM-Project/.cache" # Huggingface 캐시 경로 설정
 
 # 내부 임포트
 from dotenv import load_dotenv
 from src.utils.config import load_config
-from src.loader.loader_main import loader_main
 from src.utils.path import get_project_root_dir
-from src.embedding.embedding_main import embedding_main
-from src.retrieval.retrieval_main import retrieval_main
-from src.generator.generator_main import generator_main
 from src.embedding.embedding_main import generate_index_name
 from src.generator.hf_generator import load_hf_model
 from src.generator.openai_generator import load_openai_model
@@ -38,6 +35,23 @@ config_path = os.path.join(project_root, "config.yaml")
 config = load_config(config_path)
 dotenv_path = os.path.join(project_root, ".env")
 load_dotenv(dotenv_path=dotenv_path)
+
+# FastAPI 서버 주소
+FASTAPI_URL = os.getenv("FASTAPI_URL")
+
+def call_fastapi(query: str) -> dict:
+    try:
+        response = requests.post(
+            FASTAPI_URL,
+            json={"query": query},
+            timeout=60
+        )
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {"error": f"FastAPI 오류 (status {response.status_code})"}
+    except Exception as e:
+        return {"error": str(e)}
 
 # 전역 설정
 @st.cache_resource
@@ -172,17 +186,6 @@ if query:
         st.markdown(query)
 
     config["retriever"]["query"] = query
-
-    # 데이터 처리
-    chunks = loader_main(config)
-
-    with st.spinner("📂 관련 문서 임베딩 중..."):
-        vector_store = embedding_main(config, chunks, is_save=is_save)
-
-    with st.spinner("🔍 관련 문서 검색 중..."):
-        docs = retrieval_main(config, vector_store, chunks)
-
-    st.session_state.docs = docs
     
     # 이전 문맥을 전달하는 방식 (선택사항 - 모델 구현에 따라)
     config["chat_history"] = st.session_state.chat_history
@@ -190,9 +193,17 @@ if query:
     # 질문에 대한 답변 생성, 추론 시간 측정
     start_time = time.time()
     with st.spinner("🤖 답변 생성 중..."):
-        answer = generator_main(docs, config, model_info=model_info) # generator_main 함수에 docs와 query를 전달
+        result = call_fastapi(query) # FastAPI 서버 호출
     end_time = time.time()
     elapsed = round(end_time - start_time, 2)
+    
+    if "error" in result:
+        answer = f"❌ 오류 발생: {result['error']}"
+        st.session_state.docs = []
+    else:
+        answer = result["answer"]
+        st.session_state.docs = result.get("docs_preview", [])
+
 
     # 추론 결과, 추론 시간 표시
     with st.chat_message("assistant"):
