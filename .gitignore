@@ -158,5 +158,8 @@ data/*
 *.faiss
 *.pkl
 
+# notebooks
+notebooks/*.ipynb
+
 # config
 config.yaml
