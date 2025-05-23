@@ -16,7 +16,6 @@ from langchain_teddynote.document_loaders import HWPLoader
 
 from src.utils.path import get_project_root_dir
 
-# EasyOCR Reader는 조건부 로딩을 위해 제거되었습니다.
 
 def safe_ocr(img_array: np.ndarray, ocr_reader: easyocr.Reader) -> str:
     """
@@ -37,6 +36,8 @@ def safe_ocr(img_array: np.ndarray, ocr_reader: easyocr.Reader) -> str:
     except Exception as e:
         raise RuntimeError(f"❌ [Runtime] (data_loader.safe_ocr) OCR 처리 실패: {e}")
 
+
+
 def extract_text_from_pdf(pdf_path: Path, apply_ocr: bool = True) -> str:
     """
     PDF 파일에서 텍스트 및 OCR 텍스트를 추출합니다.
@@ -49,10 +50,11 @@ def extract_text_from_pdf(pdf_path: Path, apply_ocr: bool = True) -> str:
         str: 전체 페이지에서 추출된 텍스트
     """
     if not pdf_path.exists():
-        raise FileNotFoundError(f"❌ [FileNotFound] (data_loader.extract_text_from_pdf.pdf_path) PDF 파일을 찾을 수 없습니다: {pdf_path}")
+        raise FileNotFoundError(
+            f"❌ [FileNotFound] (data_loader.extract_text_from_pdf.pdf_path) PDF 파일을 찾을 수 없습니다: {pdf_path}"
+        )
 
     full_text = ""
-    # EasyOCR Reader는 최초 1회만 로드되며 캐싱됩니다.
     try:
         with fitz.open(pdf_path) as doc:
             for page_num, page in enumerate(tqdm(doc, desc=f"{pdf_path.name}")):
@@ -63,8 +65,9 @@ def extract_text_from_pdf(pdf_path: Path, apply_ocr: bool = True) -> str:
                     if apply_ocr:
                         pix = page.get_pixmap(dpi=300)
                         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-                        if apply_ocr and not hasattr(extract_text_from_pdf, "reader"):
+                        if not hasattr(extract_text_from_pdf, "reader"):
                             import torch
+
                             gpu_available = torch.cuda.is_available()
                             extract_text_from_pdf.reader = easyocr.Reader(['ko', 'en'], gpu=gpu_available)
                         ocr_text = safe_ocr(np.array(img), extract_text_from_pdf.reader)
@@ -77,9 +80,13 @@ def extract_text_from_pdf(pdf_path: Path, apply_ocr: bool = True) -> str:
 
     return full_text
 
-def retrieve_top_documents_from_metadata(query: str, csv_path: str, embed_model: str, top_k: int = 5) -> pd.DataFrame:
+
+
+def retrieve_top_documents_from_metadata(
+    query: str, csv_path: str, embed_model: str, top_k: int = 5
+) -> pd.DataFrame:
     """
-    사용자 질문(query)과 문서 메타데이터(csv)에 기반하여 
+    사용자 질문(query)과 문서 메타데이터(csv)에 기반하여
     가장 유사한 top_k개의 문서를 반환합니다.
 
     Args:
@@ -92,28 +99,39 @@ def retrieve_top_documents_from_metadata(query: str, csv_path: str, embed_model:
         pd.DataFrame: 상위 top_k 문서 정보 + 유사도 점수
     """
     from src.embedding.vector_db import generate_embedding
+
     embedder = generate_embedding(embed_model)
 
     if embedder is not None:
         print(f"📌 [Info] Embedding model: {embedder.__class__.__name__}")
 
     if not os.path.exists(csv_path):
-        raise FileNotFoundError(f"❌ [FileNotFound] (data_loader.retrieve_top_documents_from_metadata) 파일을 찾을 수 없습니다: {csv_path}")
+        raise FileNotFoundError(
+            f"❌ [FileNotFound] (data_loader.retrieve_top_documents_from_metadata) 파일을 찾을 수 없습니다: {csv_path}"
+        )
 
     try:
         df = pd.read_csv(csv_path)
     except Exception as e:
-        raise ValueError(f"❌ [Value] (data_loader.retrieve_top_documents_from_metadata) CSV 파일 로딩 실패: {e}")
+        raise ValueError(
+            f"❌ [Value] (data_loader.retrieve_top_documents_from_metadata) CSV 파일 로딩 실패: {e}"
+        )
 
     required_columns = ["사업명", "발주 기관", "사업 요약", "파일명"]
     for col in required_columns:
         if col not in df.columns:
-            raise KeyError(f"❌ [Key] (data_loader.retrieve_top_documents_from_metadata) '{col}' 열이 CSV에 존재하지 않습니다.")
+            raise KeyError(
+                f"❌ [Key] (data_loader.retrieve_top_documents_from_metadata) '{col}' 열이 CSV에 존재하지 않습니다."
+            )
 
     try:
-        df["임베딩텍스트"] = df.apply(lambda row: f"{row['사업명']} {row['발주 기관']} {row['사업 요약']}", axis=1)
+        df["임베딩텍스트"] = df.apply(
+            lambda row: f"{row['사업명']} {row['발주 기관']} {row['사업 요약']}", axis=1
+        )
     except Exception as e:
-        raise RuntimeError(f"❌ [Runtime] (data_loader.retrieve_top_documents_from_metadata) 임베딩 텍스트 생성 중 오류: {e}")
+        raise RuntimeError(
+            f"❌ [Runtime] (data_loader.retrieve_top_documents_from_metadata) 임베딩 텍스트 생성 중 오류: {e}"
+        )
 
     doc_texts = df["임베딩텍스트"].tolist()
 
@@ -124,7 +142,9 @@ def retrieve_top_documents_from_metadata(query: str, csv_path: str, embed_model:
     else:
         doc_embeddings = embedder.embed_documents(doc_texts)
         query_embedding = embedder.embed_query(query)
-        similarities = cosine_similarity(np.array([query_embedding]), np.array(doc_embeddings))[0]
+        similarities = cosine_similarity(
+            np.array([query_embedding]), np.array(doc_embeddings)
+        )[0]
 
     top_k_indices = np.argsort(similarities)[::-1][:top_k]
 
@@ -132,15 +152,23 @@ def retrieve_top_documents_from_metadata(query: str, csv_path: str, embed_model:
         top_docs = df.iloc[top_k_indices].copy()
         top_docs["유사도"] = similarities[top_k_indices]
     except Exception as e:
-        raise RuntimeError(f"❌ [Runtime] (data_loader.retrieve_top_documents_from_metadata) 결과 DataFrame 생성 실패: {e}")
+        raise RuntimeError(
+            f"❌ [Runtime] (data_loader.retrieve_top_documents_from_metadata) 결과 DataFrame 생성 실패: {e}"
+        )
 
-    table = [[idx, row["파일명"], f"{row['유사도']:.4f}"] for idx, row in top_docs.iterrows()]
+    table = [
+        [idx, row["파일명"], f"{row['유사도']:.4f}"] for idx, row in top_docs.iterrows()
+    ]
     output = tabulate(table, headers=["IDX", "파일명", "유사도"], tablefmt="github")
     print("\n".join("    " + line for line in output.splitlines()))
 
     return top_docs
 
-def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all") -> pd.DataFrame:
+
+
+def data_process(
+    df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all"
+) -> pd.DataFrame:
     """
     HWP 또는 PDF 파일을 처리하여 텍스트를 추출하고 full_text 컬럼에 저장합니다.
 
@@ -156,35 +184,45 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all
     file_root = os.path.join(base_dir, "data", "files")
 
     if file_type in ["hwp", "pdf"]:
-        mask = df['파일명'].str.lower().str.endswith(f".{file_type}")
+        mask = df["파일명"].str.lower().str.endswith(f".{file_type}")
         filtered_df = df[mask].copy()
     elif file_type == "all":
         filtered_df = df.copy()
 
-    filtered_df['full_text'] = None
+    filtered_df["full_text"] = None
 
-    for file_name in filtered_df['파일명']:
+    for file_name in filtered_df["파일명"]:
         file_path = os.path.join(file_root, file_name)
         try:
             if not os.path.exists(file_path):
-                raise FileNotFoundError(f"❌ [FileNotFound] (data_loader.data_process.path) 파일이 존재하지 않습니다: {file_path}")
+                raise FileNotFoundError(
+                    f"❌ [FileNotFound] (data_loader.data_process.path) 파일이 존재하지 않습니다: {file_path}"
+                )
 
             if file_name.lower().endswith(".hwp") and file_type in ["hwp", "all"]:
                 loader = HWPLoader(file_path)
                 docs = loader.load()
                 if docs and isinstance(docs[0].page_content, str):
-                    filtered_df.loc[filtered_df['파일명'] == file_name, 'full_text'] = docs[0].page_content
+                    filtered_df.loc[
+                        filtered_df["파일명"] == file_name, "full_text"
+                    ] = docs[0].page_content
                 else:
-                    print(f"⚠️ [Warning] (data_loader.data_process.hwp) HWP 파일 무시됨 (내용 없음): {file_name}")
+                    print(
+                        f"⚠️ [Warning] (data_loader.data_process.hwp) HWP 파일 무시됨 (내용 없음): {file_name}"
+                    )
 
             elif file_name.lower().endswith(".pdf") and file_type in ["pdf", "all"]:
                 text = extract_text_from_pdf(Path(file_path), apply_ocr=apply_ocr)
-                filtered_df.loc[filtered_df['파일명'] == file_name, 'full_text'] = text
+                filtered_df.loc[filtered_df["파일명"] == file_name, "full_text"] = text
 
             else:
-                print(f"⚠️ [Warning] (data_loader.data_process) 지원하지 않는 파일 형식입니다: {file_name}")
+                print(
+                    f"⚠️ [Warning] (data_loader.data_process) 지원하지 않는 파일 형식입니다: {file_name}"
+                )
 
         except Exception as e:
-            raise RuntimeError(f"❌ [Runtime] (data_loader.data_process) 파일 처리 오류 ({file_name}): {e}")
+            raise RuntimeError(
+                f"❌ [Runtime] (data_loader.data_process) 파일 처리 오류 ({file_name}): {e}"
+            )
 
     return filtered_df.reset_index(drop=True)
