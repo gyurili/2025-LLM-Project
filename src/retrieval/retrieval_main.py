@@ -1,14 +1,14 @@
+from typing import List, Optional
+
 from src.retrieval.retrieval import retrieve_documents
 from src.embedding.vector_db import load_vector_db
 from src.embedding.embedding_main import generate_index_name
+
+from langsmith import traceable
 from langchain.schema import Document
-from typing import List, Optional
 
 
-from langsmith import trace
-
-
-@trace(name="retrieval_main")
+@traceable(name="retrieval_main")
 def retrieval_main(
     config: dict,
     vector_store: Optional[object],

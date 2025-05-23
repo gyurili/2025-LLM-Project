@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from typing import List, Optional, Literal
 
-from langsmith import trace
+from langsmith import traceable
 from langchain.vectorstores.base import VectorStore
 from langchain.schema import Document
 from langchain_community.retrievers import BM25Retriever
@@ -13,7 +13,7 @@ from src.embedding.vector_db import generate_embedding
 load_dotenv()
 
 
-@trace(name="rerank_documents")
+@traceable(name="rerank_documents")
 def rerank_documents(
     query: str,
     docs: List[Document],
@@ -56,7 +56,7 @@ def rerank_documents(
     return [doc for doc, _ in doc_scores[:rerank_top_k]]
 
 
-@trace(name="retrieve_documents")
+@traceable(name="retrieve_documents")
 def retrieve_documents(
     query: str,
     vector_store: VectorStore,

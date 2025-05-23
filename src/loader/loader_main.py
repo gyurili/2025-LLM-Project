@@ -1,6 +1,6 @@
 from typing import List
 
-from langsmith import trace
+from langsmith import trace, traceable
 from langchain.schema import Document
 
 from src.loader.data_loader import (
@@ -13,7 +13,7 @@ from src.loader.splitter import (
 )
 
 
-@trace(name="loader_main")
+@traceable(name="loader_main")
 def loader_main(config: dict) -> List[Document]:
     """
     설정 정보를 기반으로 문서를 로드하고, 전처리 및 청크 작업을 수행합니다.

@@ -5,7 +5,7 @@ import faiss
 from dotenv import load_dotenv
 from tqdm import tqdm
 
-from langsmith import trace
+from langsmith import traceable
 from langchain.schema import Document
 from langchain_community.vectorstores import FAISS
 from langchain_chroma import Chroma
@@ -43,7 +43,7 @@ def generate_embedding(embed_model_name: str) -> Union[OpenAIEmbeddings, Hugging
         raise ValueError(f"❌ [Value] (vector_db.generate_embedding) 임베딩 모델 초기화 실패: {e}")
 
 
-@trace(name="generate_vector_db")
+@traceable(name="generate_vector_db")
 def generate_vector_db(
     all_chunks: List[Document],
     embed_model_name: str,
@@ -127,7 +127,7 @@ def generate_vector_db(
         raise RuntimeError(f"❌ [Runtime] (vector_db.generate_vector_db) 벡터 DB 생성 실패: {e}")
 
 
-@trace(name="load_vector_db")
+@traceable(name="load_vector_db")
 def load_vector_db(
     path: str,
     embed_model_name: str,
