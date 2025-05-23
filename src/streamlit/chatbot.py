@@ -25,6 +25,8 @@ from src.generator.generator_main import generator_main
 from src.embedding.embedding_main import generate_index_name
 from src.generator.hf_generator import load_hf_model
 from src.generator.openai_generator import load_openai_model
+from src.generator.generator_main import load_chat_history
+
 # Streamlit 페이지 설정
 
 st.set_page_config(
@@ -34,13 +36,6 @@ st.set_page_config(
 
 st.header("RFP Chatbot", divider='blue')
 st.caption("PDF, HWP 형식의 제안서를 기반으로 한 내용 요약 및 질의응답을 경험하세요!")
-
-# 세션 상태 초기화
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
-
-if "docs" not in st.session_state:
-    st.session_state.docs = None
 
 # 프로젝트 루트 경로 설정 및 config 로드
 try:
@@ -57,6 +52,16 @@ if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path=dotenv_path)
 else:
     st.warning(".env 파일을 찾을 수 없습니다. 일부 기능이 제한될 수 있습니다.")
+
+# 세션 상태 초기화
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+else: # 세션 상태가 존재하는 경우, chat_history를 초기화하지 않음
+    st.session_state.chat_history = st.session_state.get("chat_history", [])
+    config["chat_history"] = st.session_state.chat_history
+
+if "docs" not in st.session_state:
+    st.session_state.docs = None
 
 # 모델 불러오기 캐시 함수
 @st.cache_resource
@@ -214,25 +219,33 @@ with tab1:
         with st.chat_message("user"):
             st.markdown(query)
 
+        if config.get("chat_history"):  # chat_history에 내용이 있는 경우
+            query = f"이전 질문 요약: {load_chat_history(config)}\n질문: {query}"
+        else:  # chat_history가 비어 있거나 없을 경우
+            # 첫 질문인 경우, 질문 내용만 추가
+            pass  # query는 그대로 유지
+
         config["retriever"]["query"] = query
+        print(f"질문: {query}")
+
         # 벡터 DB에서 유사 문서 검색
         # 데이터 처리
         try:
             chunks = loader_main(config)
             # 과거 chunks 병합
-            past_chunks = st.session_state.get("past_chunks", [])
-            merged_chunks = merge_and_deduplicate_chunks(chunks + past_chunks)
+            # past_chunks = st.session_state.get("past_chunks", [])
+            # merged_chunks = merge_and_deduplicate_chunks(chunks + past_chunks)
             
             with st.spinner("📂 관련 문서 임베딩 중..."):
-                vector_store = embedding_main(config, merged_chunks, is_save=is_save)
+                vector_store = embedding_main(config, chunks, is_save=is_save) # merged_chunks
             with st.spinner("🔍 관련 문서 검색 중..."):
-                docs = retrieval_main(config, vector_store, merged_chunks)
+                docs = retrieval_main(config, vector_store, chunks) # merged_chunks
         except Exception as e:
             st.error(f"문서 처리 중 오류 발생: {e}")
             st.stop()
 
         # 이번 질문까지 완료한 chunks 저장
-        st.session_state.past_chunks = merged_chunks
+        # st.session_state.past_chunks = merged_chunks
         
         st.session_state.docs = docs 
 
@@ -255,6 +268,10 @@ with tab1:
         # 추론 시간 표시
         with st.chat_message("assistant"):
             st.markdown(f"🕒 **추론 시간:** {elapsed}초")
+        # 대화 기록 업데이트
+        st.session_state.chat_history.append({"role": "ai", "content": answer}) # 답변 기록
+        config["chat_history"] = st.session_state.chat_history
+        # st.rerun()
 
         # 랜더링 한계점: 20개까지 히스토리 표시
         MAX_CHAT_HISTORY = 20
