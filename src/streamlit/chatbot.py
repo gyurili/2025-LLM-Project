@@ -10,6 +10,8 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict
 os.environ["HF_HOME"] = "2025-LLM-Project/.cache" # Huggingface 캐시 경로 설정
+from src.utils.shared_cache import set_cache_dirs
+set_cache_dirs()
 
 # 내부 임포트
 from dotenv import load_dotenv
