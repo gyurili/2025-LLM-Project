@@ -15,7 +15,6 @@ os.environ["HF_HOME"] = "2025-LLM-Project/.cache" # Huggingface 캐시 경로 �
 from dotenv import load_dotenv
 from src.utils.config import load_config
 from src.loader.loader_main import loader_main
-from src.loader.data_loader import merge_and_deduplicate_chunks
 from src.utils.path import get_project_root_dir
 from src.embedding.embedding_main import embedding_main
 from src.retrieval.retrieval_main import retrieval_main
@@ -178,7 +177,6 @@ with st.sidebar:
         if st.button("🔄 리셋"):
             st.session_state.chat_history = []
             st.session_state.docs = None
-            st.session_state.past_chunks = []
             st.rerun()
     with cols[1]:
         if st.button("🔁 모델 리로드"):
@@ -220,21 +218,14 @@ with tab1:
         # 데이터 처리
         try:
             chunks = loader_main(config)
-            # 과거 chunks 병합
-            past_chunks = st.session_state.get("past_chunks", [])
-            merged_chunks = merge_and_deduplicate_chunks(chunks + past_chunks)
-            
             with st.spinner("📂 관련 문서 임베딩 중..."):
-                vector_store = embedding_main(config, merged_chunks, is_save=is_save)
+                vector_store = embedding_main(config, chunks, is_save=is_save)
             with st.spinner("🔍 관련 문서 검색 중..."):
-                docs = retrieval_main(config, vector_store, merged_chunks)
+                docs = retrieval_main(config, vector_store, chunks)
         except Exception as e:
             st.error(f"문서 처리 중 오류 발생: {e}")
             st.stop()
-
-        # 이번 질문까지 완료한 chunks 저장
-        st.session_state.past_chunks = merged_chunks
-        
+            
         st.session_state.docs = docs 
 
         # 모델 불러오기는 단 한번만!
