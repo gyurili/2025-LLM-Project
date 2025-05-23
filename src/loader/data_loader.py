@@ -18,8 +18,6 @@ from langchain.schema import Document
 from src.utils.path import get_project_root_dir
 from src.generator.generator_main import load_chat_history
 
-reader = easyocr.Reader(['ko', 'en'], gpu=False)
-
 
 def safe_ocr(img_array: np.ndarray, ocr_reader: easyocr.Reader) -> str:
     """
