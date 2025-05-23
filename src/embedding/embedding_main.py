@@ -44,7 +44,7 @@ def generate_index_name(config: dict) -> str:
         return f"{data_type}_{splitter}_{model_key}_{db_type}"
 
 
-@traceable(name="embedding_main", inputs={"index_name": "<to_be_injected_at_runtime>"})
+@traceable(name="embedding_main")
 def embedding_main(config: dict, chunks: List[Document], is_save: bool = False) -> Union[FAISS, Chroma]:
     """
     설정에 따라 벡터 DB를 생성하거나 로드합니다.
