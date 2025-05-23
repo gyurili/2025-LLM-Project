@@ -14,6 +14,7 @@ os.environ["HF_HOME"] = "2025-LLM-Project/.cache" # Huggingface 캐시 경로 �
 from dotenv import load_dotenv
 from src.utils.config import load_config
 from src.loader.loader_main import loader_main
+from src.loader.data_loader import merge_and_deduplicate_chunks
 from src.utils.path import get_project_root_dir
 from src.embedding.embedding_main import embedding_main
 from src.retrieval.retrieval_main import retrieval_main
@@ -28,8 +29,11 @@ st.header("RFP Chatbot", divider='blue') # 색상 선택 ("rainbow", "red", "blu
 st.write("PDF, HWP 형식의 제안서를 업로드하여 내용 요약 및 질의응답을 경험하세요!")
 
 # 세션 상태 초기화
+#    질의응답 기록할 빈 리스트
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []  # [{"role": "user", "content": "..."}, {"role": "ai", "content": "..."}]
+if "docs" not in st.session_state:
+    st.session_state.docs = None
 
 # 기본 설정 파일 경로
 project_root = get_project_root_dir()
@@ -53,11 +57,13 @@ model_info = get_generation_model(config["generator"]["model_type"],
                                   config["generator"]["model_name"], 
                                   config["generator"]["use_quantization"])
 
-
 # 사이드 바 설정
 with st.sidebar:
     st.header("⚙️ 설정")
-    sidebar_page = st.radio("사이드바 메뉴 선택", ["옵션 설정", "참고 문서 보기"])
+    sidebar_page = st.radio(
+        "사이드바 메뉴 선택", 
+        ["옵션 설정", "참고 문서 보기"],
+    )
 
     if sidebar_page == "옵션 설정":
         # Data 관련 설정
@@ -148,12 +154,22 @@ with st.sidebar:
             st.warning("검색된 문서가 없습니다.")
         else:
             st.info(docs.page_content)
-        
-# 채팅
-query = st.chat_input("질문을 입력하세요")
+            
+# 초기화 버튼 분기 나누기
+cols = st.columns([9, 1])
+
+# 채팅 입력란
+with cols[0]:
+    query = st.chat_input("질문을 입력하세요")
+
+# 히스토리 정리 (쳇 히스토리 + 추출 문서)
+with cols[1]:
+    if st.button("정리"):
+        st.session_state.chat_history = []
+        st.session_state.docs = None
 
 if query:
-    # Vector DB 존재 여부 확인
+    # 사이드바 설정 반영 - Vector DB 존재 여부 확인
     if config["data"]["top_k"] == 100:
         if config["embedding"]["db_type"] == "faiss":
             is_save = not os.path.exists(vector_db_file)
@@ -163,6 +179,9 @@ if query:
             is_save = True
     else:
         is_save = True
+    # 질문 입력시 이전 추출문서 기록 초기화
+    if st.session_state.docs is not None:
+        st.session_state.docs = None
 
     # 이전 대화로 context 구성
     st.session_state.chat_history.append({"role": "user", "content": query})
@@ -175,12 +194,21 @@ if query:
     # 데이터 처리
     chunks = loader_main(config)
 
+    # 과거 chunks 병합
+    past_chunks = st.session_state.get("past_chunks", [])
+    merged_chunks = merge_and_deduplicate_chunks(chunks + past_chunks)
+
+    # 병합된 벡터 저장소 생성
     with st.spinner("📂 관련 문서 임베딩 중..."):
-        vector_store = embedding_main(config, chunks, is_save=is_save)
-
+        vector_store = embedding_main(config, merged_chunks, is_save=is_save)
+        
+    # 벡터 저장소로 문서 검색
     with st.spinner("🔍 관련 문서 검색 중..."):
-        docs = retrieval_main(config, vector_store, chunks)
+        docs = retrieval_main(config, vector_store, merged_chunks)
 
+    # 이번 질문까지 완료한 chunks 저장
+    st.session_state.past_chunks = merged_chunks
+    
     st.session_state.docs = docs
     
     # 이전 문맥을 전달하는 방식 (선택사항 - 모델 구현에 따라)
@@ -198,9 +226,9 @@ if query:
         st.markdown(answer)
         st.markdown(f"🕒 **추론 시간:** {elapsed}초")
 
-
     # 대화 기록 업데이트
-    st.session_state.chat_history.append({"role": "ai", "content": answer}) # 답변 기록 
+    st.session_state.chat_history.append({"role": "ai", "content": answer}) # 답변 기록
+    st.rerun()
 
 # 이전 대화 보여주기
 # if st.session_state.chat_history:

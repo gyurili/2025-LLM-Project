@@ -8,6 +8,7 @@ from langchain_community.retrievers import BM25Retriever
 from langchain.retrievers import EnsembleRetriever
 from sentence_transformers import CrossEncoder
 
+from src.generator.generator_main import load_chat_history
 from src.embedding.vector_db import generate_embedding
 
 load_dotenv()
@@ -66,7 +67,8 @@ def retrieve_documents(
     embed_model: str,
     rerank: bool,
     rerank_top_k: int,
-    verbose: bool
+    verbose: bool,
+    config
 ) -> List[Document]:
     """
     주어진 쿼리에 대해 similarity 또는 hybrid 검색 방식으로 관련 문서를 검색합니다.
@@ -93,7 +95,7 @@ def retrieve_documents(
         embed_model = generate_embedding(embed_model)
     except Exception as e:
         raise RuntimeError(f"❌ [Runtime] (retrieval.retrieve_documents.embed_model) 임베딩 모델 생성 실패: {e}")
-
+    
     if search_type == "similarity":
         docs = vector_store.similarity_search(query, k=top_k)
         if rerank:
