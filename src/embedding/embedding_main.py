@@ -68,7 +68,6 @@ def embedding_main(config: dict, chunks: List[Document], is_save: bool = False) 
 
     os.makedirs(vector_db_path, exist_ok=True)
     index_name = generate_index_name(config)
-    embedding_main.__inputs__["index_name"] = index_name
 
     if db_type == "faiss":
         faiss_file = os.path.join(vector_db_path, f"{index_name}.faiss")
