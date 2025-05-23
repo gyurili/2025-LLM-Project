@@ -50,10 +50,9 @@ def get_generation_model(model_type:str, model_name:str, use_quantization:bool =
         model_info = load_openai_model(config)
     return model_info
 
-# 실행 중 모델은 단 한번만 부르기
-model_info = get_generation_model(config["generator"]["model_type"], 
-                                  config["generator"]["model_name"], 
-                                  config["generator"]["use_quantization"])
+model_type = config["generator"]["model_type"]
+model_name = config["generator"]["model_name"]
+use_quantization = config["generator"]["use_quantization"]
 
 # 사이드 바 설정
 with st.sidebar:
@@ -165,6 +164,7 @@ with cols[1]:
     if st.button("정리"):
         st.session_state.chat_history = []
         st.session_state.docs = None
+        st.rerun()
 
 if query:
     # Vector DB 존재 여부 확인
@@ -203,6 +203,11 @@ if query:
     # 이전 문맥을 전달하는 방식 (선택사항 - 모델 구현에 따라)
     config["chat_history"] = st.session_state.chat_history
 
+    # 모델 불러오기는 단 한번만!
+    model_info = get_generation_model(model_type, 
+                                  model_name, 
+                                  use_quantization)
+
     # 질문에 대한 답변 생성, 추론 시간 측정
     start_time = time.time()
     with st.spinner("🤖 답변 생성 중..."):
@@ -212,11 +217,12 @@ if query:
 
     # 추론 결과, 추론 시간 표시
     with st.chat_message("assistant"):
-        st.markdown(answer)
+        # st.markdown(answer)
         st.markdown(f"🕒 **추론 시간:** {elapsed}초")
 
     # 대화 기록 업데이트
     st.session_state.chat_history.append({"role": "ai", "content": answer}) # 답변 기록
+    time.sleep(1)
     st.rerun()
 
 # 이전 대화 보여주기
@@ -228,6 +234,6 @@ if query:
 
 # 이전 대화 보여주기(업데이트 버전)
 if st.session_state.chat_history:
-    for turn in st.session_state.chat_history:
+    for turn in st.session_state.chat_history[::-1]:
         with st.chat_message("user" if turn["role"] == "user" else "assistant"):
             st.markdown(turn["content"])
