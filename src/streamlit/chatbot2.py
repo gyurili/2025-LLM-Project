@@ -89,10 +89,6 @@ def get_generation_model(model_type: str, model_name: str, use_quantization: boo
         raise RuntimeError(f"모델 로딩 실패: {e}")
         st.stop()
 
-model_type = config["generator"]["model_type"]
-model_name = config["generator"]["model_name"]
-use_quantization = config["generator"]["use_quantization"]
-
 # 사이드바 구성
 with st.sidebar:
     st.subheader("⚙️ 설정")
@@ -186,6 +182,10 @@ with st.sidebar:
 # 탭 구성
 tab1, tab2 = st.tabs(["💬 챗봇", "📄 문서 요약 및 분석"])
 
+model_type = config["generator"]["model_type"]
+model_name = config["generator"]["model_name"]
+use_quantization = config["generator"]["use_quantization"]
+
 with tab1:
     query = st.chat_input("질문을 입력하세요")
 
@@ -232,7 +232,7 @@ with tab1:
         model_info = get_generation_model(model_type, 
                                       model_name, 
                                       use_quantization)
-
+        
         # 질문에 대한 답변 생성, 추론 시간 측정
         start_time = time.time()
         with st.spinner("🤖 답변 생성 중..."):
