@@ -22,18 +22,12 @@ from src.generator.generator_main import generator_main
 from src.embedding.embedding_main import generate_index_name
 from src.generator.hf_generator import load_hf_model
 from src.generator.openai_generator import load_openai_model
+from src.generator.generator_main import load_chat_history
 
 # Streamlit 페이지 설정
 st.set_page_config(page_title="RFP Chatbot", layout="wide") # (Chrome 상단 바 이름)
 st.header("RFP Chatbot", divider='blue') # 색상 선택 ("rainbow", "red", "blue", "green", "orange", "violet", "gray")
 st.write("PDF, HWP 형식의 제안서를 업로드하여 내용 요약 및 질의응답을 경험하세요!")
-
-# 세션 상태 초기화
-#    질의응답 기록할 빈 리스트
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []  # [{"role": "user", "content": "..."}, {"role": "ai", "content": "..."}]
-if "docs" not in st.session_state:
-    st.session_state.docs = None
 
 # 기본 설정 파일 경로
 project_root = get_project_root_dir()
@@ -51,6 +45,19 @@ def get_generation_model(model_type:str, model_name:str, use_quantization:bool =
     else:
         model_info = load_openai_model(config)
     return model_info
+
+# 세션 상태 초기화
+#    질의응답 기록할 빈 리스트
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []  # [{"role": "user", "content": "..."}, {"role": "ai", "content": "..."}]
+else:
+    # 세션 상태가 존재하는 경우, 기존 대화 기록을 유지
+    st.session_state.chat_history = st.session_state.get("chat_history", [])
+    config["chat_history"] = st.session_state.chat_history
+
+if "docs" not in st.session_state:
+    st.session_state.docs = None
+
 
 # 실행 중 모델은 단 한번만 부르기
 model_info = get_generation_model(config["generator"]["model_type"], 
@@ -189,30 +196,34 @@ if query:
     with st.chat_message("user"):
         st.markdown(query)
 
-    config["retriever"]["query"] = query
+    if config.get("chat_history"):  # chat_history에 내용이 있는 경우
+        query = f"이전 질문 요약: {load_chat_history(config)}\n질문: {query}"
+    else:  # chat_history가 비어 있거나 없을 경우
+        # 첫 질문인 경우, 질문 내용만 추가
+        pass  # query는 그대로 유지
 
+    config["retriever"]["query"] = query
+    # print(f"질문: {query}")
+    
     # 데이터 처리
     chunks = loader_main(config)
 
     # 과거 chunks 병합
-    past_chunks = st.session_state.get("past_chunks", [])
-    merged_chunks = merge_and_deduplicate_chunks(chunks + past_chunks)
+    # past_chunks = st.session_state.get("past_chunks", [])
+    # merged_chunks = merge_and_deduplicate_chunks(chunks + past_chunks)
 
     # 병합된 벡터 저장소 생성
     with st.spinner("📂 관련 문서 임베딩 중..."):
-        vector_store = embedding_main(config, merged_chunks, is_save=is_save)
+        vector_store = embedding_main(config, chunks, is_save=is_save) # merged_chunks
         
     # 벡터 저장소로 문서 검색
     with st.spinner("🔍 관련 문서 검색 중..."):
-        docs = retrieval_main(config, vector_store, merged_chunks)
+        docs = retrieval_main(config, vector_store, chunks) # merged_chunks
 
     # 이번 질문까지 완료한 chunks 저장
-    st.session_state.past_chunks = merged_chunks
+    # st.session_state.past_chunks = merged_chunks
     
     st.session_state.docs = docs
-    
-    # 이전 문맥을 전달하는 방식 (선택사항 - 모델 구현에 따라)
-    config["chat_history"] = st.session_state.chat_history
 
     # 질문에 대한 답변 생성, 추론 시간 측정
     start_time = time.time()
@@ -228,7 +239,8 @@ if query:
 
     # 대화 기록 업데이트
     st.session_state.chat_history.append({"role": "ai", "content": answer}) # 답변 기록
-    st.rerun()
+    config["chat_history"] = st.session_state.chat_history
+#    st.rerun()
 
 # 이전 대화 보여주기
 # if st.session_state.chat_history:
