@@ -2,7 +2,8 @@ import os
 import shutil
 import streamlit as st
 from dotenv import load_dotenv
-
+from src.utils.shared_cache import set_cache_dirs
+set_cache_dirs()
 from src.utils.path import get_project_root_dir
 from src.utils.config import load_config
 from src.loader.loader_main import loader_main
@@ -202,34 +203,47 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
     st.session_state.history_timestamp = time.time()
 
-# 추가 history 초기화 = 10분간만 history 유지
-EXPIRY_SECONDS = 600
+# 추가 history 초기화 = 5분간만 history 유지
+EXPIRY_SECONDS = 300
 if time.time() - st.session_state.get("history_timestamp", 0) > EXPIRY_SECONDS:
     st.session_state.chat_history = []
     st.session_state.history_timestamp = time.time()
 
-def reset_query():
-    st.session_state.input_key_version += 1
-    st.session_state.user_query = "" 
-    st.session_state.trigger_search = False
+# 공통 검색 트리거 함수
+def trigger_search():
+    query_key = f"user_query_{st.session_state.input_key_version}"
+    query_value = st.session_state.get(query_key, "").strip()
+    if query_value:
+        st.session_state.user_query = query_value
+        st.session_state.trigger_search = True
+
+cols = st.columns([9, 1])
 
 # 항상 질문 입력창 보여줌
 query_key = f"user_query_{st.session_state.input_key_version}"
-query = st.text_input("❓ 질문을 입력하세요:", key=query_key)
+with cols[0]:
+    st.text_input(label="질문 입력", 
+                  key=query_key, 
+                  placeholder="❓ 질문을 입력하세요", 
+                  on_change=trigger_search, 
+                  label_visibility="collapsed")
 
-if st.button("🔎 검색") and query.strip():
-    st.session_state.trigger_search = True
-    st.session_state.user_query = query
+# 버튼 클릭으로도 동일 함수 호출
+with cols[1]:
+    if st.button("🔎 검색"):
+        trigger_search()
 
 if st.session_state.trigger_search:
-    config["retriever"]["query"] = st.session_state.user_query
     st.markdown(f"### 🙋 입력한 질문: `{st.session_state.user_query}`")
-
+    
     # RAG 실행
+    config["retriever"]["query"] = st.session_state.user_query
     run_rag_pipeline(config)
-    # Reset
-    reset_query()
 
+    # 트리거 리셋 및 입력창 초기화
+    st.session_state.trigger_search = False
+    st.session_state.input_key_version += 1
+    
 if st.session_state.chat_history:
     st.markdown("### 🗂️ 대화 히스토리")
     for i, turn in enumerate(st.session_state.chat_history[::-1]):
