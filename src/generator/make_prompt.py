@@ -70,7 +70,7 @@ def build_prompt(
             "### 이전 대화:\n{chat_history_section}\n\n"
             "### 문서 내용:\n{context}\n\n"
             "### 질문:\n{question}\n\n"
-            "### 답변:"
+            "### 답변:\n(여기까지 답변하고 멈추세요.)"
         )
 
     return prompt_template.format(context=context_text, question=question, chat_history_section=chat_history_section)
