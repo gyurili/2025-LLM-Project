@@ -1,5 +1,5 @@
 # 터미널 실행 코드
-# python -m streamlit run src/streamlit/chatbot2.py
+# python -m streamlit run src/streamlit/chatbot.py
 
 # 외부 임포트
 import os
@@ -118,7 +118,7 @@ with st.sidebar:
     config["embedding"]["embed_model"] = st.text_input("🧬 임베딩 모델", config["embedding"]["embed_model"])
     config["embedding"]["db_type"] = st.selectbox("💾 Vector DB 타입", ["faiss", "chroma"], index=["faiss", "chroma"].index(config["embedding"]["db_type"]))
 
-    # 
+    # api_key 확인
     api_key_verification(config["embedding"]["embed_model"])
 
     # Retriever 설정
@@ -133,8 +133,9 @@ with st.sidebar:
     config["generator"]["model_type"] = st.selectbox("🔎 생성 모델 타입", ["huggingface", "openai"], index=["huggingface", "openai"].index(config["generator"]["model_type"]))
     config["generator"]["model_name"] = st.text_input("🧬 생성 모델", config["generator"]["model_name"])
     config["generator"]["max_length"] = st.number_input("🔢 최대 토큰 수(max_length)", value=config["generator"]["max_length"], step=32)
-
-    api_key_verification(config["generator"]["embed_model"])
+    
+    # api_key 재확인
+    api_key_verification(config["generator"]["model_type"])
 
     reset_vector_db = st.button("⚠️ Vector DB 초기화")
     

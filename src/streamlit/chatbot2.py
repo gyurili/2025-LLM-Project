@@ -91,6 +91,15 @@ def get_generation_model(model_type: str, model_name: str, use_quantization: boo
         raise RuntimeError(f"모델 로딩 실패: {e}")
         st.stop()
 
+def api_key_verification(embed_model):
+    if embed_model.strip().lower() == "openai":
+        load_dotenv()
+        if not os.environ["OPENAI_API_KEY"]:
+            openai_key = st.text_input("🔑 OpenAI API Key", type="password")
+            os.environ["OPENAI_API_KEY"] = openai_key
+            if not openai_key:
+                st.warning("OpenAI 모델을 사용하려면 API 키를 입력해야 합니다.")
+
 # 사이드바 구성
 with st.sidebar:
     st.subheader("⚙️ 설정")
@@ -108,13 +117,8 @@ with st.sidebar:
     config["embedding"]["embed_model"] = st.text_input("🧬 임베딩 모델", config["embedding"]["embed_model"])
     config["embedding"]["db_type"] = st.selectbox("💾 Vector DB 타입", ["faiss", "chroma"], index=["faiss", "chroma"].index(config["embedding"]["db_type"]))
 
-    if config["embedding"]["embed_model"].strip().lower() == "openai":
-        load_dotenv()
-        if not os.environ["OPENAI_API_KEY"]:
-            openai_key = st.text_input("🔑 OpenAI API Key", type="password")
-            os.environ["OPENAI_API_KEY"] = openai_key
-            if not openai_key:
-                st.warning("OpenAI 모델을 사용하려면 API 키를 입력해야 합니다.")
+    # api_key 확인
+    api_key_verification(config["embedding"]["embed_model"])
 
     # Retriever 설정
     st.subheader("🔍 리트리버 설정")
@@ -128,15 +132,9 @@ with st.sidebar:
     config["generator"]["model_type"] = st.selectbox("🔎 생성 모델 타입", ["huggingface", "openai"], index=["huggingface", "openai"].index(config["generator"]["model_type"]))
     config["generator"]["model_name"] = st.text_input("🧬 생성 모델", config["generator"]["model_name"])
     config["generator"]["max_length"] = st.number_input("🔢 최대 토큰 수(max_length)", value=config["generator"]["max_length"], step=32)
-
-    if config["generator"]["model_type"].strip().lower() == "openai":
-        load_dotenv()
-        if not os.environ["OPENAI_API_KEY"]:
-            openai_key = st.text_input("🔑 OpenAI API Key", type="password")
-            os.environ["OPENAI_API_KEY"] = openai_key  # 필요한 경우 환경 변수로 설정
-            if not openai_key:
-                st.warning("OpenAI 모델을 사용하려면 API 키를 입력해야 합니다.")
-
+    
+    # api_key 재확인
+    api_key_verification(config["generator"]["model_type"])
 
     reset_vector_db = st.button("⚠️ Vector DB 초기화")
     
