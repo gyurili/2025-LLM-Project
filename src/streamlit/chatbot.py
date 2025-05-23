@@ -14,6 +14,7 @@ os.environ["HF_HOME"] = "2025-LLM-Project/.cache" # Huggingface 캐시 경로 �
 from dotenv import load_dotenv
 from src.utils.config import load_config
 from src.loader.loader_main import loader_main
+from src.loader.data_loader import merge_and_deduplicate_chunks
 from src.utils.path import get_project_root_dir
 from src.embedding.embedding_main import embedding_main
 from src.retrieval.retrieval_main import retrieval_main
@@ -193,12 +194,21 @@ if query:
     # 데이터 처리
     chunks = loader_main(config)
 
+    # 과거 chunks 병합
+    past_chunks = st.session_state.get("past_chunks", [])
+    merged_chunks = merge_and_deduplicate_chunks(chunks + past_chunks)
+
+    # 병합된 벡터 저장소 생성
     with st.spinner("📂 관련 문서 임베딩 중..."):
-        vector_store = embedding_main(config, chunks, is_save=is_save)
-
+        vector_store = embedding_main(config, merged_chunks, is_save=is_save)
+        
+    # 벡터 저장소로 문서 검색
     with st.spinner("🔍 관련 문서 검색 중..."):
-        docs = retrieval_main(config, vector_store, chunks)
+        docs = retrieval_main(config, vector_store, merged_chunks)
 
+    # 이번 질문까지 완료한 chunks 저장
+    st.session_state.past_chunks = merged_chunks
+    
     st.session_state.docs = docs
     
     # 이전 문맥을 전달하는 방식 (선택사항 - 모델 구현에 따라)
