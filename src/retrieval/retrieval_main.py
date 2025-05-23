@@ -31,7 +31,7 @@ def retrieval_main(config, vector_store, chunks):
     rerank_top_k = config.get("retriever", {}).get("rerank_top_k", 5)
     verbose = config.get("settings", {}).get("verbose", False)
 
-    docs = retrieve_documents(query, vector_store, top_k, search_type, chunks, embed_model, rerank, rerank_top_k, verbose)
+    docs = retrieve_documents(query, vector_store, top_k, search_type, chunks, embed_model, rerank, rerank_top_k, verbose, config)
     
     if verbose:
         for i, doc in enumerate(docs, 1):

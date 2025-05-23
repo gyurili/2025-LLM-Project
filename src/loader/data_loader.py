@@ -16,6 +16,7 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers.util import cos_sim
 from src.utils.path import get_project_root_dir
+from src.generator.generator_main import load_chat_history
 
 # EasyOCR Reader 객체 생성 (GPU 사용)
 # 한글(ko) + 영어(en)를 인식하며, 모델은 한 번만 로드됨
@@ -78,7 +79,7 @@ def extract_text_from_pdf(pdf_path: Path, apply_ocr: bool = True) -> str:
     return full_text
 
 
-def retrieve_top_documents_from_metadata(query, csv_path, embed_model, top_k=5):
+def retrieve_top_documents_from_metadata(query, csv_path, embed_model, top_k=5, config=None):
     """
     사용자 질문(query)과 문서 메타데이터(csv)에 기반하여 
     가장 유사한 top_k개의 문서를 반환합니다.
@@ -111,8 +112,11 @@ def retrieve_top_documents_from_metadata(query, csv_path, embed_model, top_k=5):
             if col not in df.columns:
                 raise KeyError(f"❌ (loader.data_loader.retrieve_top_documents_from_metadata) '{col}' 열이 CSV에 존재하지 않습니다.")
 
+        # 과거 질의응답 내역 불러오기
+        chat_history = load_chat_history(config)
+
         def make_embedding_text(row):
-            return f"{row['사업명']} {row['발주 기관']} {row['사업 요약']}"
+            return f"{chat_history} {row['파일명']} {row['사업 요약']} {row['사업명']} {row['발주 기관']}"
 
         try:
             df["임베딩텍스트"] = df.apply(make_embedding_text, axis=1)
@@ -202,3 +206,17 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all
             raise RuntimeError(f"❌ [Runtime] (data_loader.data_process) 파일 처리 오류 ({file_name}): {e}")  
 
     return filtered_df.reset_index(drop=True)
+
+
+def merge_and_deduplicate_chunks(chunks: List[Document]) -> List[Document]:
+    """
+    파일명 + chunk_idx 기준으로 중복 제거한 문서 리스트 반환
+    """
+    seen = set()
+    deduped_chunks = []
+    for doc in chunks:
+        identifier = (doc.metadata.get("파일명"), doc.metadata.get("chunk_idx"))
+        if identifier not in seen:
+            seen.add(identifier)
+            deduped_chunks.append(doc)
+    return deduped_chunks
