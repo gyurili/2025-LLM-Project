@@ -26,6 +26,7 @@ st.header("RFP Chatbot", divider='blue') # 색상 선택 ("rainbow", "red", "blu
 st.write("PDF, HWP 형식의 제안서를 업로드하여 내용 요약 및 질의응답을 경험하세요!")
 
 # 세션 상태 초기화
+#    질의응답 기록할 빈 리스트
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []  # [{"role": "user", "content": "..."}, {"role": "ai", "content": "..."}]
 
@@ -114,7 +115,7 @@ with st.sidebar:
 query = st.chat_input("질문을 입력하세요")
 
 if query:
-    # Vector DB 존재 여부 확인
+    # 사이드바 설정 반영 - Vector DB 존재 여부 확인
     if config["data"]["top_k"] == 100:
         if config["embedding"]["db_type"] == "faiss":
             is_save = not os.path.exists(vector_db_file)
