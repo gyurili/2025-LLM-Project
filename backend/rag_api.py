@@ -1,3 +1,5 @@
+from src.utils.shared_cache import set_cache_dirs
+set_cache_dirs()
 import os
 from dotenv import load_dotenv
 from langsmith import trace

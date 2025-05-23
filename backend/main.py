@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from rag_api import run_rag_pipeline
+from .rag_api import run_rag_pipeline
 
 app = FastAPI()                             # FastAPI 앱 생성
 
