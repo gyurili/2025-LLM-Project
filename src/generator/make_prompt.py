@@ -49,7 +49,7 @@ def build_prompt(
     # 대화 내역 요약 검사
     chat_history_section = ""
     if chat_history:
-        chat_history_section = f"### 이전 대화:\n{chat_history}\n\n"
+        chat_history_section = f"{chat_history}"
 
     if prompt_template is None:
         prompt_template = (
@@ -66,6 +66,8 @@ def build_prompt(
             "- 항목이 여러 개인 경우, 항목별로 줄바꿈하여 나열하세요.\n"
             "- 답변의 마지막엔 출처가 된 문서들을 [출처: '문서명'] 형식으로 작성 하시오.\n"
             "- 문서 내용 중간에 출처를 표시하지 마세요.\n\n"
+            " 이전에 사용자와 나눈 대화 내역이 아래에 정리되어 있습니다. 이 내역은 질문의 의도를 파악하는 데 도움이 됩니다. 그러나 여전히 답변은 반드시 문서 내용을 기반으로 해야 하며, 문서에 없는 내용은 포함하지 마십시오.\n\n"
+            "### 이전 대화:\n{chat_history_section}\n\n"
             "### 문서 내용:\n{context}\n\n"
             "### 질문:\n{question}\n\n"
             "### 답변:"
