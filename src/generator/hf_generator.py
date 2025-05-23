@@ -101,7 +101,7 @@ def generate_answer_hf(prompt: str, model_info: Dict, generation_config: Dict, v
             answer = generated_text.strip()
 
         # 모델에서 나오는 stop words 추가
-        stop_strings = ["```", "<|endoftext|>", "Human:", "human:", "###"]
+        stop_strings = ["```", "<|endoftext|>", "Human:", "human:", "###", "(여기까지 답변하고 멈추세요.)"]
         for stop_str in stop_strings:
             if stop_str in answer:
                 answer = answer.split(stop_str)[0].strip()
