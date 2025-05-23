@@ -1,9 +1,19 @@
 from src.retrieval.retrieval import retrieve_documents
 from src.embedding.vector_db import load_vector_db
 from src.embedding.embedding_main import generate_index_name
+from langchain.schema import Document
+from typing import List, Optional
 
 
-def retrieval_main(config, vector_store, chunks):
+from langsmith import trace
+
+
+@trace(name="retrieval_main")
+def retrieval_main(
+    config: dict,
+    vector_store: Optional[object],
+    chunks: List[Document]
+) -> List[Document]:
     """
     설정에 따라 similarity 또는 hybrid 방식으로 검색하고, 필요시 re-ranking을 수행합니다.
 
@@ -22,8 +32,13 @@ def retrieval_main(config, vector_store, chunks):
     db_type = config.get("embedding", {}).get("db_type", "faiss")
 
     if vector_store is None:
-        vector_store=load_vector_db(vector_db_path, embed_model, index_name, db_type)
-    
+        vector_store = load_vector_db(
+            path=vector_db_path,
+            embed_model_name=embed_model,
+            index_name=index_name,
+            db_type=db_type
+        )
+
     query = config.get("retriever", {}).get("query", "")
     top_k = config.get("retriever", {}).get("top_k", 10)
     search_type = config.get("retriever", {}).get("search_type", "hybrid")
@@ -31,12 +46,22 @@ def retrieval_main(config, vector_store, chunks):
     rerank_top_k = config.get("retriever", {}).get("rerank_top_k", 5)
     verbose = config.get("settings", {}).get("verbose", False)
 
-    docs = retrieve_documents(query, vector_store, top_k, search_type, chunks, embed_model, rerank, rerank_top_k, verbose)
-    
+    docs = retrieve_documents(
+        query=query,
+        vector_store=vector_store,
+        top_k=top_k,
+        search_type=search_type,
+        chunks=chunks,
+        embed_model=embed_model,
+        rerank=rerank,
+        rerank_top_k=rerank_top_k,
+        verbose=verbose
+    )
+
     if verbose:
         for i, doc in enumerate(docs, 1):
-                print(f"\n📄 문서 {i}")
-                print(f"본문:\n{doc.page_content}...")
-                print(f"메타데이터: {doc.metadata}")
-            
+            print(f"\n📄 문서 {i}")
+            print(f"본문:\n{doc.page_content}...")
+            print(f"메타데이터: {doc.metadata}")
+
     return docs
