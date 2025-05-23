@@ -8,6 +8,7 @@ import streamlit as st
 import shutil
 from pathlib import Path
 from datetime import datetime
+from typing import Dict
 os.environ["HF_HOME"] = "2025-LLM-Project/.cache" # Huggingface 캐시 경로 설정
 
 # 내부 임포트
@@ -34,22 +35,55 @@ if "chat_history" not in st.session_state:
 if "docs" not in st.session_state:
     st.session_state.docs = None
 
-# 기본 설정 파일 경로
-project_root = get_project_root_dir()
-config_path = os.path.join(project_root, "config.yaml")
-config = load_config(config_path)
-dotenv_path = os.path.join(project_root, ".env")
-load_dotenv(dotenv_path=dotenv_path)
+# 프로젝트 루트 경로 설정 및 config 로드
+try:
+    project_root = get_project_root_dir()
+    config_path = os.path.join(project_root, "config.yaml")
+    config = load_config(config_path)
+except Exception as e:
+    st.error(f"❌ 설정 파일 로드 실패: {e}")
+    st.stop()
 
-# 전역 설정
+# .env 파일 로딩 (API Key 등 private 정보 처리용)
+dotenv_path = os.path.join(project_root, ".env")
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path=dotenv_path)
+else:
+    st.warning(".env 파일을 찾을 수 없습니다. 일부 기능이 제한될 수 있습니다.")
+
+# 모델 불러오기 캐시 함수
 @st.cache_resource
-def get_generation_model(model_type:str, model_name:str, use_quantization:bool = False):
-    config = {'generator': {'model_type': model_type, 'model_name': model_name, 'use_quantization': use_quantization}}
-    if model_type == 'huggingface':
-        model_info = load_hf_model(config)
-    else:
-        model_info = load_openai_model(config)
-    return model_info
+def get_generation_model(model_type: str, model_name: str, use_quantization: bool = False) -> Dict:
+    """
+    지정된 모델 타입 및 이름에 따라 생성 모델을 로드합니다.
+
+    Args:
+        model_type (str): 생성 모델 종류 ('huggingface' 또는 'openai')
+        model_name (str): 사용할 모델 이름
+        use_quantization (bool, optional): 양자화 사용 여부. 기본값은 False.
+
+    Returns:
+        Dict: 로드된 모델 정보 (예: pipeline, tokenizer 등 포함)
+    """
+    try:
+        config = {
+            'generator': {
+                'model_type': model_type,
+                'model_name': model_name,
+                'use_quantization': use_quantization
+            }
+        }
+
+        if model_type == 'huggingface':
+            return load_hf_model(config)
+        elif model_type == 'openai':
+            return load_openai_model(config)
+        else:
+            raise ValueError(f"지원되지 않는 모델 타입: {model_type}")
+    
+    except Exception as e:
+        raise RuntimeError(f"모델 로딩 실패: {e}")
+        st.stop()
 
 model_type = config["generator"]["model_type"]
 model_name = config["generator"]["model_name"]
@@ -121,18 +155,24 @@ with st.sidebar:
     
         if reset_vector_db:
             # 선택된 벡터 DB 경로 삭제
-            if config["embedding"]["db_type"] == "faiss":
-                if os.path.exists(vector_db_file):
-                    os.remove(vector_db_file)
-                    os.remove(metadata_file)
-                    st.success("FAISS DB 삭제 완료")
-            elif config["embedding"]["db_type"] == "chroma":
-                import shutil
-                if os.path.exists(chroma_path):
-                    shutil.rmtree(chroma_path)
-                    st.success("Chroma DB 삭제 완료")
-            else:
-                st.info("삭제할 파일 및 폴더가 없습니다.")
+            try:
+                if config["embedding"]["db_type"] == "faiss":
+                    if os.path.exists(vector_db_file):
+                        os.remove(vector_db_file)
+                        os.remove(metadata_file)
+                        st.success("FAISS DB 삭제 완료")
+                    else:
+                        st.info("FAISS 파일이 존재하지 않습니다.")
+                elif config["embedding"]["db_type"] == "chroma":
+                    import shutil
+                    if os.path.exists(chroma_path):
+                        shutil.rmtree(chroma_path)
+                        st.success("Chroma DB 삭제 완료")
+                    else:
+                        st.info("Chroma 폴더가 존재하지 않습니다.")
+            except Exception as e:
+                st.error(f"Vector DB 삭제 실패: {e}")
+            
                 
     elif sidebar_page == "참고 문서 보기":
         st.subheader("📄 검색된 문서")
@@ -154,7 +194,7 @@ with st.sidebar:
             st.info(docs.page_content)
             
 # 초기화 버튼 분기 나누기
-cols = st.columns([9, 1])
+cols = st.columns([8, 1, 1])
 
 # 채팅 입력란
 with cols[0]:
@@ -166,8 +206,15 @@ with cols[1]:
         st.session_state.chat_history = []
         st.session_state.docs = None
         st.rerun()
+with cols[2]:
+    if st.button("모델 리로드"):
+        get_generation_model.clear()
 
 if query:
+    if not isinstance(query, str) or query.strip() == "":
+        st.warning("질문을 올바르게 입력해주세요.")
+        st.stop()
+        
     # 사이드바 설정 반영 - Vector DB 존재 여부 확인
     if config["data"]["top_k"] == 100:
         if config["embedding"]["db_type"] == "faiss":
@@ -191,13 +238,16 @@ if query:
     config["retriever"]["query"] = query
 
     # 데이터 처리
-    chunks = loader_main(config)
-
-    with st.spinner("📂 관련 문서 임베딩 중..."):
-        vector_store = embedding_main(config, chunks, is_save=is_save)
-
-    with st.spinner("🔍 관련 문서 검색 중..."):
-        docs = retrieval_main(config, vector_store, chunks)
+    try:
+        chunks = loader_main(config)
+        with st.spinner("📂 관련 문서 임베딩 중..."):
+            vector_store = embedding_main(config, chunks, is_save=is_save)
+        with st.spinner("🔍 관련 문서 검색 중..."):
+            docs = retrieval_main(config, vector_store, chunks)
+    except Exception as e:
+        st.error(f"문서 처리 중 오류 발생: {e}")
+        st.stop()
+    
 
     st.session_state.docs = docs
     
@@ -238,3 +288,12 @@ if st.session_state.chat_history:
     for turn in st.session_state.chat_history[::-1]:
         with st.chat_message("user" if turn["role"] == "user" else "assistant"):
             st.markdown(turn["content"])
+            
+tab1, tab2 = st.tabs(["챗봇", "문서"])
+
+with tab1:
+    # 기존 챗봇 코드
+    st.write("챗봇")
+with tab2:
+    # 예: 문서 통계, 토큰 수, 리트리버 관련 시각화 등
+    st.write("문서")
