@@ -38,6 +38,7 @@ def loader_main(config: dict) -> List[Document]:
             csv_path=data_list_path,
             embed_model=embed_model,
             top_k=top_k,
+            config=config
         )
         print("✅ 문서 유사도 검색 완료")
 

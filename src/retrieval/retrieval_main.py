@@ -55,7 +55,8 @@ def retrieval_main(
         embed_model=embed_model,
         rerank=rerank,
         rerank_top_k=rerank_top_k,
-        verbose=verbose
+        verbose=verbose,
+        config=config
     )
 
     if verbose:
