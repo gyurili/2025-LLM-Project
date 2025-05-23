@@ -8,6 +8,7 @@ import streamlit as st
 import shutil
 from pathlib import Path
 from datetime import datetime
+import requests
 os.environ["HF_HOME"] = "2025-LLM-Project/.cache" # Huggingface 캐시 경로 설정
 
 # 내부 임포트
@@ -41,6 +42,9 @@ config_path = os.path.join(project_root, "config.yaml")
 config = load_config(config_path)
 dotenv_path = os.path.join(project_root, ".env")
 load_dotenv(dotenv_path=dotenv_path)
+
+# FastAPI 서버 주소
+FASTAPI_URL = os.getenv("FASTAPI_URL")
 
 # 전역 설정
 @st.cache_resource
