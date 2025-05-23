@@ -100,6 +100,12 @@ def generate_answer_hf(prompt: str, model_info: Dict, generation_config: Dict, v
             generated_text = tokenizer.decode(generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=True)
             answer = generated_text.strip()
 
+        # 모델에서 나오는 stop words 추가
+        stop_strings = ["```", "<|endoftext|>", "Human:", "human:", "###"]
+        for stop_str in stop_strings:
+            if stop_str in answer:
+                answer = answer.split(stop_str)[0].strip()
+
         # 반복 제거
         bad_tokens = ["하십시오", "하실 수", "알고 싶어요", "하는데 필요한", "것을", "한다", "하십시오.", "하시기 바랍니다"]
         for token in bad_tokens:
