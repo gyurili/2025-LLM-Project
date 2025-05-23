@@ -1,8 +1,10 @@
 from typing import List
+from collections import defaultdict
 from langchain.schema import Document
 from src.generator.hf_generator import load_hf_model, generate_answer_hf
 from src.generator.openai_generator import load_openai_model, generate_answer_openai
 from src.generator.make_prompt import build_prompt
+
 
 def summarize_chat_history(config):
     """
@@ -24,6 +26,22 @@ def summarize_chat_history(config):
         return generate_answer_openai(prompt, model_info, config["generator"])
 
 
+def load_chat_history(config):
+    """
+    과거 질문, 답변 내역을 로드합니다.
+    """
+    # 1. 과거 질문, 답변 내역
+    if config["chat_history"]:
+        chat_history_str = "\n".join([f"질문: {turn['content']}" for turn in config["chat_history"]])
+
+        # 2. 내역 요약
+        chat_history_str = summarize_chat_history(config)
+        return chat_history_str
+    else: # 대화 내역이 없을 경우
+        chat_history_str = ""
+        return chat_history_str
+
+
 def generator_main(
     retrieved_docs: List[Document],
     config: dict,
@@ -40,25 +58,21 @@ def generator_main(
     Returns:
         str: 생성된 답변
     """
+    # 0. 과거 질의응답 내역 요약
+    chat_history = load_chat_history(config)
+    print(f"과거 맥락 :{chat_history}")
+
     # 1. 프롬프트 생성
     query = config["retriever"]["query"]
-
-    # 2. 과거 질문, 답변 내역
-    if config["chat_history"]:
-        chat_history_str = "\n".join([f"질문: {turn['content']}" for turn in config["chat_history"]])
-
-        # 3. 내역 요약
-        chat_history_str = summarize_chat_history(config)
-    else: # 대화 내역이 없을 경우
-        chat_history_str = ""
 
     prompt = build_prompt(
         question=query,
         retrieved_docs=retrieved_docs,
         include_source=config.get("include_source", True),
         prompt_template=config.get("prompt_template"),
-        chat_history=chat_history_str,
+        chat_history=chat_history,
     )
+
     model_type = config["generator"]["model_type"]
     if model_info is None:
         if model_type == "huggingface":
@@ -73,6 +87,7 @@ def generator_main(
         
     print(answer)
     return answer
+
 
 def is_unsatisfactory(answer: str) -> bool:
     if '정보가 없습니다' in answer or '잘 모르겠습니다' in answer:
@@ -89,9 +104,7 @@ def is_unsatisfactory(answer: str) -> bool:
         return True
 
     return False
-    
-from collections import defaultdict
-from typing import List
+
 
 def generate_with_clarification(
     retrieved_docs: List[Document], 
@@ -112,6 +125,8 @@ def generate_with_clarification(
     Returns:
         str: 최종 생성된 적절한 답변
     """
+    # 0) 대화 내역 요약
+    chat_history = load_chat_history(config)
 
     # 1) context 구성
     docs_by_file = defaultdict(list)
@@ -134,6 +149,7 @@ def generate_with_clarification(
         "- 반드시 문서에 기반한 내용만 답변에 포함하고, 출처를 바탕으로 신뢰도 있게 작성하세요.\n"
         "- 사전 지식이나 추측은 절대 포함하지 마세요.\n"
         "- 답변은 한국어로 작성하세요.\n\n"
+        "### 이전 대화:\n{chat_history}\n\n"
         "### 문서 내용:\n{context}\n\n"
         "### 질문:\n{question}\n\n"
         "### 보완된 답변:"
@@ -162,7 +178,8 @@ def generate_with_clarification(
         retry_prompt = clarification_template.format(
             context=context_text,
             question=config["retriever"]["query"],
-            issue=issue
+            issue=issue,
+            chat_history=chat_history,
         )
 
         if model_type == "huggingface":
