@@ -226,7 +226,7 @@ with tab1:
             config["retriever"]["query"] = query
             pass  # query는 그대로 유지
 
-        print(f"질문: {config["retriever"]["query"]}")
+        print(f"질문: {config['retriever']['query']}")
 
         # 벡터 DB에서 유사 문서 검색
         # 데이터 처리
