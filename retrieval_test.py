@@ -36,7 +36,7 @@ def retrieval_test():
             run.add_outputs({
                 "query": config["retriever"]["query"],
                 "search_type": config["retriever"]["search_type"],
-                "embed_model": config["embedding"]["embed_model"],
+                "embed_model": embed_model_name,
                 "db_type": config["embedding"]["db_type"],
                 "rerank": config["retriever"]["rerank"],
                 "rerank_top_k": config["retriever"]["rerank_top_k"],
