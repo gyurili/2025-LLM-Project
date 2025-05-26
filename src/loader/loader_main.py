@@ -1,25 +1,20 @@
 from typing import List
-
 from langsmith import trace, traceable
 from langchain.schema import Document
 
-from src.loader.data_loader import (
-    retrieve_top_documents_from_metadata,
-    data_process,
-)
-from src.loader.splitter import (
-    data_chunking,
-    summarize_chunk_quality,
-)
+from src.loader.data_loader import retrieve_top_documents_from_metadata, data_process
+from src.loader.splitter import data_chunking, summarize_chunk_quality
 
 
 @traceable(name="loader_main")
-def loader_main(config: dict) -> List[Document]:
+def loader_main(config: dict, embeddings, chat_history) -> List[Document]:
     """
     설정 정보를 기반으로 문서를 로드하고, 전처리 및 청크 작업을 수행합니다.
 
     Args:
         config (dict): 시스템 설정 정보를 담은 딕셔너리
+        embedder: 사전 생성된 임베딩 모델 인스턴스
+        chat_history: 사전 로드된 채팅 이력 문자열
 
     Returns:
         List[Document]: 처리된 문서의 청크 리스트
@@ -28,7 +23,6 @@ def loader_main(config: dict) -> List[Document]:
     query = config.get("retriever", {}).get("query", "사업")
     top_k = data_config.get("top_k", 5)
     verbose = config.get("settings", {}).get("verbose", True)
-    embed_model = config.get("embedding", {}).get("embed_model", "openai")
 
     # 1. 데이터 로드
     with trace(name="load_data"):
@@ -36,9 +30,9 @@ def loader_main(config: dict) -> List[Document]:
         df = retrieve_top_documents_from_metadata(
             query=query,
             csv_path=data_list_path,
-            embed_model=embed_model,
+            embeddings=embeddings,
+            chat_history=chat_history,
             top_k=top_k,
-            config=config
         )
         print("✅ 문서 유사도 검색 완료")
 

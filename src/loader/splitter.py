@@ -22,7 +22,7 @@ def clean_text(text: str) -> str:
         ValueError: 입력이 문자열이 아닌 경우
     """
     if not isinstance(text, str):
-        raise ValueError("❌ [Type] (splitter.clean_text) 입력값은 문자열이어야 합니다.")
+        raise ValueError("❌ [Type] (splitter.clean_text) 문자열이 아닌 입력값")
 
     allowed_pattern = r"[^\uAC00-\uD7A3a-zA-Z0-9\s.,:;!?()\[\]~\-/•※❍□ㅇ○①-⑳IVXLCDM]"
     text = re.sub(allowed_pattern, " ", text)
@@ -160,7 +160,7 @@ def data_chunking(
         splitter = None
     else:
         raise ValueError(
-            f"❌ [Value] (splitter.data_chunking.splitter_type) {splitter_type}은 지원하지 않습니다."
+            f"❌ [Value] (splitter.data_chunking.splitter_type) 지원하지 않는 분할 방식: {splitter_type}"
         )
 
     all_chunks = []
@@ -200,7 +200,7 @@ def data_chunking(
                 )
         else:
             raise ValueError(
-                f"❌ [Data] (splitter.data_chunking) full_text가 비어있거나 문자열이 아닙니다: {row.get('파일명')}"
+                f"❌ [Data] (splitter.data_chunking) 비어있거나 문자열이 아닌 full_text: {row.get('파일명')}"
             )
 
     return all_chunks
@@ -225,7 +225,7 @@ def inspect_sample_chunks(
 
     file_chunks = [doc for doc in chunks if doc.metadata.get("파일명") == file_name]
     if not file_chunks:
-        print(f"❌ [Data] (splitter.inspect_sample_chunks) {file_name}에 대한 청크가 없습니다.")
+        print(f"❌ [Data] (splitter.inspect_sample_chunks) 청크 없음: {file_name}")
         return
 
     lengths = [len(doc.page_content) for doc in file_chunks]
@@ -241,11 +241,13 @@ def inspect_sample_chunks(
     }
 
     for label, doc in selected.items():
-        print(f"        - {label} 길이: {len(doc.page_content)}")
-        preview = doc.page_content[:500]
-        if len(doc.page_content) > 500:
+        print(f"\n▶ {label}")
+        print(f"  - 길이: {len(doc.page_content)}")
+        print("  - 내용:")
+        preview = doc.page_content[:300]
+        if len(doc.page_content) > 300:
             preview += "..."
-        print(f"        - 내용: {preview}")
+        print(f"    {preview}")
 
 
 def summarize_chunk_quality(
@@ -286,13 +288,13 @@ def summarize_chunk_quality(
 
     results.sort(key=lambda x: x["500자미만비율"], reverse=True)
 
-    print("    - 청크 품질 요약:")
+    print("\n📌 청크 품질 요약")
     for res in results:
-        print(f"    - {res['파일명']}")
-        print(f"        - 청크수: {res['청크수']}")
-        print(f"        - 평균길이: {res['평균길이']}")
-        print(f"        - 최소길이: {res['최소길이']}")
-        print(f"        - 최대길이: {res['최대길이']}")
-        print(f"        - 500자미만비율: {res['500자미만비율']:.2f}%")
+        print("=" * 60)
+        print(f"📄 파일명: {res['파일명']}")
+        print(f"  - 청크 수         : {res['청크수']}")
+        print(f"  - 평균 길이       : {res['평균길이']:.2f}")
+        print(f"  - 최소 길이       : {res['최소길이']}")
+        print(f"  - 최대 길이       : {res['최대길이']}")
+        print(f"  - 500자 미만 비율 : {res['500자미만비율']:.2f}%")
         inspect_sample_chunks(chunks, res['파일명'], verbose=True)
-        print("-" * 30)
