@@ -10,7 +10,11 @@ from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 
 from src.utils.path import get_project_root_dir
-from src.embedding.vector_db import generate_vector_db, load_vector_db
+from src.embedding.vector_db import (
+    generate_embedding, 
+    generate_vector_db, 
+    load_vector_db
+    )
 
 
 def generate_index_name(config: dict) -> str:
@@ -41,7 +45,7 @@ def generate_index_name(config: dict) -> str:
 def embedding_main(
     config: dict,
     chunks: List[Document],
-    embeddings: Union[HuggingFaceEmbeddings, OpenAIEmbeddings],
+    embeddings: Union[HuggingFaceEmbeddings, OpenAIEmbeddings] = None,
     is_save: bool = False
 ) -> Union[FAISS, Chroma]:
     """
@@ -67,7 +71,7 @@ def embedding_main(
     if len(chunks) == 0:
         raise ValueError("❌ (embedding.embedding_main) chunks 리스트가 비어 있음")
 
-    if embeddings is None or not isinstance(embeddings, (HuggingFaceEmbeddings, OpenAIEmbeddings)):
+    if not isinstance(embeddings, (HuggingFaceEmbeddings, OpenAIEmbeddings)):
         raise ValueError("❌ (embedding.embedding_main) 잘못된 embeddings 인자")
 
     embed_config = config.get("embedding", {})
@@ -83,6 +87,9 @@ def embedding_main(
 
     if not isinstance(index_name, str) or index_name.strip() == "":
         raise ValueError("❌ (embedding.embedding_main) 잘못된 index_name 생성")
+    
+    if embeddings is None:
+        embeddings = generate_embedding(embed_config.get("model_type"), "openai")
 
     if db_type == "faiss":
         faiss_file = os.path.join(vector_db_path, f"{index_name}.faiss")
