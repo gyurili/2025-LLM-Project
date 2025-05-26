@@ -1,3 +1,6 @@
+settings:
+    verbose: False
+    project_root: ""
 
 data:
     folder_path: "data/files"
@@ -5,15 +8,15 @@ data:
     top_k: 5 # 최대 몇개까지 1 ~ 100 
     file_type: "all" # "hwp" 또는 "pdf", "all"
     apply_ocr: False # True/ False
-    splitter: "recursive" # "recursive", "token", "section"
+    splitter: "section" # "recursive", "token", "section"
     chunk_size: 1000            # KoE5는 허용 토큰이 많은 편이기에, chunk_size를 높일 수 있다.
     chunk_overlap: 250 
 
 embedding:
     # openai 사용시 "text-embedding-3-small" 권장
-    embed_model: "openai" #"sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "nlpai-lab/KoE5", "openai", "cohere", "huggingface"
+    embed_model: "openai" #"sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     db_type: "faiss" # "faiss", "chorma"
-    vector_db_path: "data"
+    vector_db_path: "data/vectrt_db"
 
 retriever:
     search_type: "hybrid" # "similarity", "hybrid"
@@ -27,9 +30,5 @@ generator:
     model_name: "gpt-4.1-nano" # "microsoft/Phi-4-mini-instruct", "gpt-4.1-mini", "gpt-4.1-nano"
     max_length: 512
     use_quantization: True
-
-# settings
-settings:
-    verbose: False
 
 chat_history:

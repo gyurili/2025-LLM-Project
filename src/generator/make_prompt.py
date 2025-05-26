@@ -1,9 +1,8 @@
 from typing import List
 from langchain.schema import Document
 
-
 '''
-    To Do:
+    TODO:
         - 입력된 질문에 따라 프롬프트를 구성하는 기능
 '''
 
@@ -46,7 +45,6 @@ def build_prompt(
 
     context_text = "\n\n---\n\n".join(context_blocks)
 
-    # 대화 내역 요약 검사
     chat_history_section = ""
     if chat_history:
         chat_history_section = f"{chat_history}"
@@ -62,7 +60,7 @@ def build_prompt(
             "- 문서에 정보가 없으면 '해당 문서에 정보가 없습니다.'라고 말하세요.\n"
             "- 불확실하거나 추측되는 내용은 포함하지 마세요.\n"
             "- 문서 외의 지식, 상식, 다른 문서나 유사 사례를 근거로 답하지 마세요\n"
-            "- 답변은 최대 5문장 이내로 작성하세요.\n"
+            "- 답변은 최대 5문장 이내로 한국어로 작성하세요.\n"
             "- 항목이 여러 개인 경우, 항목별로 줄바꿈하여 나열하세요.\n"
             "- 답변 마지막에 문서명과 함께 반드시 청크 번호도 포함하세요. 예시: [출처: '문서명', 청크번호: '5']\n"
             "- 문서 내용 중간에 출처를 표시하지 마세요.\n\n"
@@ -73,4 +71,8 @@ def build_prompt(
             "### 답변:"
         )
 
-    return prompt_template.format(context=context_text, question=question, chat_history_section=chat_history_section)
+    return prompt_template.format(
+        chat_history_section=chat_history_section,
+        context=context_text,
+        question=question,
+    )

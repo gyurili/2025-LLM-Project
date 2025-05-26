@@ -1,14 +1,15 @@
-from src.utils.shared_cache import set_cache_dirs
-set_cache_dirs()
+
 import os
 from langsmith import trace
 from dotenv import load_dotenv
+from src.loader.loader_main import loader_main
 from src.embedding.embedding_main import embedding_main
 from src.retrieval.retrieval_main import retrieval_main
-from src.loader.loader_main import loader_main
 from src.generator.generator_main import generator_main
 from src.utils.config import load_config
 from src.utils.path import get_project_root_dir
+from src.utils.shared_cache import set_cache_dirs
+set_cache_dirs()
 
 def rag_pipeline():
     try:
@@ -22,7 +23,7 @@ def rag_pipeline():
             dotenv_path = os.path.join(project_root, ".env")
             load_dotenv(dotenv_path=dotenv_path)
 
-            config = load_config(config_path)
+            config = load_config(project_root)
             print("✅ Config 로드 완료")
 
             with trace(name="loader_main"):
