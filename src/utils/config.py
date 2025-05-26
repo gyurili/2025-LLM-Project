@@ -151,8 +151,8 @@ def check_config(config: dict) -> None:
     
     # chat_history
     chat_history = config.get("chat_history")
-    if not isinstance(chat_history, str):
-        raise ValueError("❌ (config.check_config.chat_history) chat_history는 문자열이어야 합니다.")
+    if not isinstance(chat_history, list):
+        raise ValueError("❌ (config.check_config.chat_history) chat_history는 list이어야 합니다.")
 
 
 def load_config(project_root: str) -> dict:
