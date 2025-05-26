@@ -1,34 +1,29 @@
 # 터미널 실행 코드
-# python -m streamlit run src/streamlit/chatbot2.py
+# python -m streamlit run src/streamlit/chatbot.py
 
 # 외부 임포트
 import os
 import time 
-import streamlit as st
 import shutil
-from pathlib import Path
-from datetime import datetime
+import streamlit as st
 from typing import Dict
-os.environ["HF_HOME"] = "2025-LLM-Project/.cache" # Huggingface 캐시 경로 설정
-from src.utils.shared_cache import set_cache_dirs
-set_cache_dirs()
+from dotenv import load_dotenv
 
 # 내부 임포트
-from dotenv import load_dotenv
 from src.utils.config import load_config
-from src.loader.loader_main import loader_main
-from src.loader.data_loader import merge_and_deduplicate_chunks
 from src.utils.path import get_project_root_dir
-from src.embedding.embedding_main import embedding_main
+from src.utils.shared_cache import set_cache_dirs
+from src.loader.loader_main import loader_main
+from src.embedding.embedding_main import embedding_main, generate_index_name
 from src.retrieval.retrieval_main import retrieval_main
 from src.generator.generator_main import generator_main
-from src.embedding.embedding_main import generate_index_name
 from src.generator.hf_generator import load_hf_model
 from src.generator.openai_generator import load_openai_model
 from src.generator.generator_main import load_chat_history
 
-# Streamlit 페이지 설정
+set_cache_dirs()
 
+# Streamlit 페이지 설정
 st.set_page_config(
     page_title="RFP Chatbot", 
     layout="wide"
@@ -40,8 +35,7 @@ st.caption("PDF, HWP 형식의 제안서를 기반으로 한 내용 요약 및 �
 # 프로젝트 루트 경로 설정 및 config 로드
 try:
     project_root = get_project_root_dir()
-    config_path = os.path.join(project_root, "config.yaml")
-    config = load_config(config_path)
+    config = load_config(project_root)
 except Exception as e:
     st.error(f"❌ 설정 파일 로드 실패: {e}")
     st.stop()

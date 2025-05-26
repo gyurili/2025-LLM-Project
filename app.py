@@ -17,8 +17,7 @@ from src.generator.load_model import load_generator_model
 
 
 project_root = get_project_root_dir()
-config_path = os.path.join(project_root, "config.yaml")
-config = load_config(config_path)
+config = load_config(project_root)
 
 st.set_page_config(page_title="RAG Demo", layout="wide")
 st.title("🧠 질문 기반 문서 검색 및 답변 생성")

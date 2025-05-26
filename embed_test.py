@@ -20,7 +20,7 @@ def embedding_test():
             dotenv_path = os.path.join(project_root, ".env")
             load_dotenv(dotenv_path=dotenv_path)
 
-            config = load_config(config_path)
+            config = load_config(project_root)
             print("✅ Config 로드 완료")
 
             with trace(name="loader_main"):
