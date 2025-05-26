@@ -24,23 +24,18 @@ def rag_pipeline():
             load_dotenv(dotenv_path=dotenv_path)
 
             config = load_config(project_root)
-            print("✅ Config 로드 완료")
 
             with trace(name="loader_main"):
                 chunks = loader_main(config)
-                print("✅ 데이터 로드 완료")
 
             with trace(name="embedding_main"):
                 vector_store = embedding_main(config, chunks, is_save=False)
-                print("✅ 벡터 DB 생성 완료")
 
             with trace(name="retrieval_main"):
                 docs = retrieval_main(config, vector_store, chunks)
-                print("✅ 문서 검색 완료")
 
             with trace(name="generator_main"):
                 answer = generator_main(docs, config)
-                print("✅ 답변 생성 완료")
 
             run.add_outputs({
                 "num_chunks": len(chunks),

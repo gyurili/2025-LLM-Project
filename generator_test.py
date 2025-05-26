@@ -10,6 +10,13 @@ from src.generator.generator_main import generator_main, generate_with_clarifica
 from src.utils.config import load_config
 from src.utils.path import get_project_root_dir
 
+'''
+    TODO:
+    - 각자 main수정에 맞게 generator_main, retrieval_main, embedding_main, loader_main 수정
+    - 임베딩, 모델인포, 컨피그, dotenv등은 전역적으로 한번만 선언
+'''
+
+
 def generator_test():
     try:
         with trace(name="generator_test") as run:
@@ -23,23 +30,18 @@ def generator_test():
             load_dotenv(dotenv_path=dotenv_path)
 
             config = load_config(project_root)
-            print("✅ Config 로드 완료")
 
             with trace(name="loader_main"):
                 chunks = loader_main(config)
-                print("✅ 데이터 로드 완료")
 
             with trace(name="embedding_main"):
                 vector_store = embedding_main(config, chunks, is_save=True)
-                print("✅ 벡터 DB 생성 완료")
 
             with trace(name="retrieval_main"):
                 docs = retrieval_main(config, vector_store, chunks)
-                print("✅ 문서 검색 완료")
 
             with trace(name="generator_main"):
                 answer = generator_main(docs, config)
-                print("✅ 답변 생성 완료")
 
             run.add_outputs({
                 "query": config["retriever"]["query"],
