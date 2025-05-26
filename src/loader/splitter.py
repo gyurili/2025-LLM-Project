@@ -1,15 +1,11 @@
 import re
-from collections import defaultdict
-from typing import List
-
 import numpy as np
 import pandas as pd
-from langchain.schema import Document
-from langchain_text_splitters import (
-    RecursiveCharacterTextSplitter,
-    TokenTextSplitter,
-)
 
+from collections import defaultdict
+from typing import List
+from langchain.schema import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter, TokenTextSplitter
 
 
 def clean_text(text: str) -> str:
@@ -21,19 +17,47 @@ def clean_text(text: str) -> str:
 
     Returns:
         str: 정제된 문자열
+        
+    Raises:
+        ValueError: 입력이 문자열이 아닌 경우
     """
     if not isinstance(text, str):
         raise ValueError("❌ [Type] (splitter.clean_text) 입력값은 문자열이어야 합니다.")
 
-    allowed_pattern = r"[^\uAC00-\uD7A3a-zA-Z0-9\s.,:;!?()~\-/]"
+    allowed_pattern = r"[^\uAC00-\uD7A3a-zA-Z0-9\s.,:;!?()\[\]~\-/•※❍□ㅇ○①-⑳IVXLCDM]"
     text = re.sub(allowed_pattern, " ", text)
     text = re.sub(r"\s+", " ", text)
     return text.strip()
 
 
-
 def extract_sections(text: str) -> List[dict]:
-    section_pattern = re.compile(r"\n?(\d+(\.\d+)*\s?[.)]?\s+[^\n]{2,50})")
+    """
+    다양한 목차 패턴으로 텍스트를 분리합니다.
+
+    Args:
+        text (str): 전체 문서 텍스트
+
+    Returns:
+        List[dict]: 분리된 섹션 정보 리스트 (각 항목은 'title'과 'content' 포함)
+    """
+    section_pattern = re.compile(
+        r"""
+        ^[ \t]*
+        (
+            (?:\d+(?:\.\d+)*[.)]?) |
+            (?:[가-힣]{1}[.)]?) |
+            (?:\[\d+\]) |
+            (?:\[\s*붙임\s*\d+\s*\]) |
+            (?:[①-⑳]) |
+            (?:[○•※❍□ㅇ]) |
+            (?:[IVXLCDM]{1,7}\.?)
+        )
+        [ \t]+
+        ([^\n]{2,50})
+        """,
+        re.MULTILINE | re.VERBOSE
+    )
+
     matches = list(section_pattern.finditer(text))
 
     chunks = []
@@ -46,8 +70,17 @@ def extract_sections(text: str) -> List[dict]:
     return chunks
 
 
-
 def merge_short_chunks(chunks: List[dict], min_length: int = 500) -> List[dict]:
+    """
+    길이가 min_length 미만인 청크들을 인접한 청크에 병합하여 반환합니다.
+
+    Args:
+        chunks (List[dict]): 섹션 단위로 분리된 청크 리스트
+        min_length (int, optional): 병합 기준이 되는 최소 길이 (기본값: 500)
+
+    Returns:
+        List[dict]: 병합된 청크 리스트
+    """
     merged = []
     buffer = ""
     for chunk in chunks:
@@ -61,10 +94,22 @@ def merge_short_chunks(chunks: List[dict], min_length: int = 500) -> List[dict]:
     return merged
 
 
-
 def refine_chunks_with_length_control(
-    chunks: List[dict], max_length: int = 1000, overlap: int = 250
+    chunks: List[dict],
+    max_length: int = 1000,
+    overlap: int = 250
 ) -> List[dict]:
+    """
+    각 청크의 길이를 제한하면서 겹치는 영역을 포함해 추가 분할합니다.
+
+    Args:
+        chunks (List[dict]): 병합된 청크 리스트
+        max_length (int, optional): 최대 청크 길이 (기본값: 1000)
+        overlap (int, optional): 청크 간 중첩 길이 (기본값: 250)
+
+    Returns:
+        List[dict]: 길이 제한 및 중첩 처리가 적용된 청크 리스트
+    """
     refined = []
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=max_length, chunk_overlap=overlap
@@ -83,13 +128,28 @@ def refine_chunks_with_length_control(
     return refined
 
 
-
 def data_chunking(
     df: pd.DataFrame,
     splitter_type: str = "section",
     size: int = 1000,
     overlap: int = 250,
 ) -> List[Document]:
+    """
+    데이터프레임의 각 row를 청크 단위로 분할하고, langchain Document로 변환합니다.
+
+    Args:
+        df (pd.DataFrame): 'full_text' 컬럼을 포함한 데이터프레임
+        splitter_type (str, optional): 분할 방식 ('recursive', 'token', 'section')
+        size (int, optional): 청크 최대 크기 (기본값: 1000)
+        overlap (int, optional): 청크 간 중첩 길이 (기본값: 250)
+
+    Returns:
+        List[Document]: 청크 단위로 변환된 langchain Document 리스트
+
+    Raises:
+        ValueError: 텍스트가 비어있거나 splitter_type이 지원되지 않는 경우
+        RuntimeError: 청크 생성 중 예외 발생 시
+    """
     if splitter_type == "recursive":
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=size, chunk_overlap=overlap
@@ -146,18 +206,26 @@ def data_chunking(
     return all_chunks
 
 
-
 def inspect_sample_chunks(
     chunks: List[Document], file_name: str, verbose: bool = False
 ) -> None:
+    """
+    특정 파일에 해당하는 청크들 중 주요 청크(첫, 중간, 마지막, 최대/최소 길이)를 출력합니다.
+
+    Args:
+        chunks (List[Document]): 전체 Document 청크 리스트
+        file_name (str): 확인할 대상 파일명
+        verbose (bool, optional): 출력 여부
+
+    Returns:
+        None
+    """
     if not verbose:
         return
 
     file_chunks = [doc for doc in chunks if doc.metadata.get("파일명") == file_name]
     if not file_chunks:
-        print(
-            f"❌ [Data] (splitter.inspect_sample_chunks) {file_name}에 대한 청크가 없습니다."
-        )
+        print(f"❌ [Data] (splitter.inspect_sample_chunks) {file_name}에 대한 청크가 없습니다.")
         return
 
     lengths = [len(doc.page_content) for doc in file_chunks]
@@ -180,10 +248,19 @@ def inspect_sample_chunks(
         print(f"        - 내용: {preview}")
 
 
-
 def summarize_chunk_quality(
     chunks: List[Document], verbose: bool = False
 ) -> None:
+    """
+    파일별로 청크 수, 평균/최소/최대 길이, 500자 미만 비율 등의 청크 품질 통계를 요약 출력합니다.
+
+    Args:
+        chunks (List[Document]): 전체 Document 청크 리스트
+        verbose (bool, optional): 샘플 청크 출력 여부
+
+    Returns:
+        None
+    """
     if not verbose:
         return
 
