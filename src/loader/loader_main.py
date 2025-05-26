@@ -1,16 +1,9 @@
 from typing import List
-
 from langsmith import trace, traceable
 from langchain.schema import Document
 
-from src.loader.data_loader import (
-    retrieve_top_documents_from_metadata,
-    data_process,
-)
-from src.loader.splitter import (
-    data_chunking,
-    summarize_chunk_quality,
-)
+from src.loader.data_loader import retrieve_top_documents_from_metadata, data_process
+from src.loader.splitter import data_chunking, summarize_chunk_quality
 
 
 @traceable(name="loader_main")

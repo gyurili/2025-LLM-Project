@@ -241,11 +241,13 @@ def inspect_sample_chunks(
     }
 
     for label, doc in selected.items():
-        print(f"        - {label} 길이: {len(doc.page_content)}")
-        preview = doc.page_content[:500]
-        if len(doc.page_content) > 500:
+        print(f"\n▶ {label}")
+        print(f"  - 길이: {len(doc.page_content)}")
+        print("  - 내용:")
+        preview = doc.page_content[:300]
+        if len(doc.page_content) > 300:
             preview += "..."
-        print(f"        - 내용: {preview}")
+        print(f"    {preview}")
 
 
 def summarize_chunk_quality(
@@ -286,13 +288,13 @@ def summarize_chunk_quality(
 
     results.sort(key=lambda x: x["500자미만비율"], reverse=True)
 
-    print("    - 청크 품질 요약:")
+    print("\n📌 청크 품질 요약")
     for res in results:
-        print(f"    - {res['파일명']}")
-        print(f"        - 청크수: {res['청크수']}")
-        print(f"        - 평균길이: {res['평균길이']}")
-        print(f"        - 최소길이: {res['최소길이']}")
-        print(f"        - 최대길이: {res['최대길이']}")
-        print(f"        - 500자미만비율: {res['500자미만비율']:.2f}%")
+        print("=" * 60)
+        print(f"📄 파일명: {res['파일명']}")
+        print(f"  - 청크 수         : {res['청크수']}")
+        print(f"  - 평균 길이       : {res['평균길이']:.2f}")
+        print(f"  - 최소 길이       : {res['최소길이']}")
+        print(f"  - 최대 길이       : {res['최대길이']}")
+        print(f"  - 500자 미만 비율 : {res['500자미만비율']:.2f}%")
         inspect_sample_chunks(chunks, res['파일명'], verbose=True)
-        print("-" * 30)
