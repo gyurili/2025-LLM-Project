@@ -59,8 +59,6 @@ def embedding_main(
     Raises:
         ValueError: 잘못된 인자나 지원하지 않는 DB 타입일 경우
     """
-    if not isinstance(config, dict):
-        raise ValueError("❌ (embedding.embedding_main.config) config는 dict 객체여야 합니다.")
 
     if not isinstance(chunks, list) or not all(isinstance(chunk, Document) for chunk in chunks):
         raise ValueError("❌ (embedding.embedding_main.chunks) chunks는 Document 객체의 리스트여야 합니다.")

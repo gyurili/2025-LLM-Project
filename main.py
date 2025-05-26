@@ -2,7 +2,7 @@ from src.utils.shared_cache import set_cache_dirs
 set_cache_dirs()
 
 import os
-import time 
+import time
 from langsmith import trace
 from dotenv import load_dotenv
 from src.loader.loader_main import loader_main
@@ -42,11 +42,14 @@ def rag_pipeline(config, model_info=None, is_save=False):
             with trace(name="retrieval_main"):
                 docs = retrieval_main(config, vector_store, chunks)
 
+            start_time = time.time()
             with trace(name="generator_main"):
+
                 start_time = time.time()
                 answer = generator_main(docs, config, model_info=model_info)
                 end_time = time.time()
                 elapsed = round(end_time - start_time, 2)
+                print("✅ 답변 생성 완료")
 
             run.add_outputs({
                 "query": config["retriever"]["query"],
