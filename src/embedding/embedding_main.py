@@ -89,7 +89,7 @@ def embedding_main(
         raise ValueError("❌ (embedding.embedding_main) 잘못된 index_name 생성")
     
     if embeddings is None:
-        embeddings = generate_embedding(embed_config.get("model_type"), "openai")
+        embeddings = generate_embedding(embed_config.get("model_type", "openai"))
 
     if db_type == "faiss":
         faiss_file = os.path.join(vector_db_path, f"{index_name}.faiss")
