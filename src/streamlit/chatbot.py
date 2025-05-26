@@ -4,31 +4,26 @@
 # 외부 임포트
 import os
 import time 
-import streamlit as st
 import shutil
-from pathlib import Path
-from datetime import datetime
+import streamlit as st
 from typing import Dict
-os.environ["HF_HOME"] = "2025-LLM-Project/.cache" # Huggingface 캐시 경로 설정
-from src.utils.shared_cache import set_cache_dirs
-set_cache_dirs()
+from dotenv import load_dotenv
 
 # 내부 임포트
-from dotenv import load_dotenv
 from src.utils.config import load_config
-from src.loader.loader_main import loader_main
-from src.loader.data_loader import merge_and_deduplicate_chunks
 from src.utils.path import get_project_root_dir
-from src.embedding.embedding_main import embedding_main
+from src.utils.shared_cache import set_cache_dirs
+from src.loader.loader_main import loader_main
+from src.embedding.embedding_main import embedding_main, generate_index_name
 from src.retrieval.retrieval_main import retrieval_main
 from src.generator.generator_main import generator_main
-from src.embedding.embedding_main import generate_index_name
 from src.generator.hf_generator import load_hf_model
 from src.generator.openai_generator import load_openai_model
 from src.generator.generator_main import load_chat_history
 
-# Streamlit 페이지 설정
+set_cache_dirs()
 
+# Streamlit 페이지 설정
 st.set_page_config(
     page_title="RFP Chatbot", 
     layout="wide"
@@ -40,8 +35,7 @@ st.caption("PDF, HWP 형식의 제안서를 기반으로 한 내용 요약 및 �
 # 프로젝트 루트 경로 설정 및 config 로드
 try:
     project_root = get_project_root_dir()
-    config_path = os.path.join(project_root, "config.yaml")
-    config = load_config(config_path)
+    config = load_config(project_root)
 except Exception as e:
     st.error(f"❌ 설정 파일 로드 실패: {e}")
     st.stop()
@@ -62,6 +56,7 @@ else: # 세션 상태가 존재하는 경우, chat_history를 초기화하지 �
 
 if "docs" not in st.session_state:
     st.session_state.docs = None
+
 
 # 모델 불러오기 캐시 함수
 @st.cache_resource
@@ -94,8 +89,9 @@ def get_generation_model(model_type: str, model_name: str, use_quantization: boo
             raise ValueError(f"지원되지 않는 모델 타입: {model_type}")
     
     except Exception as e:
-        raise RuntimeError(f"모델 로딩 실패: {e}")
+        st.error(f"모델 로딩 실패: {e}")
         st.stop()
+
 
 def api_key_verification(embed_model):
     if embed_model.strip().lower() == "openai":
@@ -105,6 +101,7 @@ def api_key_verification(embed_model):
             os.environ["OPENAI_API_KEY"] = openai_key
             if not openai_key:
                 st.warning("OpenAI 모델을 사용하려면 API 키를 입력해야 합니다.")
+
 
 # 사이드바 구성
 with st.sidebar:
@@ -123,7 +120,7 @@ with st.sidebar:
     config["embedding"]["embed_model"] = st.text_input("🧬 임베딩 모델", config["embedding"]["embed_model"])
     config["embedding"]["db_type"] = st.selectbox("💾 Vector DB 타입", ["faiss", "chroma"], index=["faiss", "chroma"].index(config["embedding"]["db_type"]))
 
-    # 
+    # api_key 확인
     api_key_verification(config["embedding"]["embed_model"])
 
     # Retriever 설정
@@ -139,6 +136,7 @@ with st.sidebar:
     config["generator"]["model_name"] = st.text_input("🧬 생성 모델", config["generator"]["model_name"])
     config["generator"]["max_length"] = st.number_input("🔢 최대 토큰 수(max_length)", value=config["generator"]["max_length"], step=32)
 
+    # api_key 재확인
     api_key_verification(config["generator"]["model_type"])
 
     reset_vector_db = st.button("⚠️ Vector DB 초기화")
