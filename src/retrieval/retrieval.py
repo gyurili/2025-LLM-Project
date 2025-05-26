@@ -1,18 +1,12 @@
-from dotenv import load_dotenv
-from typing import List, Optional, Literal
-
+from typing import List, Optional
 from langsmith import traceable
-from langchain.vectorstores.base import VectorStore
 from langchain.schema import Document
+from langchain.vectorstores.base import VectorStore
 from langchain_community.retrievers import BM25Retriever
 from langchain.retrievers import EnsembleRetriever
 from sentence_transformers import CrossEncoder
 
 from src.generator.generator_main import load_chat_history
-from src.embedding.vector_db import generate_embedding
-
-load_dotenv()
-
 
 @traceable(name="rerank_documents")
 def rerank_documents(
@@ -59,30 +53,17 @@ def rerank_documents(
 
 @traceable(name="retrieve_documents")
 def retrieve_documents(
-    query: str,
     vector_store: VectorStore,
-    top_k: int,
-    search_type: Literal["similarity", "hybrid"],
     chunks: Optional[List[Document]],
-    embed_model: str,
-    rerank: bool,
-    rerank_top_k: int,
-    verbose: bool,
-    config
+    config: dict
 ) -> List[Document]:
     """
     주어진 쿼리에 대해 similarity 또는 hybrid 검색 방식으로 관련 문서를 검색합니다.
 
     Args:
-        query (str): 사용자 검색 쿼리
         vector_store (VectorStore): 벡터 저장소 인스턴스
-        top_k (int): 검색할 최대 문서 개수
-        search_type (Literal["similarity", "hybrid"]): 검색 방식
         chunks (Optional[List[Document]]): hybrid 검색을 위한 전체 문서 리스트
-        embed_model (str): 사용할 임베딩 모델 이름
-        rerank (bool): re-ranking 적용 여부
-        rerank_top_k (int): re-ranking 시 최종 반환할 문서 개수
-        verbose (bool): 로그 출력 여부
+        config (dict): 설정 config
 
     Returns:
         List[Document]: 검색 또는 재정렬된 문서 리스트
@@ -91,23 +72,22 @@ def retrieve_documents(
         RuntimeError: retriever 생성에 실패할 경우
         ValueError: 지원하지 않는 검색 방식 또는 chunks 미제공 시
     """
-    try:
-        embed_model = generate_embedding(embed_model)
-    except Exception as e:
-        raise RuntimeError(f"❌ [Runtime] (retrieval.retrieve_documents.embed_model) 임베딩 모델 생성 실패: {e}")
-    
-        # 과거 질의응답 내역 불러오가
+    query = config['retriever']['query']
+    search_type = config['retriever']['search_type']
+    top_k = config['retriever']['top_k']
+    rerank = config['retriever']['rerank']
+    rerank_top_k = config['retriever']['rerank_top_k']
+    verbose = config['settings']['verbose']
+
+    # 과거 질의응답 내역 불러오기
     chat_history = load_chat_history(config)
     query = f"맥락: {chat_history}\n 질문:{query}"
     
     if search_type == "similarity":
         docs = vector_store.similarity_search(query, k=top_k)
-        if rerank:
-            docs = rerank_documents(query, docs, rerank_top_k, verbose)
-
     elif search_type == "hybrid":
         if chunks is None:
-            raise ValueError("❌ [Value] (retrieval.retrieve_documents.chunks) hybrid 검색을 위해 chunks가 필요합니다.")
+            raise ValueError("❌ [Value] (retrieval.retrieve_documents.chunks) chunks 누락 오류.")
 
         try:
             vector_retriever = vector_store.as_retriever(
@@ -137,13 +117,12 @@ def retrieve_documents(
                 unique_docs.append(doc)
                 seen_pairs.add(identifier)
         docs = unique_docs[:top_k]
-
-        if rerank:
-            docs = rerank_documents(query, docs, rerank_top_k, verbose)
-        else:
-            docs = docs[:top_k]
-
     else:
-        raise ValueError(f"❌ [Value] (retrieval.retrieve_documents.search_type) 지원하지 않는 검색 방식입니다: {search_type}")
+        raise ValueError(f"❌ [Value] (retrieval.retrieve_documents.search_type) search_type 값 오류: {search_type}")
+    
+    if rerank:
+        docs = rerank_documents(query, docs, rerank_top_k, verbose)
+    else:
+        docs = docs[:top_k]
 
     return docs

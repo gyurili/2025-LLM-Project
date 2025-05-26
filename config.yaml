@@ -31,4 +31,4 @@ generator:
     max_length: 512
     use_quantization: True
 
-chat_history:
+chat_history: []
