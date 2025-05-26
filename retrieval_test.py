@@ -1,9 +1,12 @@
 from src.utils.shared_cache import set_cache_dirs
 set_cache_dirs()
+
 import os
 from langsmith import trace
 from dotenv import load_dotenv
+
 from src.embedding.embedding_main import embedding_main
+from src.embedding.vector_db import generate_embedding
 from src.retrieval.retrieval_main import retrieval_main
 from src.loader.loader_main import loader_main
 from src.utils.config import load_config
@@ -13,28 +16,23 @@ def retrieval_test():
     try:
         with trace(name="retrieval_test") as run:
             project_root = get_project_root_dir()
-            print(f"Project root directory: {project_root}")
 
             config_path = os.path.join(project_root, "config.yaml")
-            print(f"Config file path: {config_path}")
-            
             dotenv_path = os.path.join(project_root, ".env")
             load_dotenv(dotenv_path=dotenv_path)
 
             config = load_config(project_root)
-            print("✅ Config 로드 완료")
 
             with trace(name="loader_main"):
                 chunks = loader_main(config)
-                print("✅ 데이터 로드 완료")
 
             with trace(name="embedding_main"):
-                vector_store = embedding_main(config, chunks, is_save=True)
-                print("✅ 벡터 DB 생성 완료")
+                embed_model_name = config["embedding"]["embed_model"]
+                embeddings = generate_embedding(embed_model_name)
+                vector_store = embedding_main(config, chunks, embeddings, is_save=True)
 
             with trace(name="retrieval_main"):
                 docs = retrieval_main(config, vector_store, chunks)
-                print("✅ 문서 검색 완료")
 
             run.add_outputs({
                 "query": config["retriever"]["query"],

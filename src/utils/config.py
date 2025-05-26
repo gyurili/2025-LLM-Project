@@ -13,7 +13,7 @@ def check_config(config: dict) -> None:
         ValueError: 설정이 유효하지 않을 경우
     """
     if not isinstance(config, dict):
-        raise ValueError("❌ (config.check_config) 설정은 딕셔너리여야 합니다.")
+        raise ValueError("❌ [Value] (config.check_config) 설정은 딕셔너리여야 합니다.")
     
     # settings
     settings_config = config.get("settings", {})

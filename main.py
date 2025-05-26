@@ -25,19 +25,15 @@ def rag_pipeline():
             load_dotenv(dotenv_path=dotenv_path)
 
             config = load_config(project_root)
-            print("✅ Config 로드 완료")
 
             with trace(name="loader_main"):
                 chunks = loader_main(config)
-                print("✅ 데이터 로드 완료")
 
             with trace(name="embedding_main"):
                 vector_store = embedding_main(config, chunks, is_save=False)
-                print("✅ 벡터 DB 생성 완료")
 
             with trace(name="retrieval_main"):
                 docs = retrieval_main(config, vector_store, chunks)
-                print("✅ 문서 검색 완료")
 
             start_time = time.time()
             with trace(name="generator_main"):
@@ -45,7 +41,7 @@ def rag_pipeline():
                 print("✅ 답변 생성 완료")
             end_time = time.time()
             elapsed = round(end_time - start_time, 2)
-
+            
             run.add_outputs({
                 "num_chunks": len(chunks),
                 "num_retrieved_docs": len(docs),
