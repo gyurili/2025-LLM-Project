@@ -14,6 +14,7 @@ from src.utils.config import load_config
 from src.utils.path import get_project_root_dir
 from src.utils.shared_cache import set_cache_dirs
 from src.loader.loader_main import loader_main
+from src.embedding.vector_db import generate_embedding
 from src.embedding.embedding_main import embedding_main, generate_index_name
 from src.retrieval.retrieval_main import retrieval_main
 from src.generator.generator_main import generator_main
@@ -230,9 +231,10 @@ with tab1:
         # 데이터 처리
         try:
             chunks = loader_main(config)
+            embeddings = generate_embedding(config['embedding']['embed_model'])
             
             with st.spinner("📂 관련 문서 임베딩 중..."):
-                vector_store = embedding_main(config, chunks, is_save=is_save) # merged_chunks
+                vector_store = embedding_main(config, chunks, embeddings=embeddings, is_save=is_save) # merged_chunks
             with st.spinner("🔍 관련 문서 검색 중..."):
                 docs = retrieval_main(config, vector_store, chunks) # merged_chunks
         except Exception as e:
