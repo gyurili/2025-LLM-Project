@@ -2,6 +2,7 @@ from src.utils.shared_cache import set_cache_dirs
 set_cache_dirs()
 
 import os
+import time 
 from langsmith import trace
 from dotenv import load_dotenv
 from src.loader.loader_main import loader_main
@@ -24,23 +25,28 @@ dotenv_path = os.path.join(project_root, ".env")
 load_dotenv(dotenv_path=dotenv_path)
 config = load_config(project_root)
 
-embedder = generate_embedding(config["embedding"]["embed_model"])
+# embedder = generate_embedding(config["embedding"]["embed_model"])
 
-def rag_pipeline(config, embedder, model_info=None):
+def rag_pipeline(config, model_info=None, is_save=False):
     try:
         with trace(name="rag_pipeline") as run:
 
             with trace(name="loader_main"):
-                chunks = loader_main(config, embedder=embedder)
-
+                embeddings = generate_embedding(config['embedding']['embed_model'])
+                chunks = loader_main(config)
+                print("chunks")
+                
             with trace(name="embedding_main"):
-                vector_store = embedding_main(config, chunks, is_save=False)
+                vector_store = embedding_main(config, chunks, embeddings=embeddings, is_save=is_save)
 
             with trace(name="retrieval_main"):
                 docs = retrieval_main(config, vector_store, chunks)
 
             with trace(name="generator_main"):
-                answer = generator_main(docs, config)
+                start_time = time.time()
+                answer = generator_main(docs, config, model_info=model_info)
+                end_time = time.time()
+                elapsed = round(end_time - start_time, 2)
 
             run.add_outputs({
                 "query": config["retriever"]["query"],
@@ -52,11 +58,11 @@ def rag_pipeline(config, embedder, model_info=None):
                 "answer_length": len(answer),
                 "final_answer": answer
             })
-
+            
+            return docs, answer, elapsed
+            
     except Exception as e:
         print(f"❌ 로깅 에러: {e}")
 
-    return docs, answer, 
-
 if __name__ == "__main__":
-    rag_pipeline()
+    rag_pipeline(config)
