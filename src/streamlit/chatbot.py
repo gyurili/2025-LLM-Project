@@ -138,7 +138,7 @@ with st.sidebar:
     config["generator"]["model_type"] = st.selectbox("🔎 생성 모델 타입", ["huggingface", "openai"], index=["huggingface", "openai"].index(config["generator"]["model_type"]))
     config["generator"]["model_name"] = st.text_input("🧬 생성 모델", config["generator"]["model_name"])
     config["generator"]["max_length"] = st.number_input("🔢 최대 토큰 수(max_length)", value=config["generator"]["max_length"], step=32)
-    
+
     # api_key 재확인
     api_key_verification(config["generator"]["model_type"])
 
@@ -221,21 +221,18 @@ with tab1:
             st.markdown(query)
 
         if config.get("chat_history"):  # chat_history에 내용이 있는 경우
-            query = f"이전 질문 요약: {load_chat_history(config)}\n질문: {query}"
+            query_c = f"이전 질문 요약: {load_chat_history(config)}\n질문: {query}"
+            config["retriever"]["query"] = query_c
         else:  # chat_history가 비어 있거나 없을 경우
-            # 첫 질문인 경우, 질문 내용만 추가
+            config["retriever"]["query"] = query
             pass  # query는 그대로 유지
 
-        config["retriever"]["query"] = query
-        print(f"질문: {query}")
+        print(f"질문: {config['retriever']['query']}")
 
         # 벡터 DB에서 유사 문서 검색
         # 데이터 처리
         try:
             chunks = loader_main(config)
-            # 과거 chunks 병합
-            # past_chunks = st.session_state.get("past_chunks", [])
-            # merged_chunks = merge_and_deduplicate_chunks(chunks + past_chunks)
             
             with st.spinner("📂 관련 문서 임베딩 중..."):
                 vector_store = embedding_main(config, chunks, is_save=is_save) # merged_chunks
@@ -244,9 +241,6 @@ with tab1:
         except Exception as e:
             st.error(f"문서 처리 중 오류 발생: {e}")
             st.stop()
-
-        # 이번 질문까지 완료한 chunks 저장
-        # st.session_state.past_chunks = merged_chunks
         
         st.session_state.docs = docs 
 
@@ -270,7 +264,6 @@ with tab1:
         with st.chat_message("assistant"):
             st.markdown(f"🕒 **추론 시간:** {elapsed}초")
         # 대화 기록 업데이트
-        st.session_state.chat_history.append({"role": "ai", "content": answer}) # 답변 기록
         config["chat_history"] = st.session_state.chat_history
         # st.rerun()
 
