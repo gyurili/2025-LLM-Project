@@ -6,3 +6,6 @@ def set_cache_dirs():
     os.environ['XDG_CACHE_HOME'] = os.path.expanduser('~/.cache/xdg')
     os.environ['LANGCHAIN_CACHE'] = os.path.expanduser('~/.cache/langchain')
     os.environ['TORCH_HOME'] = os.path.expanduser('~/.cache/torch')
+
+    # 문제시 삭제
+    os.environ["HF_HOME"] = "2025-LLM-Project/.cache"
