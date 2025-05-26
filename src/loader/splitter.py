@@ -22,7 +22,7 @@ def clean_text(text: str) -> str:
         ValueError: 입력이 문자열이 아닌 경우
     """
     if not isinstance(text, str):
-        raise ValueError("❌ [Type] (splitter.clean_text) 입력값은 문자열이어야 합니다.")
+        raise ValueError("❌ [Type] (splitter.clean_text) 문자열이 아닌 입력값")
 
     allowed_pattern = r"[^\uAC00-\uD7A3a-zA-Z0-9\s.,:;!?()\[\]~\-/•※❍□ㅇ○①-⑳IVXLCDM]"
     text = re.sub(allowed_pattern, " ", text)
@@ -160,7 +160,7 @@ def data_chunking(
         splitter = None
     else:
         raise ValueError(
-            f"❌ [Value] (splitter.data_chunking.splitter_type) {splitter_type}은 지원하지 않습니다."
+            f"❌ [Value] (splitter.data_chunking.splitter_type) 지원하지 않는 분할 방식: {splitter_type}"
         )
 
     all_chunks = []
@@ -200,7 +200,7 @@ def data_chunking(
                 )
         else:
             raise ValueError(
-                f"❌ [Data] (splitter.data_chunking) full_text가 비어있거나 문자열이 아닙니다: {row.get('파일명')}"
+                f"❌ [Data] (splitter.data_chunking) 비어있거나 문자열이 아닌 full_text: {row.get('파일명')}"
             )
 
     return all_chunks
@@ -225,7 +225,7 @@ def inspect_sample_chunks(
 
     file_chunks = [doc for doc in chunks if doc.metadata.get("파일명") == file_name]
     if not file_chunks:
-        print(f"❌ [Data] (splitter.inspect_sample_chunks) {file_name}에 대한 청크가 없습니다.")
+        print(f"❌ [Data] (splitter.inspect_sample_chunks) 청크 없음: {file_name}")
         return
 
     lengths = [len(doc.page_content) for doc in file_chunks]
