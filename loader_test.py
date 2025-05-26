@@ -20,11 +20,9 @@ def loader_test():
             load_dotenv(dotenv_path=dotenv_path)
 
             config = load_config(project_root)
-            print("✅ Config 로드 완료")
 
             with trace(name="loader_main"):
                 chunks = loader_main(config)
-                print("✅ 데이터 로드 완료")
 
             run.add_outputs({
                 "top_k": config["data"]["top_k"],

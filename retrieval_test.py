@@ -22,19 +22,15 @@ def retrieval_test():
             load_dotenv(dotenv_path=dotenv_path)
 
             config = load_config(project_root)
-            print("✅ Config 로드 완료")
 
             with trace(name="loader_main"):
                 chunks = loader_main(config)
-                print("✅ 데이터 로드 완료")
 
             with trace(name="embedding_main"):
                 vector_store = embedding_main(config, chunks, is_save=True)
-                print("✅ 벡터 DB 생성 완료")
 
             with trace(name="retrieval_main"):
                 docs = retrieval_main(config, vector_store, chunks)
-                print("✅ 문서 검색 완료")
 
             run.add_outputs({
                 "query": config["retriever"]["query"],

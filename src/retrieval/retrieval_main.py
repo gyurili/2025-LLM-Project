@@ -44,15 +44,16 @@ def retrieval_main(
         chunks=chunks,
         config=config
     )
+    print("✅ 문서 검색 완료")
     
     verbose = config["settings"]["verbose"]
 
     if verbose:
         count = 0
         for i, doc in enumerate(docs, 1):
-            print(f"\n📄 문서 {i}")
-            print(f"본문:\n{doc.page_content[:100]}...")
-            print(f"메타데이터: {doc.metadata}")
+            print(f"\n    📄 문서 {i}")
+            print(f"    - 본문(100자): {doc.page_content[:100]}...")
+            print(f"    - 메타데이터: {doc.metadata}")
             count += 1
             if count > 4:
                 break
