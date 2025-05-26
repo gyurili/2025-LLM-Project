@@ -10,11 +10,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 
 from src.utils.path import get_project_root_dir
-from src.embedding.vector_db import (
-    generate_embedding, 
-    generate_vector_db, 
-    load_vector_db
-    )
+from src.embedding.vector_db import generate_vector_db, load_vector_db
 
 
 def generate_index_name(config: dict) -> str:
@@ -45,7 +41,7 @@ def generate_index_name(config: dict) -> str:
 def embedding_main(
     config: dict,
     chunks: List[Document],
-    embeddings: Union[HuggingFaceEmbeddings, OpenAIEmbeddings] = None,
+    embeddings: Union[HuggingFaceEmbeddings, OpenAIEmbeddings],
     is_save: bool = False
 ) -> Union[FAISS, Chroma]:
     """
@@ -64,15 +60,15 @@ def embedding_main(
         ValueError: 잘못된 인자나 지원하지 않는 DB 타입일 경우
     """
     if not isinstance(config, dict):
-        raise ValueError("❌ (embedding.embedding_main) config는 dict 객체여야 합니다.")
+        raise ValueError("❌ (embedding.embedding_main.config) config는 dict 객체여야 합니다.")
 
     if not isinstance(chunks, list) or not all(isinstance(chunk, Document) for chunk in chunks):
-        raise ValueError("❌ (embedding.embedding_main) chunks는 Document 객체의 리스트여야 합니다.")
+        raise ValueError("❌ (embedding.embedding_main.chunks) chunks는 Document 객체의 리스트여야 합니다.")
     if len(chunks) == 0:
-        raise ValueError("❌ (embedding.embedding_main) chunks 리스트가 비어 있음")
+        raise ValueError("❌ (embedding.embedding_main.chunks) chunks 리스트가 비어 있음")
 
-    if not isinstance(embeddings, (HuggingFaceEmbeddings, OpenAIEmbeddings)):
-        raise ValueError("❌ (embedding.embedding_main) 잘못된 embeddings 인자")
+    if embeddings is None or not isinstance(embeddings, (HuggingFaceEmbeddings, OpenAIEmbeddings)):
+        raise ValueError("❌ (embedding.embedding_main.embeddings) 잘못된 embeddings 인자")
 
     embed_config = config.get("embedding", {})
     db_type = embed_config.get("db_type", "faiss").lower()
@@ -80,16 +76,13 @@ def embedding_main(
     vector_db_path = os.path.join(project_root, embed_config.get("vector_db_path", "data"))
 
     if not isinstance(vector_db_path, str) or vector_db_path.strip() == "":
-        raise ValueError("❌ (embedding.embedding_main) 잘못된 vector_db_path 경로")
+        raise ValueError("❌ (embedding.embedding_main.vector_db_path) 잘못된 vector_db_path 경로")
 
     os.makedirs(vector_db_path, exist_ok=True)
     index_name = generate_index_name(config)
 
     if not isinstance(index_name, str) or index_name.strip() == "":
-        raise ValueError("❌ (embedding.embedding_main) 잘못된 index_name 생성")
-    
-    if embeddings is None:
-        embeddings = generate_embedding(embed_config.get("model_type", "openai"))
+        raise ValueError("❌ (embedding.embedding_main.index_name) 잘못된 index_name 생성")
 
     if db_type == "faiss":
         faiss_file = os.path.join(vector_db_path, f"{index_name}.faiss")
@@ -115,10 +108,10 @@ def embedding_main(
             db_exists = False
 
     else:
-        raise ValueError(f"❌ (embedding.embedding_main) 지원하지 않는 DB 타입입니다: {db_type}")
+        raise ValueError(f"❌ (embedding.embedding_main.db_type) 지원하지 않는 DB 타입입니다: {db_type}")
 
     if is_save:
-        vector_store = generate_vector_db(chunks, embeddings, index_name, db_type)
+        vector_store = generate_vector_db(chunks, embeddings, index_name, db_type, output_path=vector_db_path)
         print("✅ Vector DB 생성 완료")
     else:
         vector_store = load_vector_db(vector_db_path, embeddings, index_name, db_type)
