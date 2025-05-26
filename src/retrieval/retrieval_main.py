@@ -27,7 +27,7 @@ def retrieval_main(
     index_name = generate_index_name(config)
 
     vector_db_path = config["embedding"]["vector_db_path"]
-    embed_model = ["embedding"]["embed_model"]
+    embed_model = config["embedding"]["embed_model"]
     db_type = config["embedding"]["db_type"]
 
     if vector_store is None:
