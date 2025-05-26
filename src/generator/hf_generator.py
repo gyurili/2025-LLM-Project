@@ -1,15 +1,27 @@
 import os
-import re
 import torch
 from typing import Dict
 from inspect import signature
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from langsmith import trace
 
+'''
+    TODO:
+    - 모델 로딩 시 GPU 메모리 최적화 ✅
+    - hf 모델 로딩 시 warning 제거 ✅
+    - verbose 모드 제거 및 prompt 및 context 제외한 답변 출력 ✅
+'''
+
 
 def load_hf_model(config: Dict) -> Dict:
     """
     Hugging Face 모델을 config를 기반으로 초기화합니다.
+
+    Args:
+        config (Dict): 설정 정보 (모델 이름, 양자화 여부 등 포함)
+        
+    Returns:
+        Dict: 모델 정보 및 토크나이저
     """
     model_name = config["generator"]["model_name"]
 
@@ -20,7 +32,12 @@ def load_hf_model(config: Dict) -> Dict:
         token=os.getenv("HF_TOKEN")
     )
 
-    if config["generator"].get("use_quantization", False):
+    use_quantization = config["generator"].get("use_quantization", False)
+
+    if use_quantization:
+        if not torch.cuda.is_available():
+            raise EnvironmentError("❌ GPU가 사용 가능하지 않습니다. 양자화 모델을 사용하려면 GPU가 필요합니다.")
+        
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_use_double_quant=True,
@@ -47,7 +64,7 @@ def load_hf_model(config: Dict) -> Dict:
     return {"tokenizer": tokenizer, "model": model}
 
 
-def generate_answer_hf(prompt: str, model_info: Dict, generation_config: Dict, verbose:bool = False) -> str:
+def generate_answer_hf(prompt: str, model_info: Dict, generation_config: Dict) -> str:
     """
     Hugging Face 모델을 사용하여 프롬프트에 응답을 생성합니다
 
@@ -76,6 +93,10 @@ def generate_answer_hf(prompt: str, model_info: Dict, generation_config: Dict, v
             "attention_mask": attention_mask,
             "max_new_tokens": generation_config.get("max_length", 512),
             "do_sample": False,
+            "num_beams": 1,
+            "temperature": None,
+            "top_k": None,
+            "top_p": None,
             "eos_token_id": tokenizer.eos_token_id or tokenizer.pad_token_id,
             "repetition_penalty": 1.2
         }
@@ -86,19 +107,12 @@ def generate_answer_hf(prompt: str, model_info: Dict, generation_config: Dict, v
         with torch.no_grad():
             output = model.generate(**generate_kwargs)
 
-        if verbose:
-            raw_output = tokenizer.decode(output[0], skip_special_tokens=True, clean_up_tokenization_spaces=True)
-            answer = raw_output.strip()
-            # 프롬프트 시작 문장 제거
-            if "당신은 정부 및 대학의 공공 사업 제안서를 분석하는" in answer:
-                answer = answer.split("문서 내용:")[-1].strip()
-        else:
-            # prompt 내용 생략
-            output_ids = output[0]
-            input_len = input_ids.size(1)
-            generated_ids = output_ids[input_len:]
-            generated_text = tokenizer.decode(generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=True)
-            answer = generated_text.strip()
+        # prompt 내용 생략
+        output_ids = output[0]
+        input_len = input_ids.size(1)
+        generated_ids = output_ids[input_len:]
+        generated_text = tokenizer.decode(generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=True)
+        answer = generated_text.strip()
 
         # 모델에서 나오는 stop words 추가
         stop_strings = ["```", "<|endoftext|>", "Human:", "human:", "###"]

@@ -28,9 +28,9 @@ def rerank_documents(
         List[Document]: 재정렬된 상위 문서 리스트
     """
     if verbose:
-        print("\n📌 기존 문서 순서:")
+        print("\n    📌 기존 문서 순서:")
         for i, doc in enumerate(docs, 1):
-            print(f"  {i}. 파일명: {doc.metadata.get('파일명')}, 청크: {doc.metadata.get('chunk_idx')}")
+            print(f"      {i}. 파일명: {doc.metadata.get('파일명')}, 청크: {doc.metadata.get('chunk_idx')}")
 
     model = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
     pairs = [(query, doc.page_content) for doc in docs]
@@ -40,13 +40,13 @@ def rerank_documents(
     doc_scores.sort(key=lambda x: x[1], reverse=True)
 
     if verbose:
-        print("\n📌 re-rank 적용 후 문서 순서:")
+        print("\n    📌 re-rank 적용 후 문서 순서:")
         for i, (doc, score) in enumerate(doc_scores, 1):
-            print(f"  {i}. 파일명: {doc.metadata.get('파일명')}, 청크: {doc.metadata.get('chunk_idx')}, 점수: {score:.4f}")
+            print(f"      {i}. 파일명: {doc.metadata.get('파일명')}, 청크: {doc.metadata.get('chunk_idx')}, 점수: {score:.4f}")
     else:
-        print("\n📌 최종 문서 순서(상위 5개):")
+        print("\n    📌 최종 문서 순서(상위 5개):")
         for i, (doc, score) in enumerate(doc_scores[:5], 1):
-            print(f"  {i}. 파일명: {doc.metadata.get('파일명')}, 청크: {doc.metadata.get('chunk_idx')}, 점수: {score:.4f}")
+            print(f"      {i}. 파일명: {doc.metadata.get('파일명')}, 청크: {doc.metadata.get('chunk_idx')}, 점수: {score:.4f}")
 
     return [doc for doc, _ in doc_scores[:rerank_top_k]]
 
