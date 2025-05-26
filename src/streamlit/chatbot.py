@@ -25,6 +25,8 @@ from src.generator.generator_main import generator_main
 from src.embedding.embedding_main import generate_index_name
 from src.generator.hf_generator import load_hf_model
 from src.generator.openai_generator import load_openai_model
+from src.generator.generator_main import load_chat_history
+
 # Streamlit 페이지 설정
 
 st.set_page_config(
@@ -34,13 +36,6 @@ st.set_page_config(
 
 st.header("RFP Chatbot", divider='blue')
 st.caption("PDF, HWP 형식의 제안서를 기반으로 한 내용 요약 및 질의응답을 경험하세요!")
-
-# 세션 상태 초기화
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
-
-if "docs" not in st.session_state:
-    st.session_state.docs = None
 
 # 프로젝트 루트 경로 설정 및 config 로드
 try:
@@ -57,6 +52,16 @@ if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path=dotenv_path)
 else:
     st.warning(".env 파일을 찾을 수 없습니다. 일부 기능이 제한될 수 있습니다.")
+
+# 세션 상태 초기화
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+else: # 세션 상태가 존재하는 경우, chat_history를 초기화하지 않음
+    st.session_state.chat_history = st.session_state.get("chat_history", [])
+    config["chat_history"] = st.session_state.chat_history
+
+if "docs" not in st.session_state:
+    st.session_state.docs = None
 
 # 모델 불러오기 캐시 함수
 @st.cache_resource
@@ -92,9 +97,14 @@ def get_generation_model(model_type: str, model_name: str, use_quantization: boo
         raise RuntimeError(f"모델 로딩 실패: {e}")
         st.stop()
 
-model_type = config["generator"]["model_type"]
-model_name = config["generator"]["model_name"]
-use_quantization = config["generator"]["use_quantization"]
+def api_key_verification(embed_model):
+    if embed_model.strip().lower() == "openai":
+        load_dotenv()
+        if not os.environ["OPENAI_API_KEY"]:
+            openai_key = st.text_input("🔑 OpenAI API Key", type="password")
+            os.environ["OPENAI_API_KEY"] = openai_key
+            if not openai_key:
+                st.warning("OpenAI 모델을 사용하려면 API 키를 입력해야 합니다.")
 
 # 사이드바 구성
 with st.sidebar:
@@ -113,13 +123,8 @@ with st.sidebar:
     config["embedding"]["embed_model"] = st.text_input("🧬 임베딩 모델", config["embedding"]["embed_model"])
     config["embedding"]["db_type"] = st.selectbox("💾 Vector DB 타입", ["faiss", "chroma"], index=["faiss", "chroma"].index(config["embedding"]["db_type"]))
 
-    if config["embedding"]["embed_model"].strip().lower() == "openai":
-        load_dotenv()
-        if not os.environ["OPENAI_API_KEY"]:
-            openai_key = st.text_input("🔑 OpenAI API Key", type="password")
-            os.environ["OPENAI_API_KEY"] = openai_key
-            if not openai_key:
-                st.warning("OpenAI 모델을 사용하려면 API 키를 입력해야 합니다.")
+    # 
+    api_key_verification(config["embedding"]["embed_model"])
 
     # Retriever 설정
     st.subheader("🔍 리트리버 설정")
@@ -134,14 +139,7 @@ with st.sidebar:
     config["generator"]["model_name"] = st.text_input("🧬 생성 모델", config["generator"]["model_name"])
     config["generator"]["max_length"] = st.number_input("🔢 최대 토큰 수(max_length)", value=config["generator"]["max_length"], step=32)
 
-    if config["generator"]["model_type"].strip().lower() == "openai":
-        load_dotenv()
-        if not os.environ["OPENAI_API_KEY"]:
-            openai_key = st.text_input("🔑 OpenAI API Key", type="password")
-            os.environ["OPENAI_API_KEY"] = openai_key  # 필요한 경우 환경 변수로 설정
-            if not openai_key:
-                st.warning("OpenAI 모델을 사용하려면 API 키를 입력해야 합니다.")
-
+    api_key_verification(config["generator"]["model_type"])
 
     reset_vector_db = st.button("⚠️ Vector DB 초기화")
     
@@ -190,6 +188,10 @@ with st.sidebar:
 # 탭 구성
 tab1, tab2 = st.tabs(["💬 챗봇", "📄 문서 요약 및 분석"])
 
+model_type = config["generator"]["model_type"]
+model_name = config["generator"]["model_name"]
+use_quantization = config["generator"]["use_quantization"]
+
 with tab1:
     query = st.chat_input("질문을 입력하세요")
 
@@ -217,25 +219,27 @@ with tab1:
         with st.chat_message("user"):
             st.markdown(query)
 
-        config["retriever"]["query"] = query
+        if config.get("chat_history"):  # chat_history에 내용이 있는 경우
+            query_c = f"이전 질문 요약: {load_chat_history(config)}\n질문: {query}"
+            config["retriever"]["query"] = query_c
+        else:  # chat_history가 비어 있거나 없을 경우
+            config["retriever"]["query"] = query
+            pass  # query는 그대로 유지
+
+        print(f"질문: {config['retriever']['query']}")
+
         # 벡터 DB에서 유사 문서 검색
         # 데이터 처리
         try:
             chunks = loader_main(config)
-            # 과거 chunks 병합
-            past_chunks = st.session_state.get("past_chunks", [])
-            merged_chunks = merge_and_deduplicate_chunks(chunks + past_chunks)
             
             with st.spinner("📂 관련 문서 임베딩 중..."):
-                vector_store = embedding_main(config, merged_chunks, is_save=is_save)
+                vector_store = embedding_main(config, chunks, is_save=is_save) # merged_chunks
             with st.spinner("🔍 관련 문서 검색 중..."):
-                docs = retrieval_main(config, vector_store, merged_chunks)
+                docs = retrieval_main(config, vector_store, chunks) # merged_chunks
         except Exception as e:
             st.error(f"문서 처리 중 오류 발생: {e}")
             st.stop()
-
-        # 이번 질문까지 완료한 chunks 저장
-        st.session_state.past_chunks = merged_chunks
         
         st.session_state.docs = docs 
 
@@ -258,6 +262,9 @@ with tab1:
         # 추론 시간 표시
         with st.chat_message("assistant"):
             st.markdown(f"🕒 **추론 시간:** {elapsed}초")
+        # 대화 기록 업데이트
+        config["chat_history"] = st.session_state.chat_history
+        # st.rerun()
 
         # 랜더링 한계점: 20개까지 히스토리 표시
         MAX_CHAT_HISTORY = 20
