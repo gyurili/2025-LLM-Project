@@ -21,6 +21,7 @@ from src.generator.generator_main import generator_main
 from src.generator.hf_generator import load_hf_model
 from src.generator.openai_generator import load_openai_model
 from src.generator.generator_main import load_chat_history
+from main import rag_pipeline
 
 set_cache_dirs()
 
@@ -229,32 +230,52 @@ with tab1:
 
         # 벡터 DB에서 유사 문서 검색
         # 데이터 처리
-        try:
-            chunks = loader_main(config)
-            embeddings = generate_embedding(config['embedding']['embed_model'])
+        # try:
+        #     chunks = loader_main(config)
+        #     embeddings = generate_embedding(config['embedding']['embed_model'])
             
-            with st.spinner("📂 관련 문서 임베딩 중..."):
-                vector_store = embedding_main(config, chunks, embeddings=embeddings, is_save=is_save) # merged_chunks
-            with st.spinner("🔍 관련 문서 검색 중..."):
-                docs = retrieval_main(config, vector_store, chunks) # merged_chunks
-        except Exception as e:
-            st.error(f"문서 처리 중 오류 발생: {e}")
-            st.stop()
+        #     with st.spinner("📂 관련 문서 임베딩 중..."):
+        #         vector_store = embedding_main(config, chunks, embeddings=embeddings, is_save=is_save) # merged_chunks
+        #     with st.spinner("🔍 관련 문서 검색 중..."):
+        #         docs = retrieval_main(config, vector_store, chunks) # merged_chunks
+        # except Exception as e:
+        #     st.error(f"문서 처리 중 오류 발생: {e}")
+        #     st.stop()
         
-        st.session_state.docs = docs 
+
 
         # 모델 불러오기는 단 한번만!
         model_info = get_generation_model(model_type, 
                                       model_name, 
                                       use_quantization)
 
-        # 질문에 대한 답변 생성, 추론 시간 측정
-        start_time = time.time()
-        with st.spinner("🤖 답변 생성 중..."):
-            answer = generator_main(docs, config, model_info=model_info) # generator_main 함수에 docs와 query를 전달
-        end_time = time.time()
-        elapsed = round(end_time - start_time, 2)
 
+        # st.session_state.docs = docs 
+
+        # # 모델 불러오기는 단 한번만!
+        # model_info = get_generation_model(model_type, 
+        #                               model_name, 
+        #                               use_quantization)
+
+        # # 질문에 대한 답변 생성, 추론 시간 측정
+
+        # start_time = time.time()
+        # with st.spinner("🤖 답변 생성 중..."):
+        #     answer = generator_main(docs, config, model_info=model_info) # generator_main 함수에 docs와 query를 전달
+        # end_time = time.time()
+        # elapsed = round(end_time - start_time, 2)
+
+        try:
+            with st.spinner("🤖 답변 생성 중..."):
+                docs, answer, elapsed = rag_pipeline(config, model_info=model_info, is_save=is_save)
+
+            # 결과 Streamlit에 반영
+            st.session_state.docs = docs 
+
+        except Exception as e:
+            st.error(f"문서 처리 중 오류 발생: {e}")
+            st.stop()
+     
         # 대화 이력 업데이트
         st.session_state.chat_history.append({"role": "user", "content": query})
         st.session_state.chat_history.append({"role": "ai", "content": answer})
