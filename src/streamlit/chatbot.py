@@ -232,7 +232,7 @@ with tab1:
             chunks = loader_main(config)
             
             with st.spinner("📂 관련 문서 임베딩 중..."):
-                vector_store = embedding_main(config, chunks, is_save=is_save) # merged_chunks
+                vector_store = embedding_main(config, chunks, embeddings=None, is_save=is_save) # merged_chunks
             with st.spinner("🔍 관련 문서 검색 중..."):
                 docs = retrieval_main(config, vector_store, chunks) # merged_chunks
         except Exception as e:
