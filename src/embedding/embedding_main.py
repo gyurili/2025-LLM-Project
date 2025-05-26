@@ -1,28 +1,21 @@
 import os
 import shutil
+
 from typing import List, Union
-
 from langsmith import traceable
-from langchain.schema import Document
-from langchain_community.vectorstores import FAISS
 from langchain_chroma import Chroma
+from langchain.schema import Document
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_huggingface import HuggingFaceEmbeddings
 
-from src.embedding.vector_db import generate_vector_db, load_vector_db
 from src.utils.path import get_project_root_dir
+from src.embedding.vector_db import generate_vector_db, load_vector_db
 
 
 def generate_index_name(config: dict) -> str:
     """
     config 설정값을 조합하여 벡터 DB 인덱스 이름을 생성합니다.
-
-    구성 요소:
-    - data.type
-    - chunk.splitter
-    - embedding.model
-    - embedding.db_type
-
-    모델명이 경로 형태일 경우 마지막 항목만 사용하며,
-    하이픈(-), 슬래시(/), 공백은 언더스코어(_)로 변환합니다.
 
     Args:
         config (dict): 설정 딕셔너리
@@ -45,29 +38,51 @@ def generate_index_name(config: dict) -> str:
 
 
 @traceable(name="embedding_main")
-def embedding_main(config: dict, chunks: List[Document], is_save: bool = False) -> Union[FAISS, Chroma]:
+def embedding_main(
+    config: dict,
+    chunks: List[Document],
+    embeddings: Union[HuggingFaceEmbeddings, OpenAIEmbeddings],
+    is_save: bool = False
+) -> Union[FAISS, Chroma]:
     """
     설정에 따라 벡터 DB를 생성하거나 로드합니다.
 
     Args:
         config (dict): 설정 정보
-        chunks (List[Document]): 청크 리스트(loader_main에서 생성된 Document 객체 리스트)
+        chunks (List[Document]): Document 객체 리스트
+        embeddings (Union[HuggingFaceEmbeddings, OpenAIEmbeddings]): 초기화된 임베딩 객체
         is_save (bool): 저장 모드 여부
 
     Returns:
-        VectorStore 객체
+        Union[FAISS, Chroma]: 생성되거나 로드된 벡터 저장소 인스턴스
+
+    Raises:
+        ValueError: 잘못된 인자나 지원하지 않는 DB 타입일 경우
     """
+    if not isinstance(config, dict):
+        raise ValueError("❌ (embedding.embedding_main) config는 dict 객체여야 합니다.")
+
     if not isinstance(chunks, list) or not all(isinstance(chunk, Document) for chunk in chunks):
-        raise ValueError("❌(embedding.embedding_main) chunks는 Document 객체의 리스트여야 합니다.")
+        raise ValueError("❌ (embedding.embedding_main) chunks는 Document 객체의 리스트여야 합니다.")
+    if len(chunks) == 0:
+        raise ValueError("❌ (embedding.embedding_main) chunks 리스트가 비어 있음")
+
+    if embeddings is None or not isinstance(embeddings, (HuggingFaceEmbeddings, OpenAIEmbeddings)):
+        raise ValueError("❌ (embedding.embedding_main) 잘못된 embeddings 인자")
 
     embed_config = config.get("embedding", {})
-    embed_model = embed_config.get("embed_model", "openai")
-    db_type = embed_config.get("db_type", "faiss")
+    db_type = embed_config.get("db_type", "faiss").lower()
     project_root = get_project_root_dir()
     vector_db_path = os.path.join(project_root, embed_config.get("vector_db_path", "data"))
 
+    if not isinstance(vector_db_path, str) or vector_db_path.strip() == "":
+        raise ValueError("❌ (embedding.embedding_main) 잘못된 vector_db_path 경로")
+
     os.makedirs(vector_db_path, exist_ok=True)
     index_name = generate_index_name(config)
+
+    if not isinstance(index_name, str) or index_name.strip() == "":
+        raise ValueError("❌ (embedding.embedding_main) 잘못된 index_name 생성")
 
     if db_type == "faiss":
         faiss_file = os.path.join(vector_db_path, f"{index_name}.faiss")
@@ -92,16 +107,14 @@ def embedding_main(config: dict, chunks: List[Document], is_save: bool = False) 
             shutil.rmtree(chroma_dir)
             db_exists = False
 
-        db_exists = os.path.isdir(chroma_dir) and os.path.exists(os.path.join(chroma_dir, "chroma.sqlite3"))
-
     else:
-        raise ValueError(f"❌(embedding.embedding_main) 지원하지 않는 DB 타입입니다: {db_type}")
+        raise ValueError(f"❌ (embedding.embedding_main) 지원하지 않는 DB 타입입니다: {db_type}")
 
     if is_save:
-        vector_store = generate_vector_db(chunks, embed_model, index_name, db_type)
+        vector_store = generate_vector_db(chunks, embeddings, index_name, db_type)
         print("✅ Vector DB 생성 완료")
     else:
-        vector_store = load_vector_db(vector_db_path, embed_model, index_name, db_type)
+        vector_store = load_vector_db(vector_db_path, embeddings, index_name, db_type)
         print("✅ Vector DB 로드 완료")
 
     return vector_store
