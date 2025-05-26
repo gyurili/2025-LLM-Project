@@ -12,6 +12,7 @@ from src.retrieval.retrieval_main import retrieval_main
 from src.generator.generator_main import generator_main
 from src.utils.config import load_config
 from src.utils.path import get_project_root_dir
+from src.generator.generator_main import load_chat_history
 
 
 '''
@@ -25,16 +26,15 @@ dotenv_path = os.path.join(project_root, ".env")
 load_dotenv(dotenv_path=dotenv_path)
 config = load_config(project_root)
 
-# embedder = generate_embedding(config["embedding"]["embed_model"])
+embeddings = generate_embedding(config["embedding"]["embed_model"])
+chat_history = load_chat_history(config)
 
 def rag_pipeline(config, model_info=None, is_save=False):
     try:
         with trace(name="rag_pipeline") as run:
 
             with trace(name="loader_main"):
-                embeddings = generate_embedding(config['embedding']['embed_model'])
-                chunks = loader_main(config)
-                print("chunks")
+                chunks = loader_main(config, embeddings, chat_history)
                 
             with trace(name="embedding_main"):
                 vector_store = embedding_main(config, chunks, embeddings=embeddings, is_save=is_save)

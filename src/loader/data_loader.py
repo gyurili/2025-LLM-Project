@@ -1,22 +1,18 @@
-from pathlib import Path
-from typing import List
 import os
 import numpy as np
 import pandas as pd
-from PIL import Image
-from tqdm import tqdm
-
 import easyocr
 import fitz  # PyMuPDF
+
+from pathlib import Path
+from PIL import Image
+from tqdm import tqdm
+from langchain_teddynote.document_loaders import HWPLoader
+from tabulate import tabulate
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers.util import cos_sim
-from tabulate import tabulate
-
-from langchain_teddynote.document_loaders import HWPLoader
-from langchain.schema import Document
 
 from src.utils.path import get_project_root_dir
-from src.generator.generator_main import load_chat_history
 
 
 def safe_ocr(img_array: np.ndarray, ocr_reader: easyocr.Reader) -> str:
@@ -89,7 +85,7 @@ def extract_text_from_pdf(pdf_path: Path, apply_ocr: bool = True) -> str:
 
 
 def retrieve_top_documents_from_metadata(
-    query, csv_path, embed_model, top_k=5, config=None
+    query, csv_path, embeddings, chat_history, top_k=5
 ):
     """
     사용자 질문과 메타데이터를 기반으로 유사도 검색을 수행합니다.
@@ -109,11 +105,11 @@ def retrieve_top_documents_from_metadata(
         ValueError: CSV 로딩 실패 또는 필수 열 누락
         RuntimeError: 임베딩 텍스트 생성 또는 결과 계산 중 오류
     """
-    from src.embedding.vector_db import generate_embedding
+    if embeddings is None:
+        raise ValueError("❌ [Value] (data_loader.retrieve_top_documents_from_metadata) embedder 인자 누락")
 
-    embedder = generate_embedding(embed_model)
-    if embedder is not None:
-        print(f"📌 [Info] Embedding model: {embedder.__class__.__name__}")
+    if chat_history is None:
+        raise ValueError("❌ [Value] (data_loader.retrieve_top_documents_from_metadata) chat_history 인자 누락")
 
     if not os.path.exists(csv_path):
         raise FileNotFoundError(
@@ -134,8 +130,6 @@ def retrieve_top_documents_from_metadata(
                 f"❌ [Key] (data_loader.retrieve_top_documents_from_metadata) '{col}' 열이 CSV에 존재하지 않습니다."
             )
 
-    chat_history = load_chat_history(config)
-
     def make_embedding_text(row):
         return f"{chat_history} {row['파일명']} {row['사업 요약']} {row['사업명']} {row['발주 기관']}"
 
@@ -146,13 +140,13 @@ def retrieve_top_documents_from_metadata(
 
     doc_texts = df["임베딩텍스트"].tolist()
 
-    if hasattr(embedder, "encode"):
-        doc_embeddings = embedder.encode(doc_texts, convert_to_tensor=True)
-        query_embedding = embedder.encode(query, convert_to_tensor=True)
+    if hasattr(embeddings, "encode"):
+        doc_embeddings = embeddings.encode(doc_texts, convert_to_tensor=True)
+        query_embedding = embeddings.encode(query, convert_to_tensor=True)
         similarities = cos_sim(query_embedding, doc_embeddings)[0].cpu().numpy()
     else:
-        doc_embeddings = embedder.embed_documents(doc_texts)
-        query_embedding = embedder.embed_query(query)
+        doc_embeddings = embeddings.embed_documents(doc_texts)
+        query_embedding = embeddings.embed_query(query)
         similarities = cosine_similarity(
             np.array([query_embedding]), np.array(doc_embeddings)
         )[0]
@@ -231,23 +225,3 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all
             )
 
     return filtered_df.reset_index(drop=True)
-
-
-def merge_and_deduplicate_chunks(chunks: List[Document]) -> List[Document]:
-    """
-    문서 리스트에서 파일명 + 청크 인덱스를 기준으로 중복 제거합니다.
-
-    Args:
-        chunks (List[Document]): 중복을 포함한 Document 리스트
-
-    Returns:
-        List[Document]: 중복 제거된 Document 리스트
-    """
-    seen = set()
-    deduped_chunks = []
-    for doc in chunks:
-        identifier = (doc.metadata.get("파일명"), doc.metadata.get("chunk_idx"))
-        if identifier not in seen:
-            seen.add(identifier)
-            deduped_chunks.append(doc)
-    return deduped_chunks
