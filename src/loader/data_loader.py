@@ -1,19 +1,16 @@
-from pathlib import Path
-from typing import List
 import os
 import numpy as np
 import pandas as pd
-from PIL import Image
-from tqdm import tqdm
-
 import easyocr
 import fitz  # PyMuPDF
+
+from pathlib import Path
+from PIL import Image
+from tqdm import tqdm
+from langchain_teddynote.document_loaders import HWPLoader
+from tabulate import tabulate
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers.util import cos_sim
-from tabulate import tabulate
-
-from langchain_teddynote.document_loaders import HWPLoader
-from langchain.schema import Document
 
 from src.utils.path import get_project_root_dir
 from src.generator.generator_main import load_chat_history
@@ -231,23 +228,3 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all
             )
 
     return filtered_df.reset_index(drop=True)
-
-
-def merge_and_deduplicate_chunks(chunks: List[Document]) -> List[Document]:
-    """
-    문서 리스트에서 파일명 + 청크 인덱스를 기준으로 중복 제거합니다.
-
-    Args:
-        chunks (List[Document]): 중복을 포함한 Document 리스트
-
-    Returns:
-        List[Document]: 중복 제거된 Document 리스트
-    """
-    seen = set()
-    deduped_chunks = []
-    for doc in chunks:
-        identifier = (doc.metadata.get("파일명"), doc.metadata.get("chunk_idx"))
-        if identifier not in seen:
-            seen.add(identifier)
-            deduped_chunks.append(doc)
-    return deduped_chunks
