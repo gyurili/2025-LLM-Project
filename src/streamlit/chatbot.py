@@ -242,6 +242,14 @@ with tab1:
         #     st.error(f"문서 처리 중 오류 발생: {e}")
         #     st.stop()
         
+
+
+        # 모델 불러오기는 단 한번만!
+        model_info = get_generation_model(model_type, 
+                                      model_name, 
+                                      use_quantization)
+
+
         # st.session_state.docs = docs 
 
         # # 모델 불러오기는 단 한번만!
@@ -250,6 +258,7 @@ with tab1:
         #                               use_quantization)
 
         # # 질문에 대한 답변 생성, 추론 시간 측정
+
         # start_time = time.time()
         # with st.spinner("🤖 답변 생성 중..."):
         #     answer = generator_main(docs, config, model_info=model_info) # generator_main 함수에 docs와 query를 전달
@@ -258,17 +267,15 @@ with tab1:
 
         try:
             with st.spinner("🤖 답변 생성 중..."):
-                result = rag_pipeline()  # 내부적으로 trace 및 print로 로그 출력
+                docs, answer, elapsed = rag_pipeline(config, model_info=model_info, is_save=is_save)
 
             # 결과 Streamlit에 반영
-            st.session_state.docs = result["docs"]
-            answer = result["answer"]
-            elapsed = result["elapsed_time"]
+            st.session_state.docs = docs 
 
         except Exception as e:
             st.error(f"문서 처리 중 오류 발생: {e}")
             st.stop()
-
+     
         # 대화 이력 업데이트
         st.session_state.chat_history.append({"role": "user", "content": query})
         st.session_state.chat_history.append({"role": "ai", "content": answer})
