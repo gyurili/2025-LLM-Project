@@ -3,6 +3,12 @@ from typing import Dict
 from langsmith import trace
 from openai import OpenAI
 
+'''
+    TODO:
+    - OpenAI 모델 로딩 시 API 키 확인 ✅
+    - 답변 생성 유지 ✅
+'''
+
 
 def load_openai_model(config: Dict) -> Dict:
     """
@@ -35,7 +41,7 @@ def generate_answer_openai(prompt: str, model_info: Dict, generation_config: Dic
             max_tokens=generation_config.get("max_length", 512),
             temperature=0.0,
         )
-        
+
         answer = response.choices[0].message.content.strip()
         
         # 후처리 필터
