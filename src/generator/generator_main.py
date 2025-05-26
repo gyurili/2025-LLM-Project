@@ -6,7 +6,7 @@ from src.generator.openai_generator import load_openai_model, generate_answer_op
 from src.generator.make_prompt import build_prompt
 
 
-def summarize_chat_history(config):
+def summarize_chat_history(config, only_user=False):
     """
     Langchain Document 또는 단순 문자열 기반 요약 생성
     """
@@ -16,7 +16,10 @@ def summarize_chat_history(config):
     history_text = "\n".join(
         [f"{'질문' if turn['role'] == 'user' else '답변'}: {turn['content']}" for turn in config["chat_history"]]
     )
-    prompt = f"다음은 사용자와 AI의 대화 내용입니다. 이 대화의 핵심 내용을 간결하게 요약해 주세요.\n\n{history_text}"
+    if only_user:
+        prompt = f"다음은 사용자의 질문 내용입니다. 이 질문의 핵심 내용을 간결하게 요약해 주세요.\n\n{history_text}"
+    else:
+        prompt = f"다음은 사용자와 AI의 대화 내용입니다. 이 대화의 핵심 내용을 간결하게 요약해 주세요.\n\n{history_text}"
 
     if config["generator"]["model_type"] == "huggingface":
         model_info = load_hf_model(config)
@@ -36,10 +39,27 @@ def load_chat_history(config):
 
         # 2. 내역 요약
         chat_history_str = summarize_chat_history(config)
+        print(f"과거 대화 내역 요약: {chat_history_str}")
         return chat_history_str
     else: # 대화 내역이 없을 경우
         chat_history_str = ""
         return chat_history_str
+    
+
+def load_user_query(config):
+    """
+    사용자 질문을 로드합니다.
+    """
+    # 1. 사용자 질문
+    if config["chat_history"]:
+        user_query = "\n".join([f"질문: {turn['content']}" for turn in config["chat_history"] if turn["role"] == "user"])
+
+        # 2. 내역 요약
+        user_query = summarize_chat_history(config, only_user=True)
+        return user_query
+    else: # 대화 내역이 없을 경우
+        user_query = ""
+        return user_query
 
 
 def generator_main(
