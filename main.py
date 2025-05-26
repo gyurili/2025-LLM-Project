@@ -1,5 +1,6 @@
 
 import os
+import time
 from langsmith import trace
 from dotenv import load_dotenv
 from src.loader.loader_main import loader_main
@@ -34,14 +35,24 @@ def rag_pipeline():
             with trace(name="retrieval_main"):
                 docs = retrieval_main(config, vector_store, chunks)
 
+            start_time = time.time()
             with trace(name="generator_main"):
                 answer = generator_main(docs, config)
-
+                print("✅ 답변 생성 완료")
+            end_time = time.time()
+            elapsed = round(end_time - start_time, 2)
+            
             run.add_outputs({
                 "num_chunks": len(chunks),
                 "num_retrieved_docs": len(docs),
                 "final_answer": answer
             })
+
+        return {
+            "docs": docs,
+            "answer": answer,
+            "elapsed_time": elapsed
+        }
     except Exception as e:
         print(f"❌ 로깅 에러: {e}")
 
