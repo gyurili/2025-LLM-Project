@@ -16,7 +16,7 @@ embedding:
     # openai 사용시 "text-embedding-3-small" 권장
     embed_model: "openai" #"sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     db_type: "faiss" # "faiss", "chorma"
-    vector_db_path: "data/vectrt_db"
+    vector_db_path: "data/vector_db"
 
 retriever:
     search_type: "hybrid" # "similarity", "hybrid"
@@ -31,4 +31,4 @@ generator:
     max_length: 512
     use_quantization: True
 
-chat_history:
+chat_history: []

@@ -1,12 +1,11 @@
 from typing import List, Optional
 
-from src.retrieval.retrieval import retrieve_documents
-from src.embedding.vector_db import load_vector_db
-from src.embedding.embedding_main import generate_index_name
-
 from langsmith import traceable
 from langchain.schema import Document
 
+from src.retrieval.retrieval import retrieve_documents
+from src.embedding.vector_db import load_vector_db
+from src.embedding.embedding_main import generate_index_name
 
 @traceable(name="retrieval_main")
 def retrieval_main(
@@ -27,11 +26,12 @@ def retrieval_main(
     """
     index_name = generate_index_name(config)
 
-    vector_db_path = config.get("embedding", {}).get("vector_db_path", "data")
-    embed_model = config.get("embedding", {}).get("embed_model", "openai")
-    db_type = config.get("embedding", {}).get("db_type", "faiss")
+    vector_db_path = config["embedding"]["vector_db_path"]
+    embed_model = config["embedding"]["embed_model"]
+    db_type = config["embedding"]["db_type"]
 
     if vector_store is None:
+        ### 인자 수정 필요
         vector_store = load_vector_db(
             path=vector_db_path,
             embed_model_name=embed_model,
@@ -39,30 +39,22 @@ def retrieval_main(
             db_type=db_type
         )
 
-    query = config.get("retriever", {}).get("query", "")
-    top_k = config.get("retriever", {}).get("top_k", 10)
-    search_type = config.get("retriever", {}).get("search_type", "hybrid")
-    rerank = config.get("retriever", {}).get("rerank", True)
-    rerank_top_k = config.get("retriever", {}).get("rerank_top_k", 5)
-    verbose = config.get("settings", {}).get("verbose", False)
-
     docs = retrieve_documents(
-        query=query,
         vector_store=vector_store,
-        top_k=top_k,
-        search_type=search_type,
         chunks=chunks,
-        embed_model=embed_model,
-        rerank=rerank,
-        rerank_top_k=rerank_top_k,
-        verbose=verbose,
         config=config
     )
+    
+    verbose = config["settings"]["verbose"]
 
     if verbose:
+        count = 0
         for i, doc in enumerate(docs, 1):
             print(f"\n📄 문서 {i}")
-            print(f"본문:\n{doc.page_content}...")
+            print(f"본문:\n{doc.page_content[:100]}...")
             print(f"메타데이터: {doc.metadata}")
+            count += 1
+            if count > 4:
+                break
 
     return docs
