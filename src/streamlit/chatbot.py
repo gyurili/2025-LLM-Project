@@ -57,6 +57,7 @@ else: # 세션 상태가 존재하는 경우, chat_history를 초기화하지 �
 if "docs" not in st.session_state:
     st.session_state.docs = None
 
+
 # 모델 불러오기 캐시 함수
 @st.cache_resource
 def get_generation_model(model_type: str, model_name: str, use_quantization: bool = False) -> Dict:
@@ -88,8 +89,9 @@ def get_generation_model(model_type: str, model_name: str, use_quantization: boo
             raise ValueError(f"지원되지 않는 모델 타입: {model_type}")
     
     except Exception as e:
-        raise RuntimeError(f"모델 로딩 실패: {e}")
+        st.error(f"모델 로딩 실패: {e}")
         st.stop()
+
 
 def api_key_verification(embed_model):
     if embed_model.strip().lower() == "openai":
@@ -99,6 +101,7 @@ def api_key_verification(embed_model):
             os.environ["OPENAI_API_KEY"] = openai_key
             if not openai_key:
                 st.warning("OpenAI 모델을 사용하려면 API 키를 입력해야 합니다.")
+
 
 # 사이드바 구성
 with st.sidebar:
