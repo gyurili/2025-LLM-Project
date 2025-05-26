@@ -1,5 +1,5 @@
 # 터미널 실행 코드
-# python -m streamlit run src/streamlit/chatbot2.py
+# python -m streamlit run src/streamlit/chatbot.py
 
 # 외부 임포트
 import os
