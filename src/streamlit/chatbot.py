@@ -216,12 +216,14 @@ with tab1:
         # 질문 입력시 이전 추출문서 기록 초기화
         if st.session_state.docs is not None:
             st.session_state.docs = None
+        
+        chat_history = load_chat_history(config)
             
         with st.chat_message("user"):
             st.markdown(query)
 
         if config.get("chat_history"):  # chat_history에 내용이 있는 경우
-            query_c = f"이전 질문 요약: {load_chat_history(config)}\n질문: {query}"
+            query_c = f"이전 질문 요약: {chat_history}\n질문: {query}"
             config["retriever"]["query"] = query_c
         else:  # chat_history가 비어 있거나 없을 경우
             config["retriever"]["query"] = query
@@ -237,8 +239,9 @@ with tab1:
         try:
             with st.spinner("🔄 임베딩 모델 생성 중..."):
                 embeddings = generate_embedding(config["embedding"]["embed_model"])
+
             with st.spinner("🤖 답변 생성 중..."):
-                docs, answer, elapsed = rag_pipeline(config, embeddings, model_info=model_info, is_save=is_save)
+                docs, answer, elapsed = rag_pipeline(config, embeddings, chat_history, model_info=model_info, is_save=is_save)
 
             # 결과 Streamlit에 반영
             st.session_state.docs = docs 
