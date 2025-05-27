@@ -15,7 +15,6 @@ def loader_main(config: dict, embeddings) -> List[Document]:
     Args:
         config (dict): 시스템 설정 정보를 담은 딕셔너리
         embedder: 사전 생성된 임베딩 모델 인스턴스
-        chat_history: 사전 로드된 채팅 이력 문자열
 
     Returns:
         List[Document]: 처리된 문서의 청크 리스트
