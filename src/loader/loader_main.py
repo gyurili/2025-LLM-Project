@@ -4,29 +4,26 @@ from langchain.schema import Document
 
 from src.loader.data_loader import retrieve_top_documents_from_metadata, data_process
 from src.loader.splitter import data_chunking, summarize_chunk_quality
-from src.generator.chat_history import load_chat_history
 
 
 @traceable(name="loader_main")
-def loader_main(config: dict, embeddings) -> List[Document]:
+def loader_main(config, embeddings, chat_history) -> List[Document]:
     """
     설정 정보를 기반으로 문서를 로드하고, 전처리 및 청크 작업을 수행합니다.
 
     Args:
         config (dict): 시스템 설정 정보를 담은 딕셔너리
         embedder: 사전 생성된 임베딩 모델 인스턴스
-        chat_history: 사전 로드된 채팅 이력 문자열
 
     Returns:
         List[Document]: 처리된 문서의 청크 리스트
     """
-    data_config = config.get("data", {})
-    query = config.get("retriever", {}).get("query", "사업")
-    top_k = data_config.get("top_k", 5)
-    verbose = config.get("settings", {}).get("verbose", True)
-    chat_history = load_chat_history(config)
+    data_config = config["data"]
+    query = config["retriever"]["query"]
+    top_k = config["data"]["top_k"]
+    verbose = config["settings"]["verbose"]
 
-    # 1. 데이터 로드
+    # 데이터 로드
     with trace(name="load_data"):
         data_list_path = data_config.get("data_list_path", "data/data_list.csv")
         df = retrieve_top_documents_from_metadata(
@@ -38,18 +35,18 @@ def loader_main(config: dict, embeddings) -> List[Document]:
         )
         print("✅ 문서 유사도 검색 완료")
 
-    # 2. 데이터 전처리
+    # 데이터 전처리
     with trace(name="process_data"):
-        file_type = data_config.get("file_type", "all")
-        apply_ocr = data_config.get("apply_ocr", False)
-        df = data_process(df, apply_ocr=apply_ocr, file_type=file_type)
+        file_type = config["data"]["file_type"]
+        apply_ocr = config["data"]["apply_ocr"]
+        df = data_process(df, config=config, apply_ocr=apply_ocr, file_type=file_type)
         print("✅ 데이터 전처리 완료")
 
-    # 3. 청크 생성
+    # 청크 생성
     with trace(name="chunk_documents"):
-        splitter_type = data_config.get("splitter", "section")
-        chunk_size = data_config.get("chunk_size", 1000)
-        chunk_overlap = data_config.get("chunk_overlap", 250)
+        splitter_type = config["data"]["splitter"]
+        chunk_size = config["data"]["chunk_size"]
+        chunk_overlap = config["data"]["chunk_overlap"]
 
         chunks = data_chunking(
             df=df,
@@ -59,7 +56,7 @@ def loader_main(config: dict, embeddings) -> List[Document]:
         )
         print("✅ 청크 생성 완료")
 
-    # 4. 청크 품질 검사
+    # 청크 품질 검사
     summarize_chunk_quality(chunks, verbose)
     if verbose:
         print("✅ 청크 품질 검사 완료")

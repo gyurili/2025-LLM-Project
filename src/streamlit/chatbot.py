@@ -14,11 +14,8 @@ from dotenv import load_dotenv
 from src.utils.config import load_config
 from src.utils.path import get_project_root_dir
 from src.utils.shared_cache import set_cache_dirs
-from src.loader.loader_main import loader_main
 from src.embedding.vector_db import generate_embedding
-from src.embedding.embedding_main import embedding_main, generate_index_name
-from src.retrieval.retrieval_main import retrieval_main
-from src.generator.generator_main import generator_main
+from src.embedding.embedding_main import generate_index_name
 from src.generator.hf_generator import load_hf_model
 from src.generator.openai_generator import load_openai_model
 from src.generator.generator_main import load_chat_history
