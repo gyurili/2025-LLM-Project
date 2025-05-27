@@ -1,5 +1,5 @@
 settings:
-    verbose: False
+    verbose: True
     project_root: ""
 
 data:
@@ -20,14 +20,14 @@ embedding:
 
 retriever:
     search_type: "hybrid" # "similarity", "hybrid"
-    query: ""
-    top_k: 10
+    query: "고려대와 광주과학기술원 차이점"
+    top_k: 20
     rerank: True # True/ False
     rerank_top_k: 5
 
 generator:
-    model_type: "openai" # "huggingface", "openai"
-    model_name: "gpt-4.1-nano" # "microsoft/Phi-4-mini-instruct", "gpt-4.1-mini", "gpt-4.1-nano"
+    model_type: "huggingface" # "huggingface", "openai"
+    model_name: "Markr-AI/Gukbap-Qwen2.5-7B" # "Markr-AI/Gukbap-Qwen2.5-7B", "gpt-4.1-mini", "gpt-4.1-nano"
     max_length: 512
     use_quantization: True
 
