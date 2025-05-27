@@ -21,35 +21,24 @@ from src.generator.generator_main import load_chat_history
     - 임베딩, 모델인포, 컨피그, dotenv등은 전역적으로 한번만 선언
 '''
 
-project_root = get_project_root_dir()     
-dotenv_path = os.path.join(project_root, ".env")
-load_dotenv(dotenv_path=dotenv_path)
-config = load_config(project_root)
-
-embeddings = generate_embedding(config["embedding"]["embed_model"])
-chat_history = load_chat_history(config)
-
-def rag_pipeline(config, model_info=None, is_save=False):
+def rag_pipeline(config, embeddings, chat_history, model_info=None, is_save=False):
     try:
         with trace(name="rag_pipeline") as run:
 
             with trace(name="loader_main"):
-                chunks = loader_main(config, embeddings, chat_history)
+                chunks = loader_main(config, embeddings)
                 
             with trace(name="embedding_main"):
                 vector_store = embedding_main(config, chunks, embeddings=embeddings, is_save=is_save)
 
             with trace(name="retrieval_main"):
-                docs = retrieval_main(config, vector_store, chunks)
+                docs = retrieval_main(config, vector_store, chunks, embeddings=embeddings)
 
-            start_time = time.time()
             with trace(name="generator_main"):
-
                 start_time = time.time()
                 answer = generator_main(docs, config, model_info=model_info)
                 end_time = time.time()
                 elapsed = round(end_time - start_time, 2)
-                print("✅ 답변 생성 완료")
 
             run.add_outputs({
                 "query": config["retriever"]["query"],
@@ -68,4 +57,6 @@ def rag_pipeline(config, model_info=None, is_save=False):
         print(f"❌ 로깅 에러: {e}")
 
 if __name__ == "__main__":
+    project_root = get_project_root_dir()
+    config = load_config(project_root)
     rag_pipeline(config)
