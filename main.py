@@ -25,11 +25,11 @@ project_root = get_project_root_dir()
 dotenv_path = os.path.join(project_root, ".env")
 load_dotenv(dotenv_path=dotenv_path)
 config = load_config(project_root)
-
 embeddings = generate_embedding(config["embedding"]["embed_model"])
 chat_history = load_chat_history(config)
+# model_info = 
 
-def rag_pipeline(config, model_info=None, is_save=False):
+def rag_pipeline(config, model_info=None, is_save=True):
     try:
         with trace(name="rag_pipeline") as run:
 
@@ -40,16 +40,13 @@ def rag_pipeline(config, model_info=None, is_save=False):
                 vector_store = embedding_main(config, chunks, embeddings=embeddings, is_save=is_save)
 
             with trace(name="retrieval_main"):
-                docs = retrieval_main(config, vector_store, chunks)
+                docs = retrieval_main(config, vector_store, chunks, embeddings=embeddings)
 
-            start_time = time.time()
             with trace(name="generator_main"):
-
                 start_time = time.time()
                 answer = generator_main(docs, config, model_info=model_info)
                 end_time = time.time()
                 elapsed = round(end_time - start_time, 2)
-                print("✅ 답변 생성 완료")
 
             run.add_outputs({
                 "query": config["retriever"]["query"],
