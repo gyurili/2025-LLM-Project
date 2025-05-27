@@ -96,10 +96,17 @@ def get_generation_model(model_type: str, model_name: str, use_quantization: boo
 def api_key_verification(embed_model):
     if embed_model.strip().lower() == "openai":
         load_dotenv()
-        if not os.environ["OPENAI_API_KEY"]:
-            openai_key = st.text_input("🔑 OpenAI API Key", type="password")
-            os.environ["OPENAI_API_KEY"] = openai_key
-            if not openai_key:
+        openai_key = os.environ.get("OPENAI_API_KEY")
+
+        if not openai_key:
+            openai_key = st.text_input(
+                "🔑 OpenAI API Key",
+                type="password",
+                key=f"openai_api_key_special"
+            )
+            if openai_key:
+                os.environ["OPENAI_API_KEY"] = openai_key
+            else:
                 st.warning("OpenAI 모델을 사용하려면 API 키를 입력해야 합니다.")
 
 
