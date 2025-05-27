@@ -6,8 +6,6 @@ from langchain_community.retrievers import BM25Retriever
 from langchain.retrievers import EnsembleRetriever
 from sentence_transformers import CrossEncoder
 
-from src.generator.generator_main import load_chat_history
-
 @traceable(name="rerank_documents")
 def rerank_documents(
     query: str,
@@ -55,7 +53,8 @@ def rerank_documents(
 def retrieve_documents(
     vector_store: VectorStore,
     chunks: Optional[List[Document]],
-    config: dict
+    config: dict,
+    chat_history: Optional[str] = None
 ) -> List[Document]:
     """
     주어진 쿼리에 대해 similarity 또는 hybrid 검색 방식으로 관련 문서를 검색합니다.
@@ -80,7 +79,6 @@ def retrieve_documents(
     verbose = config['settings']['verbose']
 
     # 과거 질의응답 내역 불러오기
-    chat_history = load_chat_history(config)
     query = f"맥락: {chat_history}\n 질문:{query}"
     
     if search_type == "similarity":
