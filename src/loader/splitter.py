@@ -26,7 +26,7 @@ def clean_text(text: str) -> str:
 
     allowed_pattern = r"[^\uAC00-\uD7A3a-zA-Z0-9\s.,:;!?()\[\]~\-/•※❍□ㅇ○①-⑳IVXLCDM]"
     text = re.sub(allowed_pattern, " ", text)
-    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\s+", " ", text)
     return text.strip()
 
 
@@ -167,18 +167,27 @@ def data_chunking(
         text = row.get("full_text", "")
         if isinstance(text, str) and text.strip():
             try:
-                text = clean_text(text)
                 if splitter_type == "section":
                     sections = extract_sections(text)
                     if not sections:
                         print(f"⚠️ [Skip] 섹션 추출 실패로 청크 없음: {row.get('파일명')}")    
-                    merged = merge_short_chunks(sections)
+
+                    cleaned_sections = []
+                    for section in sections:
+                        cleaned_section = {
+                            "title": section["title"],
+                            "content": clean_text(section["content"]),
+                        }
+                        cleaned_sections.append(cleaned_section)
+
+                    merged = merge_short_chunks(cleaned_sections)
                     chunks = refine_chunks_with_length_control(
                         merged, max_length=size, overlap=overlap
                     )
                     if not chunks:
                         print(f"⚠️ [Skip] 청크 0개 생성됨: {row.get('파일명')}")
                 else:
+                    text = clean_text(text)
                     chunks = splitter.split_text(text)
 
                 for i, chunk in enumerate(chunks):
