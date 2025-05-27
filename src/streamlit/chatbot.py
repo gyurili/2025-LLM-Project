@@ -14,11 +14,8 @@ from dotenv import load_dotenv
 from src.utils.config import load_config
 from src.utils.path import get_project_root_dir
 from src.utils.shared_cache import set_cache_dirs
-from src.loader.loader_main import loader_main
 from src.embedding.vector_db import generate_embedding
-from src.embedding.embedding_main import embedding_main, generate_index_name
-from src.retrieval.retrieval_main import retrieval_main
-from src.generator.generator_main import generator_main
+from src.embedding.embedding_main import generate_index_name
 from src.generator.hf_generator import load_hf_model
 from src.generator.openai_generator import load_openai_model
 from src.generator.generator_main import load_chat_history
@@ -240,9 +237,8 @@ with tab1:
         try:
             with st.spinner("🔄 임베딩 모델 생성 중..."):
                 embeddings = generate_embedding(config["embedding"]["embed_model"])
-                chat_history = load_chat_history(config)
             with st.spinner("🤖 답변 생성 중..."):
-                docs, answer, elapsed = rag_pipeline(config, embeddings, chat_history, model_info=model_info, is_save=is_save)
+                docs, answer, elapsed = rag_pipeline(config, embeddings, model_info=model_info, is_save=is_save)
 
             # 결과 Streamlit에 반영
             st.session_state.docs = docs 
