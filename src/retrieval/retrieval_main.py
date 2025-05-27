@@ -14,7 +14,8 @@ def retrieval_main(
     config: dict,
     vector_store: Optional[object],
     chunks: List[Document],
-    embeddings: Union[HuggingFaceEmbeddings, OpenAIEmbeddings]
+    embeddings: Union[HuggingFaceEmbeddings, OpenAIEmbeddings],
+    chat_history: Optional[str] = None
 ) -> List[Document]:
     """
     설정에 따라 similarity 또는 hybrid 방식으로 검색하고, 필요시 re-ranking을 수행합니다.
@@ -44,7 +45,8 @@ def retrieval_main(
     docs = retrieve_documents(
         vector_store=vector_store,
         chunks=chunks,
-        config=config
+        config=config,
+        chat_history=chat_history
     )
     print("✅ 문서 검색 완료")
     
