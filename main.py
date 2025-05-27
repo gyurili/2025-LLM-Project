@@ -26,7 +26,7 @@ def rag_pipeline(config, embeddings, chat_history, model_info=None, is_save=Fals
         with trace(name="rag_pipeline") as run:
 
             with trace(name="loader_main"):
-                chunks = loader_main(config, embeddings, chat_history)
+                chunks = loader_main(config, embeddings)
                 
             with trace(name="embedding_main"):
                 vector_store = embedding_main(config, chunks, embeddings=embeddings, is_save=is_save)
@@ -57,4 +57,6 @@ def rag_pipeline(config, embeddings, chat_history, model_info=None, is_save=Fals
         print(f"❌ 로깅 에러: {e}")
 
 if __name__ == "__main__":
+    project_root = get_project_root_dir()
+    config = load_config(project_root)
     rag_pipeline(config)

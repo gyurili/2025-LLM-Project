@@ -4,10 +4,11 @@ from langchain.schema import Document
 
 from src.loader.data_loader import retrieve_top_documents_from_metadata, data_process
 from src.loader.splitter import data_chunking, summarize_chunk_quality
+from src.generator.chat_history import load_chat_history
 
 
 @traceable(name="loader_main")
-def loader_main(config: dict, embeddings, chat_history) -> List[Document]:
+def loader_main(config: dict, embeddings) -> List[Document]:
     """
     설정 정보를 기반으로 문서를 로드하고, 전처리 및 청크 작업을 수행합니다.
 
@@ -23,6 +24,7 @@ def loader_main(config: dict, embeddings, chat_history) -> List[Document]:
     query = config.get("retriever", {}).get("query", "사업")
     top_k = data_config.get("top_k", 5)
     verbose = config.get("settings", {}).get("verbose", True)
+    chat_history = load_chat_history(config)
 
     # 1. 데이터 로드
     with trace(name="load_data"):
