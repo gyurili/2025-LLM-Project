@@ -5,6 +5,7 @@
 import os
 import time 
 import shutil
+import yaml
 import streamlit as st
 from typing import Dict
 from dotenv import load_dotenv
@@ -192,6 +193,9 @@ model_type = config["generator"]["model_type"]
 model_name = config["generator"]["model_name"]
 use_quantization = config["generator"]["use_quantization"]
 
+print("\n📄 [Verbose] 최종 설정 내용:")
+print(yaml.dump(config, allow_unicode=True, sort_keys=False))
+
 with tab1:
     query = st.chat_input("질문을 입력하세요")
 
@@ -228,46 +232,17 @@ with tab1:
 
         print(f"질문: {config['retriever']['query']}")
 
-        # 벡터 DB에서 유사 문서 검색
-        # 데이터 처리
-        # try:
-        #     chunks = loader_main(config)
-        #     embeddings = generate_embedding(config['embedding']['embed_model'])
-            
-        #     with st.spinner("📂 관련 문서 임베딩 중..."):
-        #         vector_store = embedding_main(config, chunks, embeddings=embeddings, is_save=is_save) # merged_chunks
-        #     with st.spinner("🔍 관련 문서 검색 중..."):
-        #         docs = retrieval_main(config, vector_store, chunks) # merged_chunks
-        # except Exception as e:
-        #     st.error(f"문서 처리 중 오류 발생: {e}")
-        #     st.stop()
-        
-
-
         # 모델 불러오기는 단 한번만!
         model_info = get_generation_model(model_type, 
                                       model_name, 
                                       use_quantization)
 
-
-        # st.session_state.docs = docs 
-
-        # # 모델 불러오기는 단 한번만!
-        # model_info = get_generation_model(model_type, 
-        #                               model_name, 
-        #                               use_quantization)
-
-        # # 질문에 대한 답변 생성, 추론 시간 측정
-
-        # start_time = time.time()
-        # with st.spinner("🤖 답변 생성 중..."):
-        #     answer = generator_main(docs, config, model_info=model_info) # generator_main 함수에 docs와 query를 전달
-        # end_time = time.time()
-        # elapsed = round(end_time - start_time, 2)
-
         try:
+            with st.spinner("🔄 임베딩 모델 생성 중..."):
+                embeddings = generate_embedding(config["embedding"]["embed_model"])
+                chat_history = load_chat_history(config)
             with st.spinner("🤖 답변 생성 중..."):
-                docs, answer, elapsed = rag_pipeline(config, model_info=model_info, is_save=is_save)
+                docs, answer, elapsed = rag_pipeline(config, embeddings, chat_history, model_info=model_info, is_save=is_save)
 
             # 결과 Streamlit에 반영
             st.session_state.docs = docs 
