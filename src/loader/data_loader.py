@@ -222,5 +222,8 @@ def data_process(df: pd.DataFrame, config: dict, apply_ocr: bool = True, file_ty
             raise RuntimeError(
                 f"❌ [Runtime] (data_loader.data_process) 파일 처리 오류 ({file_name}): {e}"
             )
+    empty_files = filtered_df[filtered_df["full_text"].isna()]["파일명"].tolist()
+    if empty_files:
+        print(f"⚠️ [Warning] (data_loader.data_process) 다음 파일은 내용이 없습니다: {', '.join(empty_files)}")
 
     return filtered_df.reset_index(drop=True)

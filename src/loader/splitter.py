@@ -40,20 +40,22 @@ def extract_sections(text: str) -> List[dict]:
     Returns:
         List[dict]: 분리된 섹션 정보 리스트 (각 항목은 'title'과 'content' 포함)
     """
+    # 줄바꿈 표준화
+    text = text.replace('\r\n', '\n').replace('\r', '\n').replace('\u2028', '\n')
+
     section_pattern = re.compile(
         r"""
-        ^[ \t]*
-        (
-            (?:\d+(?:\.\d+)*[.)]?) |
-            (?:[가-힣]{1}[.)]?) |
-            (?:\[\d+\]) |
-            (?:\[\s*붙임\s*\d+\s*\]) |
-            (?:[①-⑳]) |
-            (?:[○•※❍□ㅇ]) |
-            (?:[IVXLCDM]{1,7}\.?)
-        )
-        [ \t]+
-        ([^\n]{2,50})
+        (?:^|\n)[ \t]*(                     # 줄 시작 또는 줄바꿈 후 공백 허용
+            (?:\d+(?:\.\d+)*[.)]?)           # 숫자형 (1., 1.1)
+            | (?:\d{1,2})                    # 단일 숫자도 허용 (1)
+            | (?:[가-힣]{1}[.)]?)            # 한글 기호 (가), 나.)
+            | (?:\[\d+\])                   # [1]
+            | (?:\[\s*붙임\s*\d+\s*\])     # [붙임 1]
+            | (?:[①-⑳])                    # 특수 번호
+            | (?:[○•※❍□ㅇ])                # 특수기호
+            | (?:[IVXLCDM]{1,7}\.?)        # 로마 숫자
+        )[ \t]+
+        ([^\n]{2,80})                       # 제목 최대 길이 확장
         """,
         re.MULTILINE | re.VERBOSE
     )
@@ -168,14 +170,27 @@ def data_chunking(
         text = row.get("full_text", "")
         if isinstance(text, str) and text.strip():
             try:
-                text = clean_text(text)
                 if splitter_type == "section":
                     sections = extract_sections(text)
-                    merged = merge_short_chunks(sections)
+                    if not sections:
+                        print(f"⚠️ [Skip] 섹션 추출 실패로 청크 없음: {row.get('파일명')}")    
+
+                    cleaned_sections = []
+                    for section in sections:
+                        cleaned_section = {
+                            "title": section["title"],
+                            "content": clean_text(section["content"]),
+                        }
+                        cleaned_sections.append(cleaned_section)
+
+                    merged = merge_short_chunks(cleaned_sections)
                     chunks = refine_chunks_with_length_control(
                         merged, max_length=size, overlap=overlap
                     )
+                    if not chunks:
+                        print(f"⚠️ [Skip] 청크 0개 생성됨: {row.get('파일명')}")
                 else:
+                    text = clean_text(text)
                     chunks = splitter.split_text(text)
 
                 for i, chunk in enumerate(chunks):
@@ -199,9 +214,8 @@ def data_chunking(
                     f"❌ [Runtime] (splitter.data_chunking) 청크 생성 오류 ({row.get('파일명')}): {e}"
                 )
         else:
-            raise ValueError(
-                f"❌ [Data] (splitter.data_chunking) 비어있거나 문자열이 아닌 full_text: {row.get('파일명')}"
-            )
+            print(f"⚠️ [Skip] full_text 비어있어 청크 건너뜸: {row.get('파일명')}")
+            continue  # 건너뛰기
 
     return all_chunks
 
