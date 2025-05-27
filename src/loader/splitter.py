@@ -24,7 +24,7 @@ def clean_text(text: str) -> str:
     if not isinstance(text, str):
         raise ValueError("❌ [Type] (splitter.clean_text) 문자열이 아닌 입력값")
 
-    allowed_pattern = r"[^\uAC00-\uD7A3a-zA-Z0-9\s.,:;!?()\[\]~\-/•※❍□ㅇ○①-⑳IVXLCDM]"
+    allowed_pattern = r"[^\uAC00-\uD7A3a-zA-Z0-9\s.,:;!?\'\"\(\)\[\]~\-/•※❍□ㅇ○①-⑳IVXLCDM]"
     text = re.sub(allowed_pattern, " ", text)
     text = re.sub(r"\s+", " ", text)
     return text.strip()
