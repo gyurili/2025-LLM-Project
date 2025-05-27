@@ -32,26 +32,56 @@ def clean_text(text: str) -> str:
 
 def extract_sections(text: str) -> List[dict]:
     """
-    다양한 목차 패턴으로 텍스트를 분리합니다.
+    다양한 목차 패턴을 기반으로 텍스트를 섹션 단위로 분리합니다.
+    
+    1. 우선적으로 강화된 다중 목차 패턴을 적용합니다.
+    2. 매칭이 없을 경우, fallback 패턴(단순 숫자 기반)으로 재시도합니다.
 
     Args:
         text (str): 전체 문서 텍스트
 
     Returns:
-        List[dict]: 분리된 섹션 정보 리스트 (각 항목은 'title'과 'content' 포함)
+        List[dict]: 분리된 섹션 정보 리스트 (각 항목은 'title', 'content' 포함)
     """
-    section_pattern = re.compile(r"\n?(\d+(\.\d+)*\s?[.)]?\s+[^\n]{2,100})")
 
-    matches = list(section_pattern.finditer(text))
+    fallback_patterns = [
+        # 1차: 다양한 목차 포맷을 포괄하는 강화된 정규식
+        re.compile(
+            r"""
+            (?:^|\n)[ \t]*
+            (
+                (?:\d+(?:\.\d+)*[.)])       # 숫자 기반 (1., 1.1. 등)
+                | (?:[가-힣]{1}[.)])             # 한글 문자 (가., 나. 등)
+                | (?:\[\d+\])                 # [1]
+                | (?:\[\s*붙임\s*\d+\s*\])  # [붙임 1]
+                | (?:[①-⑳])                    # 특수 숫자 기호
+                | (?:[○•※❍□ㅇ])                # 일반 문서 특수기호
+                | (?:[IVXLCDM]{1,4}[.)])        # 로마 숫자
+            )
+            [ \t]+
+            ([^\n]{2,100})                     # 제목 텍스트
+            """,
+            re.MULTILINE | re.VERBOSE
+        ),
+        # 2차: 단순 숫자 기반 목차만 인식 (fallback)
+        re.compile(r"\n?(\d+(\.\d+)*\s?[.)]?\s+[^\n]{2,100})")
+    ]
 
-    chunks = []
-    for i in range(len(matches)):
-        start = matches[i].start()
-        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
-        title = matches[i].group().strip()
-        content = text[start:end].strip()
-        chunks.append({"title": title, "content": content})
-    return chunks
+    for pattern in fallback_patterns:
+        matches = list(pattern.finditer(text))
+        if matches:
+            chunks = []
+            for i in range(len(matches)):
+                start = matches[i].start()
+                end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+                title = matches[i].group().strip()
+                content = text[start:end].strip()
+                chunks.append({"title": title, "content": content})
+            return chunks
+
+    # 섹션 패턴이 전혀 없을 경우 빈 리스트 반환
+    print("⚠️ [Warning] (splitter.extract_sections) 섹션 패턴이 발견되지 않음")
+    return []
 
 
 def merge_short_chunks(chunks: List[dict], min_length: int = 500) -> List[dict]:
