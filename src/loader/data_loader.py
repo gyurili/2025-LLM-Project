@@ -1,8 +1,8 @@
 import os
-import numpy as np
-import pandas as pd
 import easyocr
 import fitz  # PyMuPDF
+import numpy as np
+import pandas as pd
 
 from pathlib import Path
 from PIL import Image
@@ -11,8 +11,6 @@ from langchain_teddynote.document_loaders import HWPLoader
 from tabulate import tabulate
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers.util import cos_sim
-
-from src.utils.path import get_project_root_dir
 
 
 def safe_ocr(img_array: np.ndarray, ocr_reader: easyocr.Reader) -> str:
@@ -93,9 +91,9 @@ def retrieve_top_documents_from_metadata(
     Args:
         query (str): 사용자 검색 쿼리
         csv_path (str): CSV 메타데이터 파일 경로
-        embed_model (str): 사용할 임베딩 모델 이름 (예: "openai", "huggingface")
+        embeddings: 사전 로드된 임베딩 모델 인스턴스
+        chat_history (str): 사용자 채팅 이력 문자열
         top_k (int): 반환할 상위 문서 수 (기본 5)
-        config (dict): 선택적 설정 정보 (chat history 포함 가능)
 
     Returns:
         pd.DataFrame: 유사도와 함께 반환된 상위 문서들의 메타데이터 DataFrame
@@ -168,13 +166,14 @@ def retrieve_top_documents_from_metadata(
     return top_docs
 
 
-def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all") -> pd.DataFrame:
+def data_process(df: pd.DataFrame, config: dict, apply_ocr: bool = True, file_type: str = "all") -> pd.DataFrame:
     """
     주어진 파일 목록(DataFrame)을 기반으로 HWP 또는 PDF 파일을 읽어 텍스트를 추출합니다.
     추출된 텍스트는 'full_text' 컬럼에 저장되며, OCR을 사용할 수 있습니다.
 
     Args:
         df (pd.DataFrame): '파일명' 컬럼을 포함한 입력 데이터프레임
+        config (dict): 프로젝트 설정 정보가 담긴 딕셔너리
         apply_ocr (bool): PDF 파일 처리 시 OCR(optical character recognition) 적용 여부
         file_type (str): 처리할 파일 유형 ('hwp', 'pdf', 'all')
 
@@ -185,7 +184,7 @@ def data_process(df: pd.DataFrame, apply_ocr: bool = True, file_type: str = "all
         FileNotFoundError: 특정 파일 경로가 존재하지 않을 경우
         RuntimeError: 파일 처리 중 오류가 발생한 경우
     """
-    base_dir = get_project_root_dir()
+    base_dir = config['settings']['project_root']
     file_root = os.path.join(base_dir, "data", "files")
 
     if file_type in ["hwp", "pdf"]:
