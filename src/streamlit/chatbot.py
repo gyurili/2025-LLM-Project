@@ -217,8 +217,6 @@ with tab1:
         if st.session_state.docs is not None:
             st.session_state.docs = None
         
-        chat_history = load_chat_history(config)
-            
         # 모델 불러오기는 단 한번만!
         model_info = get_generation_model(model_type, 
                                       model_name, 
