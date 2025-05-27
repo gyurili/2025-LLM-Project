@@ -68,8 +68,8 @@ def embedding_main(
     if embeddings is None or not isinstance(embeddings, (HuggingFaceEmbeddings, OpenAIEmbeddings)):
         raise ValueError("❌ (embedding.embedding_main.embeddings) 잘못된 embeddings 인자")
 
-    embed_config = config.get("embedding", {})
-    db_type = embed_config.get("db_type", "faiss").lower()
+    embed_config = config['embedding']
+    db_type = embed_config['db_type'].lower()
     project_root = get_project_root_dir()
     vector_db_path = os.path.join(project_root, embed_config.get("vector_db_path", "data"))
 
