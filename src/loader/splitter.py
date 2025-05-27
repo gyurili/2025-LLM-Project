@@ -171,10 +171,14 @@ def data_chunking(
                 text = clean_text(text)
                 if splitter_type == "section":
                     sections = extract_sections(text)
+                    if not sections:
+                        print(f"⚠️ [Skip] 섹션 추출 실패로 청크 없음: {row.get('파일명')}")    
                     merged = merge_short_chunks(sections)
                     chunks = refine_chunks_with_length_control(
                         merged, max_length=size, overlap=overlap
                     )
+                    if not chunks:
+                        print(f"⚠️ [Skip] 청크 0개 생성됨: {row.get('파일명')}")
                 else:
                     chunks = splitter.split_text(text)
 
