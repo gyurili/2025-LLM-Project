@@ -32,7 +32,7 @@ def rag_pipeline(config, embeddings, chat_history, model_info=None, is_save=Fals
                 vector_store = embedding_main(config, chunks, embeddings=embeddings, is_save=is_save)
 
             with trace(name="retrieval_main"):
-                docs = retrieval_main(config, vector_store, chunks)
+                docs = retrieval_main(config, vector_store, chunks, embeddings=embeddings)
 
             with trace(name="generator_main"):
                 start_time = time.time()
