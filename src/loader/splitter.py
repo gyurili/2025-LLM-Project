@@ -40,26 +40,7 @@ def extract_sections(text: str) -> List[dict]:
     Returns:
         List[dict]: 분리된 섹션 정보 리스트 (각 항목은 'title'과 'content' 포함)
     """
-    # 줄바꿈 표준화 (\u2028, \u0085 등도 포함)
-    text = text.replace('\r\n', '\n').replace('\r', '\n')
-    text = text.replace('\u2028', '\n').replace('\u0085', '\n')
-
-    section_pattern = re.compile(
-        r"""
-        (?:^|[\n\u2028\u0085])              # 줄의 시작 또는 줄바꿈 문자
-        [ \t]*(
-            (?:\d+(?:\.\d+)*[.)]?)          # 숫자형 (1., 1.1)
-            | (?:[가-힣]{1}[.)]?)           # 한글 (가), 나.
-            | (?:\[\d+\])                   # [1]
-            | (?:\[\s*붙임\s*\d+\s*\])     # [붙임 1]
-            | (?:[①-⑳])                    # 특수 번호
-            | (?:[○•※❍□ㅇ])                # 특수기호
-            | (?:[IVXLCDM]{1,7}\.?)         # 로마 숫자
-        )[ \t]+
-        (.{2,80})                          # 제목: 개행 전까지 2~100자 허용
-        """,
-        re.MULTILINE | re.VERBOSE
-    )
+    section_pattern = re.compile(r"\n?(\d+(\.\d+)*\s?[.)]?\s+[^\n]{2,100})")
 
     matches = list(section_pattern.finditer(text))
 
