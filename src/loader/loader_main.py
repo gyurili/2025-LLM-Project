@@ -7,7 +7,7 @@ from src.loader.splitter import data_chunking, summarize_chunk_quality
 
 
 @traceable(name="loader_main")
-def loader_main(config: dict, embeddings) -> List[Document]:
+def loader_main(config, embeddings, chat_history) -> List[Document]:
     """
     설정 정보를 기반으로 문서를 로드하고, 전처리 및 청크 작업을 수행합니다.
 
@@ -23,7 +23,6 @@ def loader_main(config: dict, embeddings) -> List[Document]:
     query = config["retriever"]["query"]
     top_k = config["data"]["top_k"]
     verbose = config["settings"]["verbose"]
-    chat_history = config["chat_history"]
 
     # 데이터 로드
     with trace(name="load_data"):

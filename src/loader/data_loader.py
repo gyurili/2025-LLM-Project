@@ -129,9 +129,7 @@ def retrieve_top_documents_from_metadata(
             )
 
     def make_embedding_text(row):
-        history_text = "\n".join(chat_history) if isinstance(chat_history, list) else str(chat_history)
-        return f"{history_text} {row['파일명']} {row['사업 요약']} {row['사업명']} {row['발주 기관']}"
-
+        return f"{chat_history} {row['파일명']} {row['사업 요약']} {row['사업명']} {row['발주 기관']}"
 
     try:
         df["임베딩텍스트"] = df.apply(make_embedding_text, axis=1)
