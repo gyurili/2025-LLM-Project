@@ -40,9 +40,12 @@ def extract_sections(text: str) -> List[dict]:
     Returns:
         List[dict]: 분리된 섹션 정보 리스트 (각 항목은 'title'과 'content' 포함)
     """
+    # 줄바꿈 표준화
+    text = text.replace('\r\n', '\n').replace('\r', '\n').replace('\u2028', '\n')
+
     section_pattern = re.compile(
         r"""
-        ^[ \t]*(
+        (?:^|\n)[ \t]*(                     # 줄 시작 또는 줄바꿈 후 공백 허용
             (?:\d+(?:\.\d+)*[.)]?)           # 숫자형 (1., 1.1)
             | (?:\d{1,2})                    # 단일 숫자도 허용 (1)
             | (?:[가-힣]{1}[.)]?)            # 한글 기호 (가), 나.)
