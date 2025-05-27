@@ -18,7 +18,7 @@ from src.embedding.vector_db import generate_embedding
 from src.embedding.embedding_main import generate_index_name
 from src.generator.hf_generator import load_hf_model
 from src.generator.openai_generator import load_openai_model
-from src.generator.generator_main import load_chat_history
+from src.generator.chat_history import load_chat_history
 from main import rag_pipeline
 
 set_cache_dirs()
@@ -219,6 +219,13 @@ with tab1:
         
         chat_history = load_chat_history(config)
             
+        # 모델 불러오기는 단 한번만!
+        model_info = get_generation_model(model_type, 
+                                      model_name, 
+                                      use_quantization)
+        
+        chat_history = load_chat_history(config, model_info)
+            
         with st.chat_message("user"):
             st.markdown(query)
 
@@ -230,11 +237,6 @@ with tab1:
             pass  # query는 그대로 유지
 
         print(f"질문: {config['retriever']['query']}")
-
-        # 모델 불러오기는 단 한번만!
-        model_info = get_generation_model(model_type, 
-                                      model_name, 
-                                      use_quantization)
 
         try:
             with st.spinner("🔄 임베딩 모델 생성 중..."):
