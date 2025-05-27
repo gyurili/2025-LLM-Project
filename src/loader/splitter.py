@@ -199,9 +199,8 @@ def data_chunking(
                     f"❌ [Runtime] (splitter.data_chunking) 청크 생성 오류 ({row.get('파일명')}): {e}"
                 )
         else:
-            raise ValueError(
-                f"❌ [Data] (splitter.data_chunking) 비어있거나 문자열이 아닌 full_text: {row.get('파일명')}"
-            )
+            print(f"⚠️ [Skip] full_text 비어있어 청크 건너뜸: {row.get('파일명')}")
+            continue  # 건너뛰기
 
     return all_chunks
 
