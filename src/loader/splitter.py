@@ -26,7 +26,7 @@ def clean_text(text: str) -> str:
 
     allowed_pattern = r"[^\uAC00-\uD7A3a-zA-Z0-9\s.,:;!?()\[\]~\-/•※❍□ㅇ○①-⑳IVXLCDM]"
     text = re.sub(allowed_pattern, " ", text)
-    text = re.sub(r"\s+", " ", text)
+    text = re.sub(r"[ \t]+", " ", text)
     return text.strip()
 
 
