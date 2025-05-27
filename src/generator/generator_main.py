@@ -4,7 +4,6 @@ from langchain.schema import Document
 from src.generator.hf_generator import generate_answer_hf
 from src.generator.openai_generator import generate_answer_openai
 from src.generator.make_prompt import build_prompt
-from src.generator.chat_history import load_chat_history
 
 '''
     TODO:
@@ -15,7 +14,8 @@ from src.generator.chat_history import load_chat_history
 def generator_main(
     retrieved_docs:List[Document],
     config:dict,
-    model_info:dict = None
+    model_info:dict = None,
+    chat_history = None
 ) -> str:
     """
     검색된 문서 리스트를 기반으로 답변을 생성하는 메인 실행 함수.
@@ -30,8 +30,6 @@ def generator_main(
     """
     if model_info is None:
         raise ValueError("❌ (generator.generator_main.generator_main) model_info가 없습니다.")
-
-    chat_history = load_chat_history(config)
 
     query = config["retriever"]["query"]
 

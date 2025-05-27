@@ -27,7 +27,7 @@ def summarize_chat_history(config, model_info=None):
         return generate_answer_openai(prompt, model_info, config["generator"])
     
 
-def load_chat_history(config):
+def load_chat_history(config, model_info=None):
     """
     질의응답 내역 요약을 로드하는 함수
     이전 질의응답 내역이 없는 경우, 빈 문자열을 반환
@@ -41,7 +41,7 @@ def load_chat_history(config):
     if config["chat_history"]:
         chat_history_str = "\n".join([f"질문: {turn['content']}" for turn in config["chat_history"]])
 
-        chat_history_str = summarize_chat_history(config)
+        chat_history_str = summarize_chat_history(config, model_info)
         print(f"과거 대화 내역 요약: {chat_history_str}")
         return chat_history_str
     else:
