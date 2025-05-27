@@ -21,15 +21,7 @@ from src.generator.generator_main import load_chat_history
     - 임베딩, 모델인포, 컨피그, dotenv등은 전역적으로 한번만 선언
 '''
 
-project_root = get_project_root_dir()     
-dotenv_path = os.path.join(project_root, ".env")
-load_dotenv(dotenv_path=dotenv_path)
-config = load_config(project_root)
-embeddings = generate_embedding(config["embedding"]["embed_model"])
-chat_history = load_chat_history(config)
-# model_info = 
-
-def rag_pipeline(config, model_info=None, is_save=True):
+def rag_pipeline(config, embeddings, chat_history, model_info=None, is_save=False):
     try:
         with trace(name="rag_pipeline") as run:
 
