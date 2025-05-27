@@ -25,7 +25,6 @@ project_root = get_project_root_dir()
 dotenv_path = os.path.join(project_root, ".env")
 load_dotenv(dotenv_path=dotenv_path)
 config = load_config(project_root)
-
 embeddings = generate_embedding(config["embedding"]["embed_model"])
 chat_history = load_chat_history(config)
 
@@ -40,7 +39,7 @@ def rag_pipeline(config, model_info=None, is_save=False):
                 vector_store = embedding_main(config, chunks, embeddings=embeddings, is_save=is_save)
 
             with trace(name="retrieval_main"):
-                docs = retrieval_main(config, vector_store, chunks)
+                docs = retrieval_main(config, vector_store, chunks, embeddings=embeddings)
 
             start_time = time.time()
             with trace(name="generator_main"):

@@ -1,7 +1,9 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from langsmith import traceable
 from langchain.schema import Document
+from langchain_openai import OpenAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 
 from src.retrieval.retrieval import retrieve_documents
 from src.embedding.vector_db import load_vector_db
@@ -11,7 +13,8 @@ from src.embedding.embedding_main import generate_index_name
 def retrieval_main(
     config: dict,
     vector_store: Optional[object],
-    chunks: List[Document]
+    chunks: List[Document],
+    embeddings: Union[HuggingFaceEmbeddings, OpenAIEmbeddings]
 ) -> List[Document]:
     """
     설정에 따라 similarity 또는 hybrid 방식으로 검색하고, 필요시 re-ranking을 수행합니다.
@@ -27,16 +30,15 @@ def retrieval_main(
     index_name = generate_index_name(config)
 
     vector_db_path = config["embedding"]["vector_db_path"]
-    embed_model = config["embedding"]["embed_model"]
+    
     db_type = config["embedding"]["db_type"]
 
     if vector_store is None:
-        ### 인자 수정 필요
         vector_store = load_vector_db(
             path=vector_db_path,
-            embed_model_name=embed_model,
+            embeddings=embeddings,
             index_name=index_name,
-            db_type=db_type
+            db_type=db_type,
         )
 
     docs = retrieve_documents(
