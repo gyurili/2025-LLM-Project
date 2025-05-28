@@ -57,7 +57,7 @@ python -m streamlit run src/streamlit/chatbot.py
 │
 ├── main.py                  # 실행 진입점
 ├── config.yaml              # 설정 파일
-├── environment.yaml         # conda 환경 파일
+├── requirements.txt         # 패키지목록
 ├── data/                    # 문서 및 벡터DB 저장 폴더
 ├── src/
 │   ├── loader/              # 문서 로딩 및 전처리
@@ -76,16 +76,16 @@ python -m streamlit run src/streamlit/chatbot.py
 
 - `main.py`: 전체 RAG 파이프라인 실행의 진입점입니다.
 - `config.yaml`: 모델, 벡터DB, 경로 등 프로젝트 전반의 설정을 관리합니다.
-- `environment.yaml`: Conda 기반 가상환경 구성을 위한 패키지 리스트입니다.
+- `requirements.txt`: 프로젝트 실행에 필요한 Python 패키지 목록입니다. `pip install -r requirements.txt`로 설치하며, 모델 학습 및 UI 구동에 필요한 주요 라이브러리가 포함되어 있습니다.
 - `data/`: 원문 문서, 전처리 텍스트, 생성된 벡터DB 등이 저장됩니다.
 - `src/loader`: PDF, HWP 문서를 텍스트로 추출하고 의미 단위로 분할합니다.
 - `src/embedding`: 텍스트 임베딩 벡터를 생성하고 FAISS/Chroma DB를 구축합니다.
 - `src/retriever`: 사용자 질문에 대한 관련 문서를 벡터DB에서 검색합니다.
 - `src/generator`: 검색된 문서 기반으로 LLM이 응답을 생성합니다.
 - `src/streamlit`: Streamlit 기반 사용자 인터페이스를 구성합니다.
-- `src/utils`: 경로 설정, 로깅, 텍스트 전처리 등 공통 유틸리티 함수들을 포함합니다.
+- `src/utils`: 설정 확인, 경로 설정 등 공통 유틸리티 함수들을 포함합니다.
 - `backend/`: FastAPI 기반의 API 서버 코드가 포함되어 있습니다.
-- `notebooks/`: 실험 및 분석을 위한 Jupyter Notebook들이 포함됩니다.
+- `notebooks/`: 실험을 위한 Jupyter Notebook들이 포함됩니다.
 - `run.sh`: 전체 시스템을 실행하기 위한 통합 셸 스크립트입니다.
 
 ## 4. 👥 팀 소개
