@@ -59,7 +59,7 @@ python -m streamlit run src/streamlit/chatbot.py
 │
 ├── main.py                  # 실행 진입점
 ├── config.yaml              # 설정 파일
-├── requirements.txt         # 패키지 목록
+├── environment.yaml         # conda 환경 파일
 ├── data/                    # 문서 및 벡터DB 저장 폴더
 ├── src/
 │   ├── loader/              # 문서 로딩 및 전처리
@@ -76,7 +76,7 @@ python -m streamlit run src/streamlit/chatbot.py
 
 - `main.py`: 전체 RAG 파이프라인 실행의 진입점입니다.
 - `config.yaml`: 모델, 벡터DB, 경로 등 프로젝트 전반의 설정을 관리합니다.
-- `requirements.txt`: 프로젝트 실행에 필요한 Python 패키지 목록입니다.
+- `environment.yaml`: 
 - `data/`: 원문 문서, 생성된 벡터DB 등이 저장됩니다.
 - `src/loader`: PDF, HWP 문서를 텍스트로 추출하고 의미 단위로 분할합니다.
 - `src/embedding`: 텍스트 임베딩 벡터를 생성하고 FAISS/Chroma DB를 구축합니다.
@@ -103,10 +103,10 @@ python -m streamlit run src/streamlit/chatbot.py
 ---
 
 | 정영선 | 구극모 | 박규리 | 이학진 | 정재의 |
-|--------|----------|--------|--------|--------|
-| <img src="https://github.com/YS-2357.png" width="100"/> | <img src="https://github.com/Glen0227.png" width="100"/> | <img src="https://github.com/gyurili.png" width="100"/> | <img src="https://github.com/kyakyak.png" width="100"/> | <img src="https://github.com/JJU09.png" width="100"/> |
-| PM  | 프론트엔드 개발자 | 백엔드 엔지니어 | NLP 엔지니어 | 문서 처리 및 전처리|
-| 그외? | | | | |
+|--------|--------|--------|--------|--------|
+| <a href="https://github.com/YS-2357"><img src="https://github.com/YS-2357.png" width="100"/></a> | <a href="https://github.com/Glen0227"><img src="https://github.com/Glen0227.png" width="100"/></a> | <a href="https://github.com/gyurili"><img src="https://github.com/gyurili.png" width="100"/></a> | <a href="https://github.com/kyakyak"><img src="https://github.com/kyakyak.png" width="100"/></a> | <a href="https://github.com/JJU09"><img src="https://github.com/JJU09.png" width="100"/></a> |
+| PM | 프론트엔드 개발자 | 백엔드 엔지니어 | NLP 엔지니어 | 문서 처리 및 전처리 |
+| 그외? |  |  |  |  |
 
 ## 5. 📊 타임라인
 
