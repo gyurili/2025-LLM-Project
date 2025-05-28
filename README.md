@@ -96,7 +96,7 @@ python -m streamlit run src/streamlit/chatbot.py
 | | | | | |
 | PM / 방어적 프로그래밍 | 프론트엔드 개발자 / Data Engineer | 백엔드 엔지니어 / Retriever 담당 | NLP 엔지니어 / 프롬프트 엔지니어 | 프론트엔드 개발자 / 문서 처리 및 전처리 / 프로젝트 문서화 담당 |
 | | | | | |
-
+<!-- 
 <table>
   <tr>
     <th>정영선</th>
@@ -126,4 +126,4 @@ python -m streamlit run src/streamlit/chatbot.py
     <td><!-- 내용 14 --></td>
     <td><!-- 내용 15 --></td>
   </tr>
-</table>
+</table> -->
