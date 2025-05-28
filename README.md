@@ -31,7 +31,6 @@
 - **도구**: ![GitHub](https://img.shields.io/badge/GitHub-181717?style=plastic&logo=GitHub&logoColor=white)
 ![Notion](https://img.shields.io/badge/Notion-000000?style=plastic&logo=Notion&logoColor=white)
 ![Canva](https://img.shields.io/badge/Canva-00C4CC?style=plastic&logo=Canva&logoColor=white)
-- **미정**: 
 
 ## 2. ⚙️ 설치 및 실행 방법
 
@@ -60,7 +59,7 @@ python -m streamlit run src/streamlit/chatbot.py
 │
 ├── main.py                  # 실행 진입점
 ├── config.yaml              # 설정 파일
-├── requirements.txt         # 패키지목록
+├── requirements.txt         # 패키지 목록
 ├── data/                    # 문서 및 벡터DB 저장 폴더
 ├── src/
 │   ├── loader/              # 문서 로딩 및 전처리
