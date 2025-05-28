@@ -72,6 +72,8 @@ python -m streamlit run src/streamlit/chatbot.py
 └── README.md
 ```
 
+### 각 디렉토리 설명
+
 - `main.py`: 전체 RAG 파이프라인 실행의 진입점입니다.
 - `config.yaml`: 모델, 벡터DB, 경로 등 프로젝트 전반의 설정을 관리합니다.
 - `requirements.txt`: 프로젝트 실행에 필요한 Python 패키지 목록입니다. `pip install -r requirements.txt`로 설치하며, 모델 학습 및 UI 구동에 필요한 주요 라이브러리가 포함되어 있습니다.
