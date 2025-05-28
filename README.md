@@ -93,6 +93,6 @@ python -m streamlit run src/streamlit/chatbot.py
 
 | 정영선 | 구극모 | 박규리 | 이학진 | 정재의 |
 |--------|----------|--------|--------|--------|
-| <img src="https://github.com/YS-2357.png" width="100"/> | 사진 | 사진 | 사진 | 사진 |
+| <img src="https://github.com/YS-2357.png" width="100"/> | <img src="https://github.com/Glen0227.png" width="100"/> | <img src="https://github.com/YS-2357.png" width="100"/> | <img src="https://github.com/YS-2357.png" width="100"/> | <img src="https://github.com/YS-2357.png" width="100"/> |
 | PM  | 프론트엔드 개발자 | 백엔드 엔지니어 | NLP 엔지니어 | 문서 처리 및 전처리|
 | 그외? | | | | |
