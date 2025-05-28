@@ -103,7 +103,7 @@ chmod +x run.sh
 ---
 
 | 정영선 | 구극모 | 박규리 | 이학진 | 정재의 |
-|--------|--------|--------|--------|--------|
+|:------:|:------:|:------:|:------:|:------:|
 | <a href="https://github.com/YS-2357"><img src="https://github.com/YS-2357.png" width="100"/></a> | <a href="https://github.com/Glen0227"><img src="https://github.com/Glen0227.png" width="100"/></a> | <a href="https://github.com/gyurili"><img src="https://github.com/gyurili.png" width="100"/></a> | <a href="https://github.com/kyakyak"><img src="https://github.com/kyakyak.png" width="100"/></a> | <a href="https://github.com/JJU09"><img src="https://github.com/JJU09.png" width="100"/></a> |
 | PM | 프론트엔드 개발자 | 백엔드 엔지니어 | NLP 엔지니어 | 문서 처리 및 전처리 |
 | <a href="mailto:joungyoungsun20@gmail.com"><img src="https://img.shields.io/badge/Gmail-D14836?style=plastic&logo=gmail&logoColor=white"/></a> | <a href="mailto:keugmo@gmail.com"><img src="https://img.shields.io/badge/Gmail-D14836?style=plastic&logo=gmail&logoColor=white"/></a> | <a href="mailto:inglifestora@naver.com"><img src="https://img.shields.io/badge/NaverMail-03C75A?style=plastic&logo=naver&logoColor=white"/></a> | <a href="mailto:udosjdjdjdj@gmail.com"><img src="https://img.shields.io/badge/Gmail-D14836?style=plastic&logo=gmail&logoColor=white"/></a> | <a href="mailto:jeaui54@gmail.com"><img src="https://img.shields.io/badge/Gmail-D14836?style=plastic&logo=gmail&logoColor=white"/></a> |
