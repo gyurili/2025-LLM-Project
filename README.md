@@ -112,3 +112,16 @@ chmod +x run.sh
 | --- | --- |
 | 2025-05-12 | 프로젝트 시작 및 팀 구성 |
 | 2025-05-30 | 프로젝트 최종 발표 및 배포 완료 |
+
+<img src="https://img.shields.io/badge/Python-3776AB?style=plastic&logo=Python&logoColor=white"/>
+<img src="https://img.shields.io/badge/Streamlit-FF4B4B?style=plastic&logo=Streamlit&logoColor=white"/>
+<img src="https://img.shields.io/badge/FastAPI-009688?style=plastic&logo=FastAPI&logoColor=white"/>
+<img src="https://img.shields.io/badge/LangChain-000000?style=plastic&logo=LangChain&logoColor=white"/>
+<img src="https://img.shields.io/badge/FAISS-00599C?style=plastic&logo=FAISS&logoColor=white"/>
+<img src="https://img.shields.io/badge/Chroma-8E44AD?style=plastic&logo=Chroma&logoColor=white"/>
+<img src="https://img.shields.io/badge/SentenceTransformer-4B8BBE?style=plastic&logo=PyTorch&logoColor=white"/>
+<img src="https://img.shields.io/badge/PyMuPDF-FFD700?style=plastic&logo=AdobeAcrobatReader&logoColor=black"/>
+<img src="https://img.shields.io/badge/HWPParser-FF8C00?style=plastic&logo=Hancom&logoColor=white"/>
+<img src="https://img.shields.io/badge/EasyOCR-008080?style=plastic&logo=Tesseract&logoColor=white"/>
+<img src="https://img.shields.io/badge/HuggingFace-FFD21E?style=plastic&logo=HuggingFace&logoColor=black"/>
+<img src="https://img.shields.io/badge/OpenAI-412991?style=plastic&logo=OpenAI&logoColor=white"/>
