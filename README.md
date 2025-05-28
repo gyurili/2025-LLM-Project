@@ -1,138 +1,90 @@
-# 2025-LLM-Project 리드미
-
-## 📄 프로젝트 개요
-
-- 목적: PDF/HWP 형식의 제안요청서(RFP) 문서를 처리하여, 검색 기반 질의응답 시스템(RAG) 구현
-- 기술 스택: LangChain, Streamlit, PyMuPDF, EasyOCR, FAISS/Chroma, OpenAI/HuggingFace
+# 2025-LLM-Project: RFP Summarizer & QA Chatbot
 
 ---
 
-## 📁 폴더 구조
+![image.png](attachment:46112345-db0d-436c-9e3f-dbff9dc42a81:image.png)
+
+> 입찰메이트 봇은 사용자의 질문을 실시간으로 처리해 관련 제안서를 탐색하여 응답을 생성합니다. 입찰메이트 봇과 함께 수백건의 RFP를 신속하게 처리하고, 컨설팅이 집중하세요!
+>
+
+![Python](https://img.shields.io/badge/Python-3776AB?style=plastic&logo=Python&logoColor=white)
+
+## 1. 📌 프로젝트 개요
+
+---
+
+- **B2G 입찰지원 전문 컨설팅 스타트업 – ‘입찰메이트 봇’**
+
+    > **배경**: 매일 수백 건의 RFP가 게시되는데, 각 요청서 당 수십 페이지가 넘는 문건을 모두 검토하는 것은 불가능합니다. 이러한 과정은 비효율적이며, 중요한 정보를 빠르게 파악하기 어렵습니다.
+    **목표**: 사용자의 질문에 실시간으로 응답하고, 관련 제안서를 탐색하여 요약 정보를 제공하는 챗봇을 개발하여 컨설턴트의 업무 효율을 향상시키고자 합니다.
+    **기대 효과**: RAG 시스템을 통해 중요한 정보를 신속하게 제공함으로써, 제안서 검토 시간을 단축하고 컨설팅 업무에 보다 집중할 수 있는 환경을 조성합니다.
+
+## 3. ⚙️ 설치 및 실행 방법
+
+---
 
 ```bash
+# 1. 의존성 설치
+pip install -r requirements.txt
+conda activate ?
+
+# 2. 실행
+python -m streamlit run src/streamlit/chatbot.py
+```
+
+## 4. 📂 프로젝트 구조
+
+---
+
+```arduino
 2025-LLM-Project/
-├── .github/             # GitHub 관련 설정 및 워크플로우
-├── data/
-│   └── files/           # 원본 문서 데이터
-├── notebooks/           # 실험/테스트용 Jupyter 노트북
-├── src/                 # 핵심 소스 코드
-│   ├── loader/          # 문서 로딩 및 전처리
-│   ├── embedding/       # 임베딩 생성 및 벡터 DB 관리
-│   ├── retrieval/       # 유사도 검색, 리트리버 구성
-│   ├── generator/       # LLM 응답 생성 모듈
-│   └── utils/           # 공통 유틸 함수
-├── app.py               # Streamlit 기반 웹 인터페이스 (RAG 전체 파이프라인 실행 및 시각화)
-├── main.py              # CLI 또는 스크립트용 전체 파이프라인 실행 진입점 (비대화형 환경용) 
+│
+├── main.py                  # 실행 진입점
+├── config.yaml              # 설정 파일
+├── environment.yaml         # conda 환경 파일
+├── data/                    # 문서 및 벡터DB 저장 폴더
+├── src/
+│   ├── loader/              # 문서 로딩 및 전처리
+│   ├── embedding/           # 임베딩 생성
+│   ├── retriever/           # 문서 검색기
+│   ├── generator/           # 응답 생성기
+│   ├── streamlit/           # UI 구성
+│   └── utils/               # 공통 함수 모듈
+├── backend/                 # 백엔드
+├── notebooks/               # 실험 및 테스트 노트북
+├── run.sh                   # 실행 스크립트
+└── README.md
 ```
 
----
+### 📁 각 디렉토리 설명
 
-## ⚙️ 설정 항목 요약 (`config.yaml`)
+- `main.py`: 전체 RAG 파이프라인을 실행하는 엔트리포인트
+- `src/loader`: PDF/HWP 등의 문서를 텍스트로 로딩하고 의미 단위로 분할합니다.
+- `src/embedding`: 텍스트에 대한 임베딩 벡터를 생성 벡터DB를 만듭니다.
+- `src/retriever`: 사용자 질문에 관련된 문서를 벡터DB에서 검색합니다.
+- `src/generator`: 검색된 문서 기반으로 LLM이 응답을 생성합니다.
+- `src/streamlit`: 사용자 인터페이스를 구성하며 FastAPI와 연동합니다.
+- `config.yaml`: 모델, DB, 경로 등 전반적인 설정을 관리합니다.
+- `data/`: 원문 문서와 생성된 임베딩 데이터가 저장됩니다.
+- `notebooks/`: 개발 과정 중의 실험 및 테스트 코드 기록입니다.
+- `run.sh`: 실행 자동화를 위한 셸 스크립트
 
-### 📂 data
-- `folder_path`: 원문 파일 경로 (`data/files`)
-- `data_list_path`: 문서 목록 CSV 경로
-- `top_k`: 최대 검색 문서 수 (1~100)
-- `file_type`: 허용 문서 타입 (`hwp`, `pdf`, `all`)
-- `apply_ocr`: OCR 적용 여부 (이미지 기반 문서)
-- `splitter`: 문서 청크 분할 방식 (`recursive`, `token`, `section`)
-- `chunk_size`: 청크 크기 (기본 1000)
-- `chunk_overlap`: 청크 간 중첩 범위 (기본 250)
-
-### 🔗 embedding
-- `embed_model`: 사용 임베딩 모델 (`nlpai-lab/KoE5`, `openai` 등)
-- `db_type`: 벡터 DB 유형 (`faiss`, `chroma`)
-- `vector_db_path`: 벡터 DB 저장 경로 (기본 `data`)
-
-### 🔍 retriever
-- `search_type`: 검색 방식 (`similarity`, `hybrid`)
-- `query`: 테스트용 기본 질의문
-- `top_k`: 검색 결과 청크 수
-- `rerank`: 재정렬 여부
-- `min_chunks`: 문서별 최소 청크 보장 수
-
-### 🤖 generator
-- `model_type`: 생성 모델 소스 (`openai`, `huggingface`)
-- `model_name`: 사용 모델 (`gpt-4.1-nano`, `Phi-4-mini-instruct` 등)
-- `max_length`: 응답 최대 길이 (토큰 단위)
-- `use_quantization`: 양자화 모델 사용 여부
-
-### 🛠 settings
-- `verbose`: 상세 로그 출력 여부 (True/False)
+## 6. 👥 팀 소개
 
 ---
 
-## 🧪 실험/테스트 환경 (Python 및 주요 라이브러리)
-
-| 항목              | 버전          |
-|-------------------|----------------|
-| Python            | 3.10.12        |
-| PyTorch           | 2.6.0 + cu124  |
-| Transformers      | 4.51.3         |
-| FAISS             | cpu: 1.11.0, gpu: 1.7.2 |
-| Streamlit         | 1.45.1         |
-| LangChain         | 0.3.25         |
-| HuggingFace Hub   | 0.31.1         |
-| OpenAI            | 1.78.1         |
+### 팀 소개
 
 ---
 
-## 🛠️ 구현된 주요 기능 (기능별 진행 상황)
+> 인공지능 모델을 실제 공공 문서 분석에 적용해 실용적 도구를 만드는 것을 목표로 합니다.
 
-### ✅ Loader
-- CSV 기반 문서 메타데이터 임베딩 및 유사 문서 검색 (메타 기반 Top-k)
-- PDF 파일 OCR 기반 텍스트 추출 (EasyOCR + PyMuPDF)
-- HWP 파일 처리 (HWPLoader)
-- 청크 분할: Section 기반 + 길이 기준 병합 및 분할 (RecursiveCharacterTextSplitter)
-- 청크 품질 분석 및 요약 출력
+### 멤버 소개
 
-### ✅ Embedding
-- OpenAI 및 HuggingFace 임베딩 모델 지원 (text-embedding-3-small, KoE5 등)
-- FAISS 및 Chroma 벡터 DB 생성/저장/로드 지원
-- embedding 모델 자동 감지 및 차원 설정
-- DB 존재 여부 확인 후 자동 생성 or 로드 로직
-- batch 단위 문서 임베딩 및 삽입
-
-### ✅ Retriever
-- similarity/hybrid 검색 타입 지원
-- BM25 + Vector 기반 하이브리드 리트리버 구성
-- 문서 내 유사도 정렬 및 선택 로직 구현
-- 리랭크 적용 시 유사도 기반 정렬 유지 및 min/max 청크 수 보장
-
-### ✅ Generator
-- 프롬프트 구성
-  - 검색된 Document 리스트로부터 질문에 맞춘 입력 프롬프트 생성
-  - 출처 정보(파일명, 기관, 사업명) 포함 가능하며, 커스텀 템플릿 사용 지원
-- 모델 로딩 및 실행 (HuggingFace / OpenAI)
-  - HuggingFace 모델: 정밀도(f16/4bit) 및 양자화 설정 지원, transformers 기반
-  - OpenAI 모델: ChatCompletion API 사용, gpt-4.1-nano 등 지정 가능
-- 응답 생성 및 후처리
-  - 반복/존댓말/비정상적 응답 제거 필터 내장
-  - LangSmith trace 기반 로깅 지원
-
-### ✅ App (Streamlit UI)
-- 사이드바 기반 실시간 설정 UI 구성
-  - 문서 수, 파일 유형, OCR, splitter, 청크 크기, DB 타입, 모델명 등 모든 주요 config 항목 제어 가능
-- Vector DB 삭제 기능 내장 (FAISS .faiss/.pkl, Chroma 디렉토리)
-- RAG 전체 파이프라인 실행 (loader → embedding → retrieval → generation) 및 결과 표시
-- 검색된 문서의 chunk와 메타데이터를 Streamlit UI에 시각적으로 출력
-- 질문 입력 및 응답 표시 기능
-- LangSmith trace와 연동된 응답 로깅 지원
-
----
-
-> 본 리포지토리는 지속적으로 개선 중입니다. 코드/모듈별 사용법은 추후 상세 문서화 예정입니다.
-
----
-
-## ▶️ Streamlit 실행 코드
-
-```bash
-streamlit run app.py --server.address=0.0.0.0 --server.port=8501
-```
-
-**Note:**
-- 최대 문서 수를 `100`으로 지정하면 처음 한 번 전체 vector DB를 생성하고, 이후부터는 `load_vector_db()`를 통해 빠르게 작동합니다.  
-  → **장점:** 첫 실행 시 약 5분 소요되며, 이후 쿼리 응답은 **1초 내외**로 처리됩니다.
-
-- 최대 문서 수를 `100 미만`으로 지정하면 (예: `config['data']['top_k'] == 5`) 매 쿼리마다 vector DB를 **실시간 생성**하게 되며, 각 쿼리당 약 **30초 내외**가 소요됩니다.
+| 이름 | 역할 |
+| --- | --- |
+| 정영선 | PM / 방어적 프로그래밍 담당 |
+| 구극모 | 프론트엔드 개발자 / Data Engineer |
+| 박규리 | 백엔드 엔지니어 **/** Retriever 담당 |
+| 이학진 | NLP 엔지니어 / 프롬프트 엔지니어 |
+| 정재의 | 프론트엔드 개발자 / **문서 처리 및 전처리**  / 프로젝트 문서화 담당 |
