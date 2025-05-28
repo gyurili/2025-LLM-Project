@@ -1,5 +1,3 @@
-from src.utils.shared_cache import set_cache_dirs
-set_cache_dirs()
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,6 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 입력 데이터 형식
 class QueryRequest(BaseModel):
     query: str
     chat_history: list
@@ -31,7 +30,7 @@ class QueryResponse(BaseModel):
     elapsed: float
     docs: list
 
-
+# 기본 설정
 project_root = get_project_root_dir()
 config = load_config(project_root)
 dotenv_path = os.path.join(project_root, ".env")
@@ -45,7 +44,7 @@ model_name = config["generator"]["model_name"]
 use_quantization = config["generator"]["use_quantization"]
 model_info = get_generation_model(model_type, model_name, use_quantization)
 
-
+# API 호출
 @app.post("/chat", response_model=QueryResponse)
 def chat(request: QueryRequest):
     config["chat_history"] = request.chat_history
