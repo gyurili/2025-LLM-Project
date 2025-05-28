@@ -31,23 +31,23 @@
 - **도구**: ![GitHub](https://img.shields.io/badge/GitHub-181717?style=plastic&logo=GitHub&logoColor=white)
 ![Notion](https://img.shields.io/badge/Notion-000000?style=plastic&logo=Notion&logoColor=white)
 ![Canva](https://img.shields.io/badge/Canva-00C4CC?style=plastic&logo=Canva&logoColor=white)
+![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=plastic&logo=discord&logoColor=white)
 
 ## 2. ⚙️ 설치 및 실행 방법
 
 ---
 
 ```bash
-# 1. 가상환경 설치?
+# 1. 가상환경 설치
 conda env create -f environment.yaml
-conda activate <이름 미정>
+conda activate myenv
 
-# 2. 의존성 설치
-pip install -r requirements.txt
-
-# 3. 실행
+# 2. 로컬 실행
 python -m streamlit run src/streamlit/chatbot.py
 
-# 4. UI
+# 3. UI 실행
+chmod +x run.sh
+./run.sh
 ```
 
 ## 3. 📂 프로젝트 구조
@@ -59,7 +59,7 @@ python -m streamlit run src/streamlit/chatbot.py
 │
 ├── main.py                  # 실행 진입점
 ├── config.yaml              # 설정 파일
-├── requirements.txt         # 패키지 목록
+├── environment.yaml         # conda 환경 파일
 ├── data/                    # 문서 및 벡터DB 저장 폴더
 ├── src/
 │   ├── loader/              # 문서 로딩 및 전처리
@@ -76,7 +76,7 @@ python -m streamlit run src/streamlit/chatbot.py
 
 - `main.py`: 전체 RAG 파이프라인 실행의 진입점입니다.
 - `config.yaml`: 모델, 벡터DB, 경로 등 프로젝트 전반의 설정을 관리합니다.
-- `requirements.txt`: 프로젝트 실행에 필요한 Python 패키지 목록입니다.
+- `environment.yaml`: 프로젝트 실행에 필요한 Conda 가상환경 설정 파일입니다. 
 - `data/`: 원문 문서, 생성된 벡터DB 등이 저장됩니다.
 - `src/loader`: PDF, HWP 문서를 텍스트로 추출하고 의미 단위로 분할합니다.
 - `src/embedding`: 텍스트 임베딩 벡터를 생성하고 FAISS/Chroma DB를 구축합니다.
@@ -103,10 +103,10 @@ python -m streamlit run src/streamlit/chatbot.py
 ---
 
 | 정영선 | 구극모 | 박규리 | 이학진 | 정재의 |
-|--------|----------|--------|--------|--------|
-| <img src="https://github.com/YS-2357.png" width="100"/> | <img src="https://github.com/Glen0227.png" width="100"/> | <img src="https://github.com/gyurili.png" width="100"/> | <img src="https://github.com/kyakyak.png" width="100"/> | <img src="https://github.com/JJU09.png" width="100"/> |
-| PM  | 프론트엔드 개발자 | 백엔드 엔지니어 | NLP 엔지니어 | 문서 처리 및 전처리|
-| 그외? | | | | |
+|:------:|:------:|:------:|:------:|:------:|
+| <a href="https://github.com/YS-2357"><img src="https://github.com/YS-2357.png" width="100"/></a> | <a href="https://github.com/Glen0227"><img src="https://github.com/Glen0227.png" width="100"/></a> | <a href="https://github.com/gyurili"><img src="https://github.com/gyurili.png" width="100"/></a> | <a href="https://github.com/kyakyak"><img src="https://github.com/kyakyak.png" width="100"/></a> | <a href="https://github.com/JJU09"><img src="https://github.com/JJU09.png" width="100"/></a> |
+| PM | 프론트엔드 개발자 | 백엔드 엔지니어 | NLP 엔지니어 | 문서 처리 및 전처리 |
+| <a href="mailto:joungyoungsun20@gmail.com"><img src="https://img.shields.io/badge/Gmail-D14836?style=plastic&logo=gmail&logoColor=white"/></a> | <a href="mailto:keugmo@gmail.com"><img src="https://img.shields.io/badge/Gmail-D14836?style=plastic&logo=gmail&logoColor=white"/></a> | <a href="mailto:inglifestora@naver.com"><img src="https://img.shields.io/badge/NaverMail-03C75A?style=plastic&logo=naver&logoColor=white"/></a> | <a href="mailto:udosjdjdjdj@gmail.com"><img src="https://img.shields.io/badge/Gmail-D14836?style=plastic&logo=gmail&logoColor=white"/></a> | <a href="mailto:jeaui54@gmail.com"><img src="https://img.shields.io/badge/Gmail-D14836?style=plastic&logo=gmail&logoColor=white"/></a> |
 
 ## 5. 📊 타임라인
 
