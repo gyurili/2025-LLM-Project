@@ -37,17 +37,16 @@
 ---
 
 ```bash
-# 1. 가상환경 설치?
+# 1. 가상환경 설치
 conda env create -f environment.yaml
-conda activate <이름 미정>
+conda activate myenv
 
-# 2. 의존성 설치
-pip install -r requirements.txt
-
-# 3. 실행
+# 2. 로컬 실행
 python -m streamlit run src/streamlit/chatbot.py
 
-# 4. UI
+# 3. UI 실행
+chmod +x run.sh
+./run.sh
 ```
 
 ## 3. 📂 프로젝트 구조
@@ -76,7 +75,7 @@ python -m streamlit run src/streamlit/chatbot.py
 
 - `main.py`: 전체 RAG 파이프라인 실행의 진입점입니다.
 - `config.yaml`: 모델, 벡터DB, 경로 등 프로젝트 전반의 설정을 관리합니다.
-- `environment.yaml`: 
+- `environment.yaml`: 가상환경 설치???
 - `data/`: 원문 문서, 생성된 벡터DB 등이 저장됩니다.
 - `src/loader`: PDF, HWP 문서를 텍스트로 추출하고 의미 단위로 분할합니다.
 - `src/embedding`: 텍스트 임베딩 벡터를 생성하고 FAISS/Chroma DB를 구축합니다.
