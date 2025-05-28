@@ -2,10 +2,6 @@
 
 ---
 
-
-
----
-
 ## 시연영상 들어가야함
 
 > 입찰메이트 봇은 사용자의 질문을 실시간으로 처리해 관련 제안서를 탐색하여 응답을 생성합니다. 입찰메이트 봇과 함께 수백건의 RFP를 신속하게 처리하고, 컨설팅이 집중하세요!
@@ -37,7 +33,7 @@
 ![Canva](https://img.shields.io/badge/Canva-00C4CC?style=plastic&logo=Canva&logoColor=white)
 - **미정**: ![Jupyter Notebook](https://img.shields.io/badge/jupyter-%23FA0F00?style=plastic&logo=jupyter&logoColor=white)
 
-## 3. ⚙️ 설치 및 실행 방법
+## 2. ⚙️ 설치 및 실행 방법
 
 ---
 
@@ -51,7 +47,7 @@ python -m streamlit run src/streamlit/chatbot.py
 # 3. UI
 ```
 
-## 4. 📂 프로젝트 구조
+## 3. 📂 프로젝트 구조
 
 ---
 
@@ -77,18 +73,21 @@ python -m streamlit run src/streamlit/chatbot.py
 
 ### 📁 각 디렉토리 설명
 
-- `main.py`: 전체 RAG 파이프라인을 실행하는 엔트리포인트
-- `src/loader`: PDF/HWP 등의 문서를 텍스트로 로딩하고 의미 단위로 분할합니다.
-- `src/embedding`: 텍스트에 대한 임베딩 벡터를 생성 벡터DB를 만듭니다.
-- `src/retriever`: 사용자 질문에 관련된 문서를 벡터DB에서 검색합니다.
+- `main.py`: 전체 RAG 파이프라인 실행의 진입점입니다.
+- `config.yaml`: 모델, 벡터DB, 경로 등 프로젝트 전반의 설정을 관리합니다.
+- `environment.yaml`: Conda 기반 가상환경 구성을 위한 패키지 리스트입니다.
+- `data/`: 원문 문서, 전처리 텍스트, 생성된 벡터DB 등이 저장됩니다.
+- `src/loader`: PDF, HWP 문서를 텍스트로 추출하고 의미 단위로 분할합니다.
+- `src/embedding`: 텍스트 임베딩 벡터를 생성하고 FAISS/Chroma DB를 구축합니다.
+- `src/retriever`: 사용자 질문에 대한 관련 문서를 벡터DB에서 검색합니다.
 - `src/generator`: 검색된 문서 기반으로 LLM이 응답을 생성합니다.
-- `src/streamlit`: 사용자 인터페이스를 구성하며 FastAPI와 연동합니다.
-- `config.yaml`: 모델, DB, 경로 등 전반적인 설정을 관리합니다.
-- `data/`: 원문 문서와 생성된 임베딩 데이터가 저장됩니다.
-- `notebooks/`: 개발 과정 중의 실험 및 테스트 코드 기록입니다.
-- `run.sh`: 실행 자동화를 위한 셸 스크립트
+- `src/streamlit`: Streamlit 기반 사용자 인터페이스를 구성합니다.
+- `src/utils`: 경로 설정, 로깅, 텍스트 전처리 등 공통 유틸리티 함수들을 포함합니다.
+- `backend/`: FastAPI 기반의 API 서버 코드가 포함되어 있습니다.
+- `notebooks/`: 실험 및 분석을 위한 Jupyter Notebook들이 포함됩니다.
+- `run.sh`: 전체 시스템을 실행하기 위한 통합 셸 스크립트입니다.
 
-## 6. 👥 팀 소개
+## 4. 👥 팀 소개
 
 ---
 
@@ -105,7 +104,6 @@ python -m streamlit run src/streamlit/chatbot.py
 | <img src="https://github.com/YS-2357.png" width="100"/> | <img src="https://github.com/Glen0227.png" width="100"/> | <img src="https://github.com/gyurili.png" width="100"/> | <img src="https://github.com/kyakyak.png" width="100"/> | <img src="https://github.com/JJU09.png" width="100"/> |
 | PM  | 프론트엔드 개발자 | 백엔드 엔지니어 | NLP 엔지니어 | 문서 처리 및 전처리|
 | 그외? | | | | |
-
 
 ## 5. 📊 타임라인
 
