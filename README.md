@@ -4,8 +4,7 @@
 
 ## 시연영상 들어가야함
 
-> 입찰메이트 봇은 사용자의 질문을 실시간으로 처리해 관련 제안서를 탐색하여 응답을 생성합니다. 입찰메이트 봇과 함께 수백건의 RFP를 신속하게 처리하고, 컨설팅이 집중하세요!
->
+> 입찰메이트 봇은 사용자의 질문을 실시간으로 처리해 관련 제안서를 탐색하여 응답을 생성합니다. 입찰메이트 봇과 함께 수백건의 RFP를 신속하게 처리하고, 컨설팅에 집중하세요!
 
 ## 1. 📌 프로젝트 개요
 
@@ -39,13 +38,17 @@
 ---
 
 ```bash
-# 1. 의존성 설치
+# 1. 가상환경 설치?
+conda env create -f environment.yaml
+conda activate <이름 미정>
+
+# 2. 의존성 설치
 pip install -r requirements.txt
 
-# 2. 실행
+# 3. 실행
 python -m streamlit run src/streamlit/chatbot.py
 
-# 3. UI
+# 4. UI
 ```
 
 ## 3. 📂 프로젝트 구조
@@ -61,7 +64,7 @@ python -m streamlit run src/streamlit/chatbot.py
 ├── data/                    # 문서 및 벡터DB 저장 폴더
 ├── src/
 │   ├── loader/              # 문서 로딩 및 전처리
-│   ├── embedding/           # 임베딩 생성
+│   ├── embedding/           # 임베딩, 벡터DB 생성
 │   ├── retriever/           # 문서 검색기
 │   ├── generator/           # 응답 생성기
 │   ├── streamlit/           # UI 구성
@@ -74,8 +77,8 @@ python -m streamlit run src/streamlit/chatbot.py
 
 - `main.py`: 전체 RAG 파이프라인 실행의 진입점입니다.
 - `config.yaml`: 모델, 벡터DB, 경로 등 프로젝트 전반의 설정을 관리합니다.
-- `requirements.txt`: 프로젝트 실행에 필요한 Python 패키지 목록입니다. `pip install -r requirements.txt`로 설치하며, 모델 학습 및 UI 구동에 필요한 주요 라이브러리가 포함되어 있습니다.
-- `data/`: 원문 문서, 전처리 텍스트, 생성된 벡터DB 등이 저장됩니다.
+- `requirements.txt`: 프로젝트 실행에 필요한 Python 패키지 목록입니다.
+- `data/`: 원문 문서, 생성된 벡터DB 등이 저장됩니다.
 - `src/loader`: PDF, HWP 문서를 텍스트로 추출하고 의미 단위로 분할합니다.
 - `src/embedding`: 텍스트 임베딩 벡터를 생성하고 FAISS/Chroma DB를 구축합니다.
 - `src/retriever`: 사용자 질문에 대한 관련 문서를 벡터DB에서 검색합니다.
