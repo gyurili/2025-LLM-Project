@@ -76,7 +76,7 @@ chmod +x run.sh
 
 - `main.py`: 전체 RAG 파이프라인 실행의 진입점입니다.
 - `config.yaml`: 모델, 벡터DB, 경로 등 프로젝트 전반의 설정을 관리합니다.
-- `environment.yaml`: 가상환경 설치???
+- `environment.yaml`: 프로젝트 실행에 필요한 Conda 가상환경 설정 파일입니다. 
 - `data/`: 원문 문서, 생성된 벡터DB 등이 저장됩니다.
 - `src/loader`: PDF, HWP 문서를 텍스트로 추출하고 의미 단위로 분할합니다.
 - `src/embedding`: 텍스트 임베딩 벡터를 생성하고 FAISS/Chroma DB를 구축합니다.
