@@ -1,34 +1,33 @@
 settings:
-    verbose: False
-    project_root: ""
+    verbose: False  # 실행 중 상세 로그 출력 여부 (True 시 자세한 로그 출력)
+    project_root: ""  # 프로젝트 루트 경로 (비워두면 현재 디렉토리 기준)
 
 data:
-    folder_path: "data/files"
-    data_list_path: "data/data_list.csv"
-    top_k: 5 # 최대 몇개까지 1 ~ 100 
-    file_type: "all" # "hwp" 또는 "pdf", "all"
-    apply_ocr: False # True/ False
-    splitter: "section" # "recursive", "token", "section"
-    chunk_size: 1000            # KoE5는 허용 토큰이 많은 편이기에, chunk_size를 높일 수 있다.
-    chunk_overlap: 250 
+    folder_path: "data/files"  # 원본 문서가 저장된 폴더 경로
+    data_list_path: "data/data_list.csv"  # 처리할 파일 목록 CSV 경로
+    top_k: 5  # 검색 시 최대 반환할 문서 수 (1~100 사이 권장)
+    file_type: "all"  # 처리할 파일 형식: "pdf", "hwp", 또는 "all"
+    apply_ocr: False  # OCR 적용 여부 (True 시 이미지 기반 문서에서 텍스트 추출)
+    splitter: "section"  # 문서 분할 방식: "section"(목차 기반), "recursive", "token"
+    chunk_size: 1000  # 분할된 텍스트 청크의 최대 길이 (토큰 또는 문자 단위)
+    chunk_overlap: 250  # 청크 간 중첩 길이 (정보 손실 방지용)
 
 embedding:
-    # openai 사용시 "text-embedding-3-small" 권장
-    embed_model: "openai" #"sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-    db_type: "faiss" # "faiss", "chorma"
-    vector_db_path: "data/vector_db"
+    embed_model: "openai"  # 임베딩 생성 모델: "openai" 또는 HuggingFace 모델명 (예: "nlpai-lab/KoE5")
+    db_type: "faiss"  # 벡터 DB 종류: "faiss" 또는 "chroma"
+    vector_db_path: "data/vector_db"  # 벡터 DB 저장 경로
 
 retriever:
-    search_type: "hybrid" # "similarity", "hybrid"
-    query: ""
-    top_k: 10
-    rerank: True # True/ False
-    rerank_top_k: 5
+    search_type: "hybrid"  # 검색 방식: "similarity" 또는 "hybrid"(유사도+재정렬)
+    query: ""  # 사용자 입력 질문 (빈 문자열로 두고 UI에서 입력 받는 경우)
+    top_k: 10  # 검색 시 상위 문서 개수
+    rerank: True  # 재정렬 사용 여부 (True 시 CrossEncoder 등으로 재정렬 수행)
+    rerank_top_k: 5  # 재정렬 후 최종 반환할 문서 수
 
 generator:
-    model_type: "openai" # "huggingface", "openai"
-    model_name: "gpt-4.1-nano" # "microsoft/Phi-4-mini-instruct", "gpt-4.1-mini", "gpt-4.1-nano"
-    max_length: 512
-    use_quantization: True
+    model_type: "openai"  # 응답 생성 모델 타입: "openai" 또는 "huggingface"
+    model_name: "gpt-4.1-nano"  # 사용할 모델 이름 (예: "gpt-4.1-nano", "Markr-AI/Gukbap-Qwen2.5-7B")
+    max_length: 512  # 생성 텍스트 최대 길이
+    use_quantization: True  # huggingface 모델 로딩 시 양자화(경량화) 적용 여부
 
-chat_history: []
+chat_history: []  # 대화 히스토리 초기값 (빈 리스트로 시작)
