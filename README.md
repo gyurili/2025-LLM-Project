@@ -4,18 +4,18 @@
 
 ![Demo](assets/demo.gif)
 
-> 입찰메이트 봇은 사용자의 질문을 실시간으로 처리해 관련 제안서를 탐색하여 응답을 생성합니다. 입찰메이트 봇과 함께 수백건의 RFP를 신속하게 처리하고, 컨설팅에 집중하세요!
+> **RFPilot**은 사용자의 질문을 실시간으로 처리해 관련 제안서를 탐색하여 응답을 생성합니다. **RFPilot**과 함께 수백건의 RFP를 신속하게 처리하고, 컨설팅에 집중하세요!
 
 ## 1. 📌 프로젝트 개요
 
 ---
 
-- **B2G 입찰지원 전문 컨설팅 스타트업 – ‘입찰메이트 봇’**
+- **B2G 입찰지원 전문 컨설팅 스타트업 – 'RFPilot'**
 - RFP 문서를 요약하고, 사용자 질문에 실시간으로 응답하는 챗봇 시스템
 
-> **배경**: 매일 수백 건의 RFP가 게시되는데, 각 요청서 당 수십 페이지가 넘는 문건을 모두 검토하는 것은 불가능합니다. 이러한 과정은 비효율적이며, 중요한 정보를 빠르게 파악하기 어렵습니다.
-**목표**: 사용자의 질문에 실시간으로 응답하고, 관련 제안서를 탐색하여 요약 정보를 제공하는 챗봇을 개발하여 컨설턴트의 업무 효율을 향상시키고자 합니다.
-**기대 효과**: RAG 시스템을 통해 중요한 정보를 신속하게 제공함으로써, 제안서 검토 시간을 단축하고 컨설팅 업무에 보다 집중할 수 있는 환경을 조성합니다.
+> **배경**: 매일 수백 건의 기업 및 정부 제안요청서(RFP)가 게시되는데, 각 요청서 당 수십 페이지가 넘는 문건을 모두 검토하는 것은 불가능합니다. 이러한 과정은 비효율적이며, 중요한 정보를 빠르게 파악하기 어렵습니다.  
+> **목표**: 사용자의 질문에 실시간으로 응답하고, 관련 제안서를 탐색하여 요약 정보를 제공하는 챗봇을 개발하여 컨설턴트의 업무 효율을 향상시키고자 합니다.  
+> **기대 효과**: RAG 시스템을 통해 중요한 정보를 신속하게 제공함으로써, 제안서 검토 시간을 단축하고 컨설팅 업무에 보다 집중할 수 있는 환경을 조성합니다.
 
 ### 기술스택
 
@@ -29,6 +29,7 @@
 ![FAISS](https://img.shields.io/badge/FAISS-00599C?style=plastic&logo=FAISS&logoColor=white)
 ![Chroma](https://img.shields.io/badge/Chroma-8E44AD?style=plastic&logo=Chroma&logoColor=white)
 - **도구**: ![GitHub](https://img.shields.io/badge/GitHub-181717?style=plastic&logo=GitHub&logoColor=white)
+![JupyterLab](https://img.shields.io/badge/JupyterLab-F37626?style=plastic&logo=Jupyter&logoColor=white)
 ![Notion](https://img.shields.io/badge/Notion-000000?style=plastic&logo=Notion&logoColor=white)
 ![Canva](https://img.shields.io/badge/Canva-00C4CC?style=plastic&logo=Canva&logoColor=white)
 ![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=plastic&logo=discord&logoColor=white)
@@ -76,7 +77,7 @@ chmod +x run.sh
 
 - `main.py`: 전체 RAG 파이프라인 실행의 진입점입니다.
 - `config.yaml`: 모델, 벡터DB, 경로 등 프로젝트 전반의 설정을 관리합니다.
-- `environment.yaml`: 프로젝트 실행에 필요한 Conda 가상환경 설정 파일입니다. 
+- `environment.yaml`: 프로젝트 실행에 필요한 Conda 가상환경 설정 파일입니다.
 - `data/`: 원문 문서, 생성된 벡터DB 등이 저장됩니다.
 - `src/loader`: PDF, HWP 문서를 텍스트로 추출하고 의미 단위로 분할합니다.
 - `src/embedding`: 텍스트 임베딩 벡터를 생성하고 FAISS/Chroma DB를 구축합니다.
@@ -108,7 +109,29 @@ chmod +x run.sh
 
 ---
 
-| 날짜 | 주요 내용 |
-| --- | --- |
-| 2025-05-12 | 프로젝트 시작 및 팀 구성 |
-| 2025-05-30 | 프로젝트 최종 발표 및 배포 완료 |
+| 날짜 | 주요 내용 | 담당자 | 상태 |
+| :---: | :--- | :---: | :---: |
+| 2025-05-12 | 프로젝트 시작 및 팀 구성 | 전원 | 완료 |
+| 2025-05-13 | 데이터 수집 및 전처리 시작 | 전원 | 완료 |
+| 2025-05-14 | 데이터 로더 개발 | 이학진 | 완료 |
+| 2025-05-15 | 임베딩 및 벡터DB 구현 | 구극모 | 완료 |
+| 2025-05-15 | 리트리버 개발 및 실험 | 박규리 | 완료 |
+| 2025-05-15 | 제너레이터 통합 및 구현 | 정재의 | 완료 |
+| 2025-05-16 | 폴더구조 개편 및 main 통합 | 정영선 | 완료 |
+| 2025-05-19 | Streamlit 기반 UI 제작 | 구극모, 정재의 | 완료 |
+| 2025-05-20 | 전체 코드 기능 개선 및 수정 | 정영선, 박규리 | 완료 |
+| 2025-05-21 | 프롬프트 엔지니어링 개선 | 이학진 | 완료 |
+| 2025-05-22 | FastAPI 연동 실험 | 박규리 | 완료 |
+| 2025-05-23 | 코드 리뷰 및 리팩토링 | 전원 | 완료 |
+| 2025-05-27 | 모델 배포 실험 | 전원 | 완료 |
+| 2025-05-28 | 보고서 및 발표자료 작성 | 전원 | 진행중 |
+| 2025-05-30 | 프로젝트 최종 발표 및 배포 완료 | 전원 | 예정 |
+
+## 📄 사용한 모델 및 라이선스
+
+---
+
+- **nlpai-lab/KoE5**: MIT License (상업적 사용 가능)
+- **OpenAI text-embedding-3-large**: OpenAI API 전용 (상업적 사용 가능, API 기반)
+- **Markr-AI/Gukbap-Qwen2.5-7B**: CC BY-NC 4.0 (비상업적 사용만 허용)
+- **OpenAI GPT-4.1-nano**: OpenAI API 전용 (상업적 사용 가능, API 기반)
