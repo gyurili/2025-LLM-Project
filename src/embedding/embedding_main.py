@@ -42,7 +42,8 @@ def embedding_main(
     config: dict,
     chunks: List[Document],
     embeddings: Union[HuggingFaceEmbeddings, OpenAIEmbeddings],
-    is_save: bool = False
+    is_save: bool = False,
+    session_id: str = None
 ) -> Union[FAISS, Chroma]:
     """
     설정에 따라 벡터 DB를 생성하거나 로드합니다.
@@ -78,6 +79,7 @@ def embedding_main(
 
     os.makedirs(vector_db_path, exist_ok=True)
     index_name = generate_index_name(config)
+    index_name = index_name + f"_{session_id}"
 
     if not isinstance(index_name, str) or index_name.strip() == "":
         raise ValueError("❌ (embedding.embedding_main.index_name) 잘못된 index_name 생성")

@@ -3,9 +3,10 @@
 
 # 외부 임포트
 import os
-import time 
 import shutil
 import yaml
+import uuid
+import torch
 import streamlit as st
 from typing import Dict
 from dotenv import load_dotenv
@@ -14,22 +15,27 @@ from dotenv import load_dotenv
 from src.utils.config import load_config
 from src.utils.path import get_project_root_dir
 from src.utils.shared_cache import set_cache_dirs
-from src.embedding.vector_db import generate_embedding
 from src.embedding.embedding_main import generate_index_name
 from src.generator.hf_generator import load_hf_model
 from src.generator.openai_generator import load_openai_model
+from src.embedding.vector_db import generate_embedding
 from src.generator.chat_history import load_chat_history
-from main import rag_pipeline
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from pipe_main import rag_pipeline
 
 set_cache_dirs()
+load_dotenv()
+torch.classes.__path__ = []
+FASTAPI_URL = os.getenv("FASTAPI_URL")
 
 # Streamlit 페이지 설정
 st.set_page_config(
-    page_title="RFP Chatbot", 
+    page_title="2025-LLM-Project: RFP Summarizer & QA Chatbot", 
     layout="wide"
 )
 
-st.header("RFP Chatbot", divider='blue')
+st.header("RFPilot", divider='blue')
 st.caption("PDF, HWP 형식의 제안서를 기반으로 한 내용 요약 및 질의응답을 경험하세요!")
 
 # 프로젝트 루트 경로 설정 및 config 로드
@@ -57,6 +63,11 @@ else: # 세션 상태가 존재하는 경우, chat_history를 초기화하지 �
 if "docs" not in st.session_state:
     st.session_state.docs = None
 
+if "session_id" not in st.session_state:
+    # uuid 고유 번호는 -(hyphen)을 포함해 36자, 너무 긺으로 자르는 과정 추가
+    st.session_state.session_id = str(uuid.uuid4())[:8]
+
+session_id = st.session_state.session_id
 
 # 모델 불러오기 캐시 함수
 @st.cache_resource
@@ -110,6 +121,7 @@ def api_key_verification(embed_model):
                 st.warning("OpenAI 모델을 사용하려면 API 키를 입력해야 합니다.")
 
 
+
 # 사이드바 구성
 with st.sidebar:
     st.subheader("⚙️ 설정")
@@ -150,11 +162,11 @@ with st.sidebar:
     
     if config["embedding"]["db_type"] == "faiss":
         faiss_index_name = f"{generate_index_name(config)}"
-        vector_db_file = os.path.join(project_root, 'data', f"{faiss_index_name}.faiss")
-        metadata_file = os.path.join(project_root, 'data', f"{faiss_index_name}.pkl")
+        vector_db_file = os.path.join(project_root, config['embedding']['vector_db_path'], f"{faiss_index_name}_{session_id}.faiss")
+        metadata_file = os.path.join(project_root, config['embedding']['vector_db_path'], f"{faiss_index_name}_{session_id}.pkl")
     else:
-        chroma_folder_name = f"{generate_index_name(config)}"
-        chroma_path = os.path.join(project_root, 'data', chroma_folder_name)
+        chroma_folder_name = f"{generate_index_name(config)}_{session_id}"
+        chroma_path = os.path.join(project_root, config['embedding']['vector_db_path'], chroma_folder_name)
 
 
     if reset_vector_db:
@@ -226,52 +238,41 @@ with tab1:
         
         # 모델 불러오기는 단 한번만!
         model_info = get_generation_model(model_type, 
-                                      model_name, 
-                                      use_quantization)
-        
+                                        model_name, 
+                                        use_quantization)
+
         chat_history = load_chat_history(config, model_info)
-            
+        
         with st.chat_message("user"):
             st.markdown(query)
 
-        if config.get("chat_history"):  # chat_history에 내용이 있는 경우
-            query_c = f"이전 질문 요약: {chat_history}\n질문: {query}"
-            config["retriever"]["query"] = query_c
-        else:  # chat_history가 비어 있거나 없을 경우
-            config["retriever"]["query"] = query
-            pass  # query는 그대로 유지
-
-        print(f"질문: {config['retriever']['query']}")
-
         try:
-            with st.spinner("🔄 임베딩 모델 생성 중..."):
-                embeddings = generate_embedding(config["embedding"]["embed_model"])
-
             with st.spinner("🤖 답변 생성 중..."):
-                docs, answer, elapsed = rag_pipeline(config, embeddings, chat_history, model_info=model_info, is_save=is_save)
-
+                embeddings = generate_embedding(config["embedding"]["embed_model"])
+                docs, answer, elapsed = rag_pipeline(config, embeddings, chat_history, model_info=model_info, is_save=is_save, session_id=session_id)
+                
             # 결과 Streamlit에 반영
             st.session_state.docs = docs 
+            
+            # 대화 이력 업데이트
+            st.session_state.chat_history.append({"role": "user", "content": query})
+            st.session_state.chat_history.append({"role": "ai", "content": answer})
+            
+            # 대화 기록 업데이트
+            config["chat_history"] = st.session_state.chat_history
+            
+            # 추론 시간 표시
+            with st.chat_message("assistant"):
+                st.markdown(f"🕒 **추론 시간:** {elapsed}초")
+                
+            # 랜더링 한계점: 20개까지 히스토리 표시
+            MAX_CHAT_HISTORY = 20
+            if len(st.session_state.chat_history) > MAX_CHAT_HISTORY:
+                st.session_state.chat_history = st.session_state.chat_history[-MAX_CHAT_HISTORY:]
 
         except Exception as e:
-            st.error(f"문서 처리 중 오류 발생: {e}")
+            st.error(f"❌ 문서 처리 중 오류 발생: {e}")
             st.stop()
-     
-        # 대화 이력 업데이트
-        st.session_state.chat_history.append({"role": "user", "content": query})
-        st.session_state.chat_history.append({"role": "ai", "content": answer})
-
-        # 추론 시간 표시
-        with st.chat_message("assistant"):
-            st.markdown(f"🕒 **추론 시간:** {elapsed}초")
-        # 대화 기록 업데이트
-        config["chat_history"] = st.session_state.chat_history
-        # st.rerun()
-
-        # 랜더링 한계점: 20개까지 히스토리 표시
-        MAX_CHAT_HISTORY = 20
-        if len(st.session_state.chat_history) > MAX_CHAT_HISTORY:
-            st.session_state.chat_history = st.session_state.chat_history[-MAX_CHAT_HISTORY:]
 
     # 이전 대화 출력
     for turn in st.session_state.chat_history[::-1]:
@@ -287,11 +288,11 @@ with tab2:
         st.info("❗ 먼저 질문을 입력하고 문서를 검색하세요.")
     elif isinstance(docs, list) and len(docs) > 0:
         for i, doc in enumerate(docs):
-            with st.expander(f"[{i+1}] {doc.metadata.get('사업명', '제목 없음')}"):
+            with st.expander(f"[{i+1}] {doc['metadata'].get('사업명', '제목 없음')}"):
                 st.write("📄 **메타데이터**")
-                st.json(doc.metadata)
+                st.json(doc["metadata"])
                 st.write("📝 **문서 내용**")
-                st.write(doc.page_content)
+                st.write(doc["content"])
     elif isinstance(docs, list) and len(docs) == 0:
         st.warning("검색된 문서가 없습니다.")
     else:

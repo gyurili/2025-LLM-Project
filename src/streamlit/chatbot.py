@@ -5,6 +5,7 @@
 import os
 import shutil
 import yaml
+import uuid
 import requests
 import torch
 import streamlit as st
@@ -26,11 +27,11 @@ FASTAPI_URL = os.getenv("FASTAPI_URL")
 
 # Streamlit 페이지 설정
 st.set_page_config(
-    page_title="RFP Chatbot", 
+    page_title="2025-LLM-Project: RFP Summarizer & QA Chatbot", 
     layout="wide"
 )
 
-st.header("RFP Chatbot", divider='blue')
+st.header("RFPilot", divider='blue')
 st.caption("PDF, HWP 형식의 제안서를 기반으로 한 내용 요약 및 질의응답을 경험하세요!")
 
 # 프로젝트 루트 경로 설정 및 config 로드
@@ -40,7 +41,7 @@ try:
 except Exception as e:
     st.error(f"❌ 설정 파일 로드 실패: {e}")
     st.stop()
-
+    
 # .env 파일 로딩 (API Key 등 private 정보 처리용)
 dotenv_path = os.path.join(project_root, ".env")
 if os.path.exists(dotenv_path):
@@ -58,6 +59,11 @@ else: # 세션 상태가 존재하는 경우, chat_history를 초기화하지 �
 if "docs" not in st.session_state:
     st.session_state.docs = None
 
+if "session_id" not in st.session_state:
+    # uuid 고유 번호는 -(hyphen)을 포함해 36자, 너무 긺으로 자르는 과정 추가
+    st.session_state.session_id = str(uuid.uuid4())[:8]
+
+session_id = st.session_state.session_id
 
 # 모델 불러오기 캐시 함수
 @st.cache_resource
@@ -152,11 +158,11 @@ with st.sidebar:
     
     if config["embedding"]["db_type"] == "faiss":
         faiss_index_name = f"{generate_index_name(config)}"
-        vector_db_file = os.path.join(project_root, 'data', f"{faiss_index_name}.faiss")
-        metadata_file = os.path.join(project_root, 'data', f"{faiss_index_name}.pkl")
+        vector_db_file = os.path.join(project_root, config['embedding']['vector_db_path'], f"{faiss_index_name}_{session_id}.faiss")
+        metadata_file = os.path.join(project_root, config['embedding']['vector_db_path'], f"{faiss_index_name}_{session_id}.pkl")
     else:
-        chroma_folder_name = f"{generate_index_name(config)}"
-        chroma_path = os.path.join(project_root, 'data', chroma_folder_name)
+        chroma_folder_name = f"{generate_index_name(config)}_{session_id}"
+        chroma_path = os.path.join(project_root, config['embedding']['vector_db_path'], chroma_folder_name)
 
 
     if reset_vector_db:
@@ -240,7 +246,8 @@ with tab1:
                     FASTAPI_URL,
                     json={
                         "query": query,
-                        "chat_history": st.session_state.chat_history
+                        "chat_history": st.session_state.chat_history,
+                        "session_id": st.session_state.session_id
                     }
                 )
                 
