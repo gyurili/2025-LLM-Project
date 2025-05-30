@@ -50,7 +50,7 @@ def get_generation_model(model_type: str, model_name: str, use_quantization: boo
     else:
         raise ValueError(f"지원되지 않는 모델 타입: {model_type}")
 
-def rag_pipeline(config, embeddings, chat_history, model_info=None, is_save=False):
+def rag_pipeline(config, embeddings, chat_history, model_info=None, is_save=False, session_id=None):
     try:
         with trace(name="rag_pipeline") as run:
 
@@ -58,7 +58,7 @@ def rag_pipeline(config, embeddings, chat_history, model_info=None, is_save=Fals
                 chunks = loader_main(config, embeddings, chat_history)
                 
             with trace(name="embedding_main"):
-                vector_store = embedding_main(config, chunks, embeddings=embeddings, is_save=is_save)
+                vector_store = embedding_main(config, chunks, embeddings=embeddings, is_save=is_save, session_id=session_id)
 
             with trace(name="retrieval_main"):
                 docs = retrieval_main(config, vector_store, chunks, embeddings=embeddings, chat_history=chat_history)

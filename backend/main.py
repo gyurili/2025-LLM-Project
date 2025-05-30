@@ -55,7 +55,7 @@ def chat(request: QueryRequest):
     else:
         config["retriever"]["query"] = request.query
 
-    docs, answer, elapsed = rag_pipeline(config, embeddings, request.chat_history, model_info, is_save=True)
+    docs, answer, elapsed = rag_pipeline(config, embeddings, request.chat_history, model_info, is_save=True, session_id=request.session_id)
 
     docs_result = [
         {
