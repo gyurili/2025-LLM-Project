@@ -63,7 +63,7 @@ def extract_sections(text: str) -> List[dict]:
             """,
             re.MULTILINE | re.VERBOSE
         ),
-        # 2차: 단순 숫자 기반 목차만 인식 (fallback)
+        # 2차: 단순 숫자 기반 목차만 인식
         re.compile(r"\n?(\d+(\.\d+)*\s?[.)]?\s+[^\n]{2,100})")
     ]
 

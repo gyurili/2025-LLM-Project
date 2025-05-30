@@ -43,10 +43,7 @@
 conda env create -f environment.yaml
 conda activate myenv
 
-# 2. 로컬 실행
-python -m streamlit run src/streamlit/chatbot.py
-
-# 3. UI 실행
+# 2. 실행
 chmod +x run.sh
 ./run.sh
 ```
@@ -127,7 +124,20 @@ chmod +x run.sh
 | 2025-05-28 | 보고서 및 발표자료 작성 | 전원 | 진행중 |
 | 2025-06-02 | 프로젝트 최종 발표 및 배포 완료 | 전원 | 예정 |
 
-## 📄 사용한 모델 및 라이선스
+## 6. 📎 참고 자료 및 산출물
+
+---
+
+- 📘 **최종 보고서**: [다운로드](https://your-link.com/report.pdf)
+- 📽️ **발표자료 (PPT)**: [다운로드](https://your-link.com/presentation.pdf)
+- 🗂️ **팀원별 협업 일지**
+  - [정영선 협업일지](https://sapphire-cart-f52.notion.site/1f101c050cec803fb4aef0a5f8267fcf?pvs=74)
+  - [구극모 협업일지](https://www.notion.so/1f1e1cd92be6809ba031d7caa012936e?source=copy_link)
+  - [박규리 협업일지](https://notion.so/your-gyr-log)
+  - [이학진 협업일지](https://www.notion.so/1f200f54e76e808e9a86f43a85d79afc?pvs=4)
+  - [정재의 협업일지](https://www.notion.so/LLM-RAG-RFP-1f219af16ea580fd9603fc066bd71238?source=copy_link)
+
+## 7. 📄 사용한 모델 및 라이센스
 
 ---
 
