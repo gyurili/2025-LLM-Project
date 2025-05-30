@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Optional
@@ -8,7 +9,6 @@ from src.utils.config import load_config
 from src.utils.path import get_project_root_dir
 from src.embedding.vector_db import generate_embedding
 from main import get_generation_model, rag_pipeline
-import os
 from dotenv import load_dotenv
 
 app = FastAPI()
@@ -48,9 +48,7 @@ model_name = config["generator"]["model_name"]
 use_quantization = config["generator"]["use_quantization"]
 model_info = get_generation_model(model_type, model_name, use_quantization)
 
-# API 호출
-from copy import deepcopy
-
+# API 요청
 @app.post("/chat", response_model=QueryResponse)
 def chat(request: QueryRequest):
     local_config = deepcopy(request.config)
