@@ -181,9 +181,9 @@ def load_config(project_root: str) -> dict:
         check_config(config)
 
         # verbose 모드일 경우 전체 설정 출력
-        if config.get("settings", {}).get("verbose", False):
-            print("\n📄 [Verbose] 최종 설정 내용:")
-            print(yaml.dump(config, allow_unicode=True, sort_keys=False))
+        #if config.get("settings", {}).get("verbose", False):
+            #print("\n📄 [Verbose] 최종 설정 내용:")
+            #print(yaml.dump(config, allow_unicode=True, sort_keys=False))
     
     # 예외 처리
     except (FileNotFoundError, PermissionError) as e:
