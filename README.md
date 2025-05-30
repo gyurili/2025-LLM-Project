@@ -43,10 +43,7 @@
 conda env create -f environment.yaml
 conda activate myenv
 
-# 2. 로컬 실행
-python -m streamlit run src/streamlit/chatbot.py
-
-# 3. UI 실행
+# 2. 실행
 chmod +x run.sh
 ./run.sh
 ```
