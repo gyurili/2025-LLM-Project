@@ -133,12 +133,12 @@ chmod +x run.sh
 - 📄 **요약 문서 (Notion)**: [바로가기](https://notion.so/your-summary)
 - 🗂️ **팀원별 협업 일지**
   - [정영선 협업일지](https://sapphire-cart-f52.notion.site/1f101c050cec803fb4aef0a5f8267fcf?pvs=74)
-  - [구극모 협업일지](https://notion.so/your-gkm-log)
+  - [구극모 협업일지](https://www.notion.so/1f1e1cd92be6809ba031d7caa012936e?source=copy_link)
   - [박규리 협업일지](https://notion.so/your-gyr-log)
-  - [이학진 협업일지](https://notion.so/your-lhj-log)
-  - [정재의 협업일지](https://notion.so/your-jje-log)
+  - [이학진 협업일지](https://www.notion.so/1f200f54e76e808e9a86f43a85d79afc?pvs=4)
+  - [정재의 협업일지](https://www.notion.so/LLM-RAG-RFP-1f219af16ea580fd9603fc066bd71238?source=copy_link)
 
-## 📄 사용한 모델 및 라이선스
+## 📄 사용한 모델 및 라이센스
 
 ---
 
