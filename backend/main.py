@@ -1,12 +1,14 @@
-from fastapi import FastAPI, Request
+import os
+from fastapi import FastAPI
 from pydantic import BaseModel
+from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
+from copy import deepcopy
 from src.generator.chat_history import load_chat_history
 from src.utils.config import load_config
 from src.utils.path import get_project_root_dir
 from src.embedding.vector_db import generate_embedding
 from main import get_generation_model, rag_pipeline
-import os
 from dotenv import load_dotenv
 
 app = FastAPI()
@@ -24,6 +26,8 @@ app.add_middleware(
 class QueryRequest(BaseModel):
     query: str
     chat_history: list
+    session_id: Optional[str] = None
+    config: dict
 
 class QueryResponse(BaseModel):
     answer: str
@@ -44,18 +48,19 @@ model_name = config["generator"]["model_name"]
 use_quantization = config["generator"]["use_quantization"]
 model_info = get_generation_model(model_type, model_name, use_quantization)
 
-# API 호출
+# API 요청
 @app.post("/chat", response_model=QueryResponse)
 def chat(request: QueryRequest):
-    config["chat_history"] = request.chat_history
+    local_config = deepcopy(request.config)
+    local_config["chat_history"] = request.chat_history
 
     if request.chat_history:
-        chat_summary = load_chat_history(config, model_info)
-        config["retriever"]["query"] = f"이전 질문 요약: {chat_summary}\n질문: {request.query}"
+        chat_summary = load_chat_history(local_config, model_info)
+        local_config["retriever"]["query"] = f"이전 질문 요약: {chat_summary}\n질문: {request.query}"
     else:
-        config["retriever"]["query"] = request.query
+        local_config["retriever"]["query"] = request.query
 
-    docs, answer, elapsed = rag_pipeline(config, embeddings, request.chat_history, model_info, is_save=True, session_id=request.session_id)
+    docs, answer, elapsed = rag_pipeline(local_config, embeddings, request.chat_history, model_info, is_save=True, session_id=request.session_id)
 
     docs_result = [
         {
