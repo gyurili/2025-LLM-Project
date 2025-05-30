@@ -2,7 +2,7 @@
 
 ---
 
-![Demo](assets/demo.gif)
+![Demo](assets/demo_white.gif)
 
 > **RFPilot**은 사용자의 질문을 실시간으로 처리해 관련 제안서를 탐색하여 응답을 생성합니다. **RFPilot**과 함께 수백건의 RFP를 신속하게 처리하고, 컨설팅에 집중하세요!
 
