@@ -247,7 +247,8 @@ with tab1:
                     json={
                         "query": query,
                         "chat_history": st.session_state.chat_history,
-                        "session_id": st.session_state.session_id
+                        "session_id": st.session_state.session_id,
+                        "config": config
                     }
                 )
                 

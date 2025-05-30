@@ -1,6 +1,3 @@
-from src.utils.shared_cache import set_cache_dirs
-set_cache_dirs()
-
 import os
 import time
 from typing import Dict
@@ -18,11 +15,6 @@ from src.generator.hf_generator import load_hf_model
 from src.generator.openai_generator import load_openai_model
 
 
-'''
-    TODO:
-    - 각자 main수정에 맞게 generator_main, retrieval_main, embedding_main, loader_main 수정
-    - 임베딩, 모델인포, 컨피그, dotenv등은 전역적으로 한번만 선언
-'''
 def get_generation_model(model_type: str, model_name: str, use_quantization: bool = False) -> Dict:
     """
     지정된 모델 타입 및 이름에 따라 생성 모델을 로드합니다.
