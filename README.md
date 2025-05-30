@@ -124,6 +124,20 @@ chmod +x run.sh
 | 2025-05-28 | 보고서 및 발표자료 작성 | 전원 | 진행중 |
 | 2025-06-02 | 프로젝트 최종 발표 및 배포 완료 | 전원 | 예정 |
 
+## 6. 📎 참고 자료 및 산출물
+
+---
+
+- 📘 **최종 보고서**: [다운로드](https://your-link.com/report.pdf)
+- 📽️ **발표자료 (PPT)**: [다운로드](https://your-link.com/presentation.pdf)
+- 📄 **요약 문서 (Notion)**: [바로가기](https://notion.so/your-summary)
+- 🗂️ **팀원별 협업 일지**
+  - [정영선 협업일지](https://sapphire-cart-f52.notion.site/1f101c050cec803fb4aef0a5f8267fcf?pvs=74)
+  - [구극모 협업일지](https://notion.so/your-gkm-log)
+  - [박규리 협업일지](https://notion.so/your-gyr-log)
+  - [이학진 협업일지](https://notion.so/your-lhj-log)
+  - [정재의 협업일지](https://notion.so/your-jje-log)
+
 ## 📄 사용한 모델 및 라이선스
 
 ---
