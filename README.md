@@ -121,15 +121,15 @@ chmod +x run.sh
 | 2025-05-22 | FastAPI 연동 실험 | 박규리 | 완료 |
 | 2025-05-23 | 코드 리뷰 및 리팩토링 | 전원 | 완료 |
 | 2025-05-27 | 모델 배포 실험 | 전원 | 완료 |
-| 2025-05-28 | 보고서 및 발표자료 작성 | 전원 | 진행중 |
-| 2025-06-02 | 프로젝트 최종 발표 및 배포 완료 | 전원 | 예정 |
+| 2025-05-28 | 보고서 및 발표자료 작성 | 전원 | 완료 |
+| 2025-06-02 | 프로젝트 최종 발표 및 배포 완료 | 전원 | 완료 |
 
 ## 6. 📎 참고 자료 및 산출물
 
 ---
 
-- 📘 **최종 보고서**: [다운로드](https://drive.google.com/file/d/1opW35ofvh4X1-mF1vPLHTNJFryTnj5D7/view?usp=sharing)
-- 📽️ **발표자료 (PPT)**: [다운로드](https://your-link.com/presentation.pdf)
+- 📘 **최종 보고서**: [다운로드](https://drive.google.com/file/d/1y3Ksc8yg2JgfvVLnvcHZzNBn48v7iMOX/view?usp=sharing)
+- 📽️ **발표자료 (PPT)**: [다운로드](https://drive.google.com/file/d/1nurMA7VOJsAODducTqiH6wRNcliIZlBM/view?usp=sharing)
 - 🗂️ **팀원별 협업 일지**
   - [정영선 협업일지](https://sapphire-cart-f52.notion.site/1f101c050cec803fb4aef0a5f8267fcf?pvs=74)
   - [구극모 협업일지](https://www.notion.so/1f1e1cd92be6809ba031d7caa012936e?source=copy_link)
