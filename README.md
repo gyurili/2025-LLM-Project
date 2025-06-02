@@ -100,11 +100,7 @@ chmod +x run.sh
 |:------:|:------:|:------:|:------:|:------:|
 | <a href="https://github.com/YS-2357"><img src="https://github.com/YS-2357.png" width="100"/></a> | <a href="https://github.com/Glen0227"><img src="https://github.com/Glen0227.png" width="100"/></a> | <a href="https://github.com/gyurili"><img src="https://github.com/gyurili.png" width="100"/></a> | <a href="https://github.com/kyakyak"><img src="https://github.com/kyakyak.png" width="100"/></a> | <a href="https://github.com/JJU09"><img src="https://github.com/JJU09.png" width="100"/></a> |
 | Def Programming<br>System Arch | Frontend Dev<br>Data Engineer | Backend Dev<br>RAG Engineer | NLP Engineer<br>Prompt Engineer | Frontend Dev<br>Data Processing |
-| ![Gmail](https://img.shields.io/badge/joungyoungsun20@gmail.com-D14836?style=plastic&logo=gmail&logoColor=white) | 
-![Gmail](https://img.shields.io/badge/keugmo@gmail.com-D14836?style=plastic&logo=gmail&logoColor=white) | 
-![Naver](https://img.shields.io/badge/inglifestora@naver.com-03C75A?style=plastic&logo=naver&logoColor=white) | 
-![Gmail](https://img.shields.io/badge/udosjdjdjdj@gmail.com-D14836?style=plastic&logo=gmail&logoColor=white) | 
-![Gmail](https://img.shields.io/badge/jeaui54@gmail.com-D14836?style=plastic&logo=gmail&logoColor=white) |
+| ![Gmail](https://img.shields.io/badge/joungyoungsun20@gmail.com-D14836?style=plastic&logo=gmail&logoColor=white) | ![Gmail](https://img.shields.io/badge/keugmo@gmail.com-D14836?style=plastic&logo=gmail&logoColor=white) | ![Naver](https://img.shields.io/badge/inglifestora@naver.com-03C75A?style=plastic&logo=naver&logoColor=white) | ![Gmail](https://img.shields.io/badge/udosjdjdjdj@gmail.com-D14836?style=plastic&logo=gmail&logoColor=white) | ![Gmail](https://img.shields.io/badge/jeaui54@gmail.com-D14836?style=plastic&logo=gmail&logoColor=white) |
 
 ## 5. 📊 타임라인
 
