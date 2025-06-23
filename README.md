@@ -1,4 +1,4 @@
-# 2025-LLM-Project: RFP Summarizer & QA Chatbot
+# 🤖 2025-LLM-Project: RFP Summarizer & QA Chatbot
 
 ---
 
